@@ -130,7 +130,7 @@ const ProductsContent = () => {
     setErrorMessage('');
 
     try {
-      const response = await fetch('http://localhost:4000/v1/papeleria/newproductapi', {
+      const response = await fetch('back-papeleria-two.vercel.app/v1/papeleria/newproductapi', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -180,7 +180,7 @@ const ProductsContent = () => {
     setErrorMessage('');
 
     try {
-      const response = await fetch('http://localhost:4000/v1/papeleria/updateproductapi', {
+      const response = await fetch('back-papeleria-two.vercel.app/v1/papeleria/updateproductapi', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -230,7 +230,7 @@ const ProductsContent = () => {
     setErrorMessage('');
 
     try {
-      const response = await fetch('http://localhost:4000/v1/papeleria/deleteproductapi', {
+      const response = await fetch('back-papeleria-two.vercel.app/v1/papeleria/deleteproductapi', {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
