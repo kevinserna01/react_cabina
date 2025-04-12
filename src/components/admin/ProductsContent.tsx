@@ -10,13 +10,31 @@ interface Product {
   imageUrl?: string;
 }
 
+interface NewProduct {
+  name: string;
+  code: string;
+  price: number;
+  category: string;
+  description: string;
+  imageUrl?: string;
+}
+
 const ProductsContent = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [isLoading, setIsLoading] = useState(false);
+  const [newProduct, setNewProduct] = useState<NewProduct>({
+    name: '',
+    code: '',
+    price: 0,
+    category: '',
+    description: '',
+    imageUrl: ''
+  });
 
   // Mock data - Replace with real data from your backend
-  const [products] = useState<Product[]>([
+  const [products, setProducts] = useState<Product[]>([
     {
       id: '1',
       name: 'Cuaderno Universitario',
@@ -36,6 +54,51 @@ const ProductsContent = () => {
   ]);
 
   const categories = ['all', 'Cuadernos', 'Útiles', 'Papelería', 'Arte'];
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setNewProduct(prev => ({
+      ...prev,
+      [name]: name === 'price' ? parseFloat(value) || 0 : value
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('http://localhost:4000/v1/papeleria/newproductapi', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}` // Asumiendo que guardas el token en localStorage
+        },
+        body: JSON.stringify(newProduct)
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al crear el producto');
+      }
+
+      const createdProduct = await response.json();
+      setProducts(prev => [...prev, createdProduct]);
+      setIsAddModalOpen(false);
+      setNewProduct({
+        name: '',
+        code: '',
+        price: 0,
+        category: '',
+        description: '',
+        imageUrl: ''
+      });
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Error al crear el producto');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const filteredProducts = products.filter(product => {
     const matchesSearch = 
@@ -155,23 +218,126 @@ const ProductsContent = () => {
         ))}
       </div>
 
-      {/* Modal de Agregar Producto (placeholder) */}
+      {/* Modal de Agregar Producto */}
       {isAddModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Agregar Nuevo Producto</h2>
-            {/* Aquí iría el formulario de agregar producto */}
-            <div className="mt-4 flex justify-end gap-2">
-              <button
-                onClick={() => setIsAddModalOpen(false)}
-                className="px-4 py-2 text-gray-700 hover:text-gray-900"
-              >
-                Cancelar
-              </button>
-              <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-                Guardar
-              </button>
-            </div>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                  Nombre
+                </label>
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  value={newProduct.name}
+                  onChange={handleInputChange}
+                  required
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="code" className="block text-sm font-medium text-gray-700">
+                  Código
+                </label>
+                <input
+                  type="text"
+                  id="code"
+                  name="code"
+                  value={newProduct.code}
+                  onChange={handleInputChange}
+                  required
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="price" className="block text-sm font-medium text-gray-700">
+                  Precio
+                </label>
+                <input
+                  type="number"
+                  id="price"
+                  name="price"
+                  value={newProduct.price}
+                  onChange={handleInputChange}
+                  required
+                  step="0.01"
+                  min="0"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="category" className="block text-sm font-medium text-gray-700">
+                  Categoría
+                </label>
+                <select
+                  id="category"
+                  name="category"
+                  value={newProduct.category}
+                  onChange={handleInputChange}
+                  required
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="">Seleccionar categoría</option>
+                  {categories.filter(cat => cat !== 'all').map(category => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+                  Descripción
+                </label>
+                <textarea
+                  id="description"
+                  name="description"
+                  value={newProduct.description}
+                  onChange={handleInputChange}
+                  rows={3}
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700">
+                  URL de la imagen
+                </label>
+                <input
+                  type="url"
+                  id="imageUrl"
+                  name="imageUrl"
+                  value={newProduct.imageUrl}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              <div className="mt-4 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsAddModalOpen(false)}
+                  className="px-4 py-2 text-gray-700 hover:text-gray-900"
+                  disabled={isLoading}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-400"
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'Guardando...' : 'Guardar'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
