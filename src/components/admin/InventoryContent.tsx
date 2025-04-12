@@ -56,7 +56,7 @@ const InventoryContent = () => {
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch('http://localhost:4000/v1/papeleria/getProductsapi');
+      const response = await fetch('back-papeleria-two.vercel.app/v1/papeleria/getProductsapi');
       if (!response.ok) throw new Error('Error al cargar productos');
       const data = await response.json();
       setProducts(data.data || []);
@@ -126,7 +126,7 @@ const InventoryContent = () => {
     setErrorMessage('');
 
     try {
-      const response = await fetch('http://localhost:4000/v1/papeleria/createInventoryProductapi', {
+      const response = await fetch('back-papeleria-two.vercel.app/v1/papeleria/createInventoryProductapi', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
