@@ -312,13 +312,13 @@ const InventoryContent = () => {
         });
       }
     } else {
-      setEditingProduct(prev => {
-        if (!prev) return prev;
-        return {
-          ...prev,
+    setEditingProduct(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
           [name]: value
-        };
-      });
+      };
+    });
     }
   };
 

@@ -27,6 +27,36 @@ const CartPanel = () => {
   const [isCustomerFormOpen, setIsCustomerFormOpen] = useState(false);
   const [isWithoutCustomer, setIsWithoutCustomer] = useState(false);
 
+  // Función para generar el código de venta
+  const generateSaleCode = async () => {
+    try {
+      const response = await fetch('https://back-papeleria-two.vercel.app/v1/papeleria/getLastSaleCodeapi', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al obtener el último código de venta');
+      }
+
+      const result = await response.json();
+      const lastCode = result.data?.lastCode || 'VTA-000';
+      
+      // Extraer el número del código
+      const currentNumber = parseInt(lastCode.split('-')[1]);
+      // Incrementar el número y formatearlo con ceros a la izquierda
+      const nextNumber = (currentNumber + 1).toString().padStart(3, '0');
+      // Generar el nuevo código
+      return `VTA-${nextNumber}`;
+    } catch (error) {
+      console.error('Error al generar código de venta:', error);
+      // Si hay un error, generar un código basado en timestamp
+      const timestamp = Date.now().toString().slice(-3);
+      return `VTA-${timestamp}`;
+    }
+  };
+
   const handleCustomerDataChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setCustomerData(prev => ({
@@ -45,7 +75,11 @@ const CartPanel = () => {
     setError(null);
 
     try {
+      // Generar el código de venta
+      const saleCode = await generateSaleCode();
+
       const saleData = {
+        code: saleCode,
         productos: items.map(item => ({
           code: item.product.code,
           cantidad: item.quantity
@@ -54,7 +88,8 @@ const CartPanel = () => {
         cliente: customerData.name ? {
           nombre: customerData.name,
           documento: customerData.document
-        } : null
+        } : null,
+        fecha: new Date().toISOString()
       };
 
       const response = await fetch('https://back-papeleria-two.vercel.app/v1/papeleria/createSaleapi', {
@@ -78,9 +113,10 @@ const CartPanel = () => {
       setSelectedPaymentMethod('');
       setCustomerData({ name: '', document: '' });
       setCustomer(null);
+      setIsWithoutCustomer(false);
 
-      // Mostrar mensaje de éxito
-      alert('Venta realizada con éxito');
+      // Mostrar mensaje de éxito con el código de venta
+      alert(`Venta ${saleCode} realizada con éxito`);
 
     } catch (error) {
       console.error('Error:', error);
