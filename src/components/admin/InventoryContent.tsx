@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface Product {
   code: string;
@@ -9,25 +9,20 @@ interface Product {
 }
 
 interface InventoryItem {
-  id?: string;
   code: string;
-  nombre: string;
-  categoria: string;
-  existencias: number;
-  stockMinimo: number;
-  descripcion: string;
-  precio: number;
+  name: string;
+  category: string;
+  stock: number;
+  minStock: number;
   lastUpdate?: Date;
 }
 
 interface NewInventoryItem {
   code: string;
-  nombre: string;
-  categoria: string;
-  existencias: number;
-  stockMinimo: number;
-  descripcion: string;
-  precio: number;
+  stock: number;
+  minStock: number;
+  name?: string;
+  category?: string;
 }
 
 const InventoryContent = () => {
@@ -44,44 +39,91 @@ const InventoryContent = () => {
   const [productCategory, setProductCategory] = useState('all');
   const [newProduct, setNewProduct] = useState<NewInventoryItem>({
     code: '',
-    nombre: '',
-    categoria: '',
-    existencias: 0,
-    stockMinimo: 0,
-    descripcion: '',
-    precio: 0
+    stock: 0,
+    minStock: 0
   });
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<InventoryItem | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [productToDelete, setProductToDelete] = useState<InventoryItem | null>(null);
+  const [successMessage, setSuccessMessage] = useState('');
 
   const categories = ['Cuadernos', 'Útiles', 'Papelería', 'Arte'];
 
+  // Cargar inventario inicial
+  useEffect(() => {
+    const fetchInventory = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch('https://back-papeleria-two.vercel.app/v1/papeleria/getInventoryProductsapi', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Error al cargar el inventario');
+        }
+
+        const result = await response.json();
+
+        if (result.status === "Success") {
+          // Asegurarse de que los datos del inventario tengan el formato correcto
+          const formattedInventory = result.data.map((item: any) => ({
+            code: item.code || '',
+            name: item.name || '',
+            category: item.category || '',
+            stock: item.stock || 0,
+            minStock: item.minStock || 0,
+            lastUpdate: item.lastUpdate ? new Date(item.lastUpdate) : new Date()
+          }));
+          
+          setInventory(formattedInventory);
+        } else {
+          setErrorMessage(result.message || 'Error al cargar el inventario');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        setErrorMessage(error instanceof Error ? error.message : 'Error al cargar el inventario');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchInventory();
+  }, []);
+
   const fetchProducts = async () => {
     try {
-      const response = await fetch('back-papeleria-two.vercel.app/v1/papeleria/getProductsapi');
+      setIsLoading(true);
+      const response = await fetch('https://back-papeleria-two.vercel.app/v1/papeleria/getProductsapi');
       if (!response.ok) throw new Error('Error al cargar productos');
       const data = await response.json();
-      setProducts(data.data || []);
+      setProducts(Array.isArray(data.data) ? data.data : []);
     } catch (error) {
       console.error('Error:', error);
       setErrorMessage('Error al cargar los productos');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleAddProductClick = async () => {
-    setIsLoading(true);
     await fetchProducts();
-    setIsLoading(false);
     setIsProductSelectionModalOpen(true);
   };
 
   const handleProductSelect = (product: Product) => {
+    if (!product) return;
+    
+    console.log('Producto seleccionado:', product); // Para debug
+    
     setNewProduct({
-      code: product.code,
-      nombre: product.name,
-      categoria: product.category,
-      existencias: 0,
-      stockMinimo: 0,
-      descripcion: product.description,
-      precio: product.price
+      code: product.code || '',
+      name: product.name || '',  // Aseguramos que name se asigne correctamente
+      category: product.category || '', // Aseguramos que category se asigne correctamente
+      stock: 0,
+      minStock: 0
     });
     setIsProductSelectionModalOpen(false);
     setIsAddModalOpen(true);
@@ -99,15 +141,7 @@ const InventoryContent = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    
-    if (name === 'precio') {
-      // Eliminar cualquier carácter que no sea número
-      const numericValue = value.replace(/[^0-9]/g, '');
-      setNewProduct(prev => ({
-        ...prev,
-        [name]: numericValue ? parseInt(numericValue) : 0
-      }));
-    } else if (name === 'existencias' || name === 'stockMinimo') {
+    if (name === 'stock' || name === 'minStock') {
       setNewProduct(prev => ({
         ...prev,
         [name]: value ? parseInt(value) : 0
@@ -126,57 +160,186 @@ const InventoryContent = () => {
     setErrorMessage('');
 
     try {
-      const response = await fetch('back-papeleria-two.vercel.app/v1/papeleria/createInventoryProductapi', {
+      const inventoryItem = {
+        code: newProduct.code,
+        name: newProduct.name,
+        category: newProduct.category,
+        stock: Number(newProduct.stock),
+        minStock: Number(newProduct.minStock),
+        lastUpdate: new Date()
+      };
+
+      const response = await fetch('https://back-papeleria-two.vercel.app/v1/papeleria/assignProductToInventoryapi', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
+        body: JSON.stringify(inventoryItem)
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || 'Error al asignar el producto al inventario');
+      }
+
+      setInventory(prev => [...prev, result.data]);
+      setIsAddModalOpen(false);
+      setNewProduct({
+        code: '',
+        stock: 0,
+        minStock: 0,
+        name: '',
+        category: ''
+      });
+      setSuccessMessage(`Producto agregado al inventario: ${newProduct.name}`);
+      setShowSuccess(true);
+      setTimeout(() => {
+        setShowSuccess(false);
+        setSuccessMessage('');
+      }, 3000);
+    } catch (error) {
+      console.error('Error:', error);
+      setErrorMessage(error instanceof Error ? error.message : 'Error al asignar el producto al inventario');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const safeFilter = <T extends { name?: string; code?: string; category?: string }>(
+    items: T[],
+    searchText: string,
+    categoryField: string
+  ): T[] => {
+    if (!Array.isArray(items)) return [];
+    
+    const searchLower = (searchText || '').toLowerCase();
+    
+    return items.filter(item => {
+      if (!item) return false;
+      
+      const nameMatch = (item.name || '').toLowerCase().includes(searchLower);
+      const codeMatch = (item.code || '').toLowerCase().includes(searchLower);
+      const categoryMatch = categoryField === 'all' || item.category === categoryField;
+      
+      return (nameMatch || codeMatch) && categoryMatch;
+    });
+  };
+
+  const filteredProducts = safeFilter(products, productSearchTerm, productCategory);
+  const filteredInventory = safeFilter(inventory, searchTerm, selectedCategory);
+
+  const handleEditClick = (item: InventoryItem) => {
+    setEditingProduct(item);
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingProduct) return;
+
+    setIsLoading(true);
+    setErrorMessage('');
+
+    try {
+      const response = await fetch('https://back-papeleria-two.vercel.app/v1/papeleria/updateInventoryProductapi', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
         body: JSON.stringify({
-          code: newProduct.code,
-          nombre: newProduct.nombre,
-          categoria: newProduct.categoria,
-          existencias: Number(newProduct.existencias),
-          stockMinimo: Number(newProduct.stockMinimo),
-          descripcion: newProduct.descripcion,
-          precio: Number(newProduct.precio)
+          code: editingProduct.code,
+          stock: Number(editingProduct.stock),
+          minStock: Number(editingProduct.minStock)
         })
       });
 
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.message || 'Error al crear el producto en inventario');
+        throw new Error(result.message || 'Error al actualizar el inventario');
       }
 
-      setInventory(prev => [...prev, result.producto]);
-      setIsAddModalOpen(false);
-      setNewProduct({
-        code: '',
-        nombre: '',
-        categoria: '',
-        existencias: 0,
-        stockMinimo: 0,
-        descripcion: '',
-        precio: 0
-      });
+      setInventory(prev => prev.map(item => 
+        item.code === editingProduct.code ? { ...item, ...result.data } : item
+      ));
+
+      setIsEditModalOpen(false);
+      setEditingProduct(null);
+      setSuccessMessage(`Inventario actualizado correctamente: ${editingProduct.name}`);
       setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 3000);
+      setTimeout(() => {
+        setShowSuccess(false);
+        setSuccessMessage('');
+      }, 3000);
     } catch (error) {
       console.error('Error:', error);
-      setErrorMessage(error instanceof Error ? error.message : 'Error al crear el producto en inventario');
+      setErrorMessage(error instanceof Error ? error.message : 'Error al actualizar el inventario');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = 
-      product.name.toLowerCase().includes(productSearchTerm.toLowerCase()) ||
-      product.code.toLowerCase().includes(productSearchTerm.toLowerCase());
-    const matchesCategory = productCategory === 'all' || product.category === productCategory;
-    return matchesSearch && matchesCategory;
-  });
+  const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    if (!editingProduct) return;
+
+    setEditingProduct(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        [name]: name === 'stock' || name === 'minStock' ? Number(value) : value
+      };
+    });
+  };
+
+  const handleDeleteClick = (item: InventoryItem) => {
+    setProductToDelete(item);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!productToDelete) return;
+
+    setIsLoading(true);
+    setErrorMessage('');
+
+    try {
+      const response = await fetch('https://back-papeleria-two.vercel.app/v1/papeleria/deleteInventoryProductapi', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          code: productToDelete.code
+        })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || 'Error al eliminar el producto del inventario');
+      }
+
+      setInventory(prev => prev.filter(item => item.code !== productToDelete.code));
+      setIsDeleteModalOpen(false);
+      setProductToDelete(null);
+      setSuccessMessage(`Producto eliminado del inventario: ${productToDelete.name}`);
+      setShowSuccess(true);
+      setTimeout(() => {
+        setShowSuccess(false);
+        setSuccessMessage('');
+      }, 3000);
+    } catch (error) {
+      console.error('Error:', error);
+      setErrorMessage(error instanceof Error ? error.message : 'Error al eliminar el producto del inventario');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -187,7 +350,7 @@ const InventoryContent = () => {
             <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
             </svg>
-            <p>Producto agregado al inventario correctamente</p>
+            <p>{successMessage}</p>
           </div>
         </div>
       )}
@@ -267,25 +430,25 @@ const InventoryContent = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {inventory.map((item) => (
+              {filteredInventory.map((item) => (
                 <tr key={item.code}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {item.code}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {item.nombre}
+                    {item.name}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {item.categoria}
+                    {item.category}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                      ${item.existencias <= item.stockMinimo ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
-                      {item.existencias}
+                      ${item.stock <= item.minStock ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
+                      {item.stock}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {item.stockMinimo}
+                    {item.minStock}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {new Date(item.lastUpdate!).toLocaleDateString()}
@@ -293,11 +456,21 @@ const InventoryContent = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     <div className="flex items-center gap-2">
                       <button
+                        onClick={() => handleEditClick(item)}
                         className="text-blue-600 hover:text-blue-800"
-                        aria-label="Editar producto"
+                        aria-label="Editar inventario"
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => handleDeleteClick(item)}
+                        className="text-red-600 hover:text-red-800"
+                        aria-label="Eliminar del inventario"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
                       </button>
                     </div>
@@ -406,64 +579,55 @@ const InventoryContent = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label htmlFor="code" className="block text-sm font-medium text-gray-700">
-                  Código
+                  Código del Producto
                 </label>
                 <input
                   type="text"
                   id="code"
                   name="code"
                   value={newProduct.code}
-                  onChange={handleInputChange}
-                  required
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  readOnly
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
                 />
               </div>
 
               <div>
-                <label htmlFor="nombre" className="block text-sm font-medium text-gray-700">
-                  Nombre
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                  Nombre del Producto
                 </label>
                 <input
                   type="text"
-                  id="nombre"
-                  name="nombre"
-                  value={newProduct.nombre}
-                  onChange={handleInputChange}
-                  required
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  id="name"
+                  name="name"
+                  value={newProduct.name}
+                  readOnly
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
                 />
               </div>
 
               <div>
-                <label htmlFor="categoria" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="category" className="block text-sm font-medium text-gray-700">
                   Categoría
                 </label>
-                <select
-                  id="categoria"
-                  name="categoria"
-                  value={newProduct.categoria}
-                  onChange={handleInputChange}
-                  required
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="">Seleccionar categoría</option>
-                  {categories.map(category => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
-                  ))}
-                </select>
+                <input
+                  type="text"
+                  id="category"
+                  name="category"
+                  value={newProduct.category}
+                  readOnly
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+                />
               </div>
 
               <div>
-                <label htmlFor="existencias" className="block text-sm font-medium text-gray-700">
-                  Existencias
+                <label htmlFor="stock" className="block text-sm font-medium text-gray-700">
+                  Stock
                 </label>
                 <input
                   type="number"
-                  id="existencias"
-                  name="existencias"
-                  value={newProduct.existencias}
+                  id="stock"
+                  name="stock"
+                  value={newProduct.stock}
                   onChange={handleInputChange}
                   required
                   min="0"
@@ -472,53 +636,17 @@ const InventoryContent = () => {
               </div>
 
               <div>
-                <label htmlFor="stockMinimo" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="minStock" className="block text-sm font-medium text-gray-700">
                   Stock Mínimo
                 </label>
                 <input
                   type="number"
-                  id="stockMinimo"
-                  name="stockMinimo"
-                  value={newProduct.stockMinimo}
+                  id="minStock"
+                  name="minStock"
+                  value={newProduct.minStock}
                   onChange={handleInputChange}
                   required
                   min="0"
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="precio" className="block text-sm font-medium text-gray-700">
-                  Precio
-                </label>
-                <div className="relative mt-1">
-                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">
-                    $
-                  </span>
-                  <input
-                    type="text"
-                    id="precio"
-                    name="precio"
-                    value={newProduct.precio ? formatPrice(newProduct.precio).replace('COP', '').trim() : ''}
-                    onChange={handleInputChange}
-                    required
-                    className="block w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="0"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="descripcion" className="block text-sm font-medium text-gray-700">
-                  Descripción
-                </label>
-                <textarea
-                  id="descripcion"
-                  name="descripcion"
-                  value={newProduct.descripcion}
-                  onChange={handleInputChange}
-                  rows={3}
-                  required
                   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
@@ -541,6 +669,139 @@ const InventoryContent = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {isEditModalOpen && editingProduct && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Editar Producto en Inventario</h2>
+            <form onSubmit={handleEditSubmit} className="space-y-4">
+              <div>
+                <label htmlFor="edit-code" className="block text-sm font-medium text-gray-700">
+                  Código del Producto
+                </label>
+                <input
+                  type="text"
+                  id="edit-code"
+                  value={editingProduct.code}
+                  readOnly
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="edit-name" className="block text-sm font-medium text-gray-700">
+                  Nombre del Producto
+                </label>
+                <input
+                  type="text"
+                  id="edit-name"
+                  value={editingProduct.name}
+                  readOnly
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="edit-category" className="block text-sm font-medium text-gray-700">
+                  Categoría
+                </label>
+                <input
+                  type="text"
+                  id="edit-category"
+                  value={editingProduct.category}
+                  readOnly
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="edit-stock" className="block text-sm font-medium text-gray-700">
+                  Stock
+                </label>
+                <input
+                  type="number"
+                  id="edit-stock"
+                  name="stock"
+                  value={editingProduct.stock}
+                  onChange={handleEditInputChange}
+                  required
+                  min="0"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="edit-minStock" className="block text-sm font-medium text-gray-700">
+                  Stock Mínimo
+                </label>
+                <input
+                  type="number"
+                  id="edit-minStock"
+                  name="minStock"
+                  value={editingProduct.minStock}
+                  onChange={handleEditInputChange}
+                  required
+                  min="0"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              <div className="mt-4 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsEditModalOpen(false);
+                    setEditingProduct(null);
+                  }}
+                  className="px-4 py-2 text-gray-700 hover:text-gray-900"
+                  disabled={isLoading}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-400"
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'Guardando...' : 'Guardar Cambios'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {isDeleteModalOpen && productToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Confirmar Eliminación</h2>
+            <p className="text-gray-700 mb-4">
+              ¿Está seguro que desea eliminar el producto "{productToDelete.name}" del inventario?
+              Esta acción no se puede deshacer.
+            </p>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsDeleteModalOpen(false);
+                  setProductToDelete(null);
+                }}
+                className="px-4 py-2 text-gray-700 hover:text-gray-900"
+                disabled={isLoading}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:bg-red-400"
+                disabled={isLoading}
+              >
+                {isLoading ? 'Eliminando...' : 'Eliminar'}
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -57,7 +57,7 @@ const ProductsContent = () => {
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch('back-papeleria-two.vercel.app/v1/papeleria/getProductsapi');
+      const response = await fetch('https://back-papeleria-two.vercel.app/v1/papeleria/getProductsapi');
       if (!response.ok) throw new Error('Error al cargar productos');
       const data = await response.json();
       setProducts(data.data || []);
@@ -130,7 +130,7 @@ const ProductsContent = () => {
     setErrorMessage('');
 
     try {
-      const response = await fetch('back-papeleria-two.vercel.app/v1/papeleria/newproductapi', {
+      const response = await fetch('https://back-papeleria-two.vercel.app/v1/papeleria/newproductapi', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -180,7 +180,7 @@ const ProductsContent = () => {
     setErrorMessage('');
 
     try {
-      const response = await fetch('back-papeleria-two.vercel.app/v1/papeleria/updateproductapi', {
+      const response = await fetch('https://back-papeleria-two.vercel.app/v1/papeleria/updateproductapi', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -230,7 +230,7 @@ const ProductsContent = () => {
     setErrorMessage('');
 
     try {
-      const response = await fetch('back-papeleria-two.vercel.app/v1/papeleria/deleteproductapi', {
+      const response = await fetch('https://back-papeleria-two.vercel.app/v1/papeleria/deleteproductapi', {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
