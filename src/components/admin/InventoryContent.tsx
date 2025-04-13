@@ -19,10 +19,10 @@ interface InventoryItem {
 
 interface NewInventoryItem {
   code: string;
-  stock: number;
-  minStock: number;
-  name?: string;
-  category?: string;
+  stock: string;
+  minStock: string;
+  name: string;
+  category: string;
 }
 
 const InventoryContent = () => {
@@ -39,8 +39,10 @@ const InventoryContent = () => {
   const [productCategory, setProductCategory] = useState('all');
   const [newProduct, setNewProduct] = useState<NewInventoryItem>({
     code: '',
-    stock: 0,
-    minStock: 0
+    stock: '',
+    minStock: '',
+    name: '',
+    category: ''
   });
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<InventoryItem | null>(null);
@@ -120,10 +122,10 @@ const InventoryContent = () => {
     
     setNewProduct({
       code: product.code || '',
-      name: product.name || '',  // Aseguramos que name se asigne correctamente
-      category: product.category || '', // Aseguramos que category se asigne correctamente
-      stock: 0,
-      minStock: 0
+      name: product.name || '',
+      category: product.category || '',
+      stock: '',
+      minStock: ''
     });
     setIsProductSelectionModalOpen(false);
     setIsAddModalOpen(true);
@@ -142,9 +144,11 @@ const InventoryContent = () => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     if (name === 'stock' || name === 'minStock') {
+      // Permitir solo números positivos
+      const numericValue = value.replace(/[^0-9]/g, '');
       setNewProduct(prev => ({
         ...prev,
-        [name]: value ? parseInt(value) : 0
+        [name]: numericValue
       }));
     } else {
       setNewProduct(prev => ({
@@ -164,8 +168,8 @@ const InventoryContent = () => {
         code: newProduct.code,
         name: newProduct.name,
         category: newProduct.category,
-        stock: Number(newProduct.stock),
-        minStock: Number(newProduct.minStock),
+        stock: Number(newProduct.stock) || 0,
+        minStock: Number(newProduct.minStock) || 0,
         lastUpdate: new Date()
       };
 
@@ -188,8 +192,8 @@ const InventoryContent = () => {
       setIsAddModalOpen(false);
       setNewProduct({
         code: '',
-        stock: 0,
-        minStock: 0,
+        stock: '',
+        minStock: '',
         name: '',
         category: ''
       });
@@ -286,13 +290,36 @@ const InventoryContent = () => {
     const { name, value } = e.target;
     if (!editingProduct) return;
 
-    setEditingProduct(prev => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        [name]: name === 'stock' || name === 'minStock' ? Number(value) : value
-      };
-    });
+    if (name === 'stock' || name === 'minStock') {
+      // Si el valor está vacío o es solo un signo negativo, mantenerlo como string
+      if (value === '' || value === '-') {
+        setEditingProduct(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            [name]: value
+          };
+        });
+      } else {
+        // Convertir a número solo si hay un valor válido
+        const numericValue = parseInt(value);
+        setEditingProduct(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            [name]: isNaN(numericValue) ? 0 : numericValue
+          };
+        });
+      }
+    } else {
+      setEditingProduct(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          [name]: value
+        };
+      });
+    }
   };
 
   const handleDeleteClick = (item: InventoryItem) => {
@@ -631,6 +658,7 @@ const InventoryContent = () => {
                   onChange={handleInputChange}
                   required
                   min="0"
+                  placeholder="0"
                   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
@@ -647,6 +675,7 @@ const InventoryContent = () => {
                   onChange={handleInputChange}
                   required
                   min="0"
+                  placeholder="0"
                   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>

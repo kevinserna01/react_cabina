@@ -1,8 +1,27 @@
 import { Minus, Plus, ShoppingCart, User, X } from 'lucide-react';
+import { useState } from 'react';
 import { useCartStore } from '../../store/cartStore';
 
+// Función para formatear el precio en COP
+const formatPrice = (price: number): string => {
+  return new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(price);
+};
+
 const CartPanel = () => {
-  const { items, total, updateQuantity, removeItem, customer, clearCart } = useCartStore();
+  const { items, total, updateQuantity, removeItem, customer, setCustomer, clearCart } = useCartStore();
+  const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
+
+  const handleCustomerSelect = (withCustomer: boolean) => {
+    if (!withCustomer) {
+      setCustomer(null);
+    }
+    setIsCustomerModalOpen(false);
+  };
 
   return (
     <div className="w-96 h-full bg-white shadow-lg flex flex-col">
@@ -22,9 +41,12 @@ const CartPanel = () => {
           )}
         </div>
 
-        <button className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+        <button 
+          onClick={() => setIsCustomerModalOpen(true)}
+          className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+        >
           <User className="h-5 w-5 mr-2" />
-          {customer ? customer.name : 'Seleccionar Cliente'}
+          {customer ? customer.name : 'Cliente'}
         </button>
       </div>
 
@@ -42,7 +64,7 @@ const CartPanel = () => {
                     {item.product.name}
                   </h3>
                   <p className="text-sm text-gray-500">
-                    ${item.product.price.toFixed(2)} x {item.quantity}
+                    {formatPrice(item.product.price)} x {item.quantity}
                   </p>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -78,11 +100,43 @@ const CartPanel = () => {
         <div className="border-t p-4">
           <div className="flex justify-between items-center mb-4">
             <span className="text-lg font-medium">Total:</span>
-            <span className="text-lg font-bold">${total.toFixed(2)}</span>
+            <span className="text-lg font-bold">{formatPrice(total)}</span>
           </div>
           <button className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
             Confirmar Venta
           </button>
+        </div>
+      )}
+
+      {/* Modal de Selección de Cliente */}
+      {isCustomerModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Selección de Cliente</h2>
+            <div className="space-y-4">
+              <button
+                onClick={() => handleCustomerSelect(true)}
+                className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+              >
+                <User className="h-5 w-5 mr-2" />
+                Registrar Cliente
+              </button>
+              <button
+                onClick={() => handleCustomerSelect(false)}
+                className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+              >
+                Continuar sin Cliente
+              </button>
+            </div>
+            <div className="mt-4 flex justify-end">
+              <button
+                onClick={() => setIsCustomerModalOpen(false)}
+                className="px-4 py-2 text-gray-700 hover:text-gray-900"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
