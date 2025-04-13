@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import Navbar from '../components/layout/Navbar';
 import SearchBar from '../components/sales/SearchBar';
 import ProductCard from '../components/sales/ProductCard';
@@ -6,38 +7,64 @@ import { useCartStore } from '../store/cartStore';
 import { Product } from '../types';
 import { useNavigate } from 'react-router-dom';
 
-// Mock data - Replace with your actual data source
-const MOCK_PRODUCTS: Product[] = [
-  {
-    id: '1',
-    name: 'Cuaderno Universitario',
-    code: 'CU001',
-    price: 3.50,
-    stock: 50,
-    category: 'Cuadernos'
-  },
-  {
-    id: '2',
-    name: 'Lápiz 2B',
-    code: 'LP002',
-    price: 0.75,
-    stock: 100,
-    category: 'Útiles'
-  },
-  // Add more mock products as needed
-];
-
 const SalesDashboard = () => {
   const { addItem } = useCartStore();
   const navigate = useNavigate();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await fetch('https://back-papeleria-two.vercel.app/v1/papeleria/getProductsWithStockapi', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Error al cargar los productos');
+        }
+
+        const result = await response.json();
+
+        if (result.status === "Success") {
+          // Mapear los datos al formato esperado por el componente
+          const formattedProducts = result.data.map((item: any) => ({
+            id: item.code, // Usamos el código como ID
+            name: item.nombre,
+            code: item.code,
+            price: item.precio,
+            stock: item.stock,
+            category: item.categoria
+          }));
+          setProducts(formattedProducts);
+        } else {
+          throw new Error(result.message || 'Error al cargar los productos');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        setError(error instanceof Error ? error.message : 'Error al cargar los productos');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
 
   const handleLogout = () => {
-    // Implement logout logic
-    console.log('Logout clicked');
+    localStorage.removeItem('token');
+    navigate('/login');
   };
 
   const handleProductSelect = (product: Product) => {
-    addItem(product);
+    if (product.stock > 0) {
+      addItem(product);
+    }
   };
 
   const handleAdminAccess = () => {
@@ -51,22 +78,34 @@ const SalesDashboard = () => {
       <div className="flex-1 flex overflow-hidden">
         <main className="flex-1 p-4 overflow-y-auto">
           <div className="max-w-7xl mx-auto">
+            {error && (
+              <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-md">
+                {error}
+              </div>
+            )}
+
             <div className="mb-6">
               <SearchBar
-                products={MOCK_PRODUCTS}
+                products={products}
                 onProductSelect={handleProductSelect}
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {MOCK_PRODUCTS.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  onAddToCart={handleProductSelect}
-                />
-              ))}
-            </div>
+            {isLoading ? (
+              <div className="flex justify-center items-center h-64">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {products.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    onAddToCart={handleProductSelect}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </main>
 
@@ -75,7 +114,6 @@ const SalesDashboard = () => {
         </aside>
       </div>
 
-      {/* Botón de acceso a administración */}
       <div className="fixed bottom-8 right-8">
         <button
           onClick={handleAdminAccess}

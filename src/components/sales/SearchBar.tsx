@@ -11,24 +11,48 @@ const SearchBar = ({ products, onProductSelect }: SearchBarProps) => {
   const [query, setQuery] = useState('');
   const [showResults, setShowResults] = useState(false);
 
-  const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(query.toLowerCase()) ||
-    product.code.toLowerCase().includes(query.toLowerCase())
-  ).slice(0, 5);
+  const filteredProducts = (products || []).filter(product => {
+    if (!product) return false;
+    
+    const searchQuery = query.toLowerCase();
+    const productName = (product.name || '').toLowerCase();
+    const productCode = (product.code || '').toLowerCase();
+    
+    return productName.includes(searchQuery) || productCode.includes(searchQuery);
+  }).slice(0, 5);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setQuery(e.target.value);
+    const value = e.target.value;
+    setQuery(value);
     setShowResults(true);
   };
 
   const handleProductClick = (product: Product) => {
-    onProductSelect(product);
-    setQuery('');
+    if (product.stock > 0) {
+      onProductSelect(product);
+      setQuery('');
+      setShowResults(false);
+    }
+  };
+
+  // Cerrar los resultados cuando se hace clic fuera del componente
+  const handleClickOutside = () => {
     setShowResults(false);
   };
 
+  React.useEffect(() => {
+    document.addEventListener('click', handleClickOutside);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, []);
+
+  const handleSearchContainerClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+
   return (
-    <div className="relative w-full max-w-xl">
+    <div className="relative w-full max-w-xl" onClick={handleSearchContainerClick}>
       <div className="relative">
         <input
           type="text"
@@ -48,12 +72,22 @@ const SearchBar = ({ products, onProductSelect }: SearchBarProps) => {
                 <li
                   key={product.id}
                   onClick={() => handleProductClick(product)}
-                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                  className={`px-4 py-2 cursor-pointer ${
+                    product.stock > 0 
+                      ? 'hover:bg-gray-100' 
+                      : 'opacity-50 cursor-not-allowed'
+                  }`}
                 >
                   <div className="flex justify-between items-center">
                     <span className="font-medium">{product.name}</span>
-                    <span className="text-sm text-gray-500">
-                      Stock: {product.stock}
+                    <span className={`text-sm ${
+                      product.stock === 0 
+                        ? 'text-red-500' 
+                        : product.stock <= 5 
+                          ? 'text-orange-500' 
+                          : 'text-gray-500'
+                    }`}>
+                      {product.stock === 0 ? 'Sin stock' : `Stock: ${product.stock}`}
                     </span>
                   </div>
                   <div className="text-sm text-gray-500">
