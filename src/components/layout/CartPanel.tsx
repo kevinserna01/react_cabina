@@ -12,13 +12,87 @@ const formatPrice = (price: number): string => {
   }).format(price);
 };
 
+interface CustomerData {
+  name: string;
+  document: string;
+}
+
 const CartPanel = () => {
-  const { items, total, updateQuantity, removeItem, customer, setCustomer, clearCart } = useCartStore();
+  const { items, total, updateQuantity, removeItem, setCustomer, clearCart } = useCartStore();
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [customerData, setCustomerData] = useState<CustomerData>({ name: '', document: '' });
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'efectivo' | 'nequi' | 'transferencia' | ''>('');
+
+  const handleCustomerDataChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setCustomerData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleCreateSale = async () => {
+    if (!selectedPaymentMethod) {
+      setError('Por favor seleccione un método de pago');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const saleData = {
+        productos: items.map(item => ({
+          code: item.product.code,
+          cantidad: item.quantity
+        })),
+        metodoPago: selectedPaymentMethod,
+        cliente: customerData.name ? {
+          nombre: customerData.name,
+          documento: customerData.document
+        } : null
+      };
+
+      const response = await fetch('https://back-papeleria-two.vercel.app/v1/papeleria/createSaleapi', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(saleData)
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || 'Error al procesar la venta');
+      }
+
+      // Limpiar el carrito y cerrar el modal
+      clearCart();
+      setIsPaymentModalOpen(false);
+      setSelectedPaymentMethod('');
+      setCustomerData({ name: '', document: '' });
+      setCustomer(null);
+
+      // Mostrar mensaje de éxito (puedes implementar un toast o alert aquí)
+      alert('Venta realizada con éxito');
+
+    } catch (error) {
+      console.error('Error:', error);
+      setError(error instanceof Error ? error.message : 'Error al procesar la venta');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleCustomerSelect = (withCustomer: boolean) => {
     if (!withCustomer) {
       setCustomer(null);
+      setCustomerData({ name: '', document: '' });
     }
     setIsCustomerModalOpen(false);
   };
@@ -46,7 +120,7 @@ const CartPanel = () => {
           className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
         >
           <User className="h-5 w-5 mr-2" />
-          {customer ? customer.name : 'Cliente'}
+          {customerData.name ? customerData.name : 'Cliente'}
         </button>
       </div>
 
@@ -102,8 +176,12 @@ const CartPanel = () => {
             <span className="text-lg font-medium">Total:</span>
             <span className="text-lg font-bold">{formatPrice(total)}</span>
           </div>
-          <button className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
-            Confirmar Venta
+          <button 
+            onClick={() => setIsPaymentModalOpen(true)}
+            className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            disabled={isLoading}
+          >
+            {isLoading ? 'Procesando...' : 'Confirmar Venta'}
           </button>
         </div>
       )}
@@ -112,28 +190,100 @@ const CartPanel = () => {
       {isCustomerModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Selección de Cliente</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Datos del Cliente</h2>
             <div className="space-y-4">
-              <button
-                onClick={() => handleCustomerSelect(true)}
-                className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-              >
-                <User className="h-5 w-5 mr-2" />
-                Registrar Cliente
-              </button>
-              <button
-                onClick={() => handleCustomerSelect(false)}
-                className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-              >
-                Continuar sin Cliente
-              </button>
+              <div>
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                  Nombre
+                </label>
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  value={customerData.name}
+                  onChange={handleCustomerDataChange}
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                />
+              </div>
+              <div>
+                <label htmlFor="document" className="block text-sm font-medium text-gray-700">
+                  Documento
+                </label>
+                <input
+                  type="text"
+                  id="document"
+                  name="document"
+                  value={customerData.document}
+                  onChange={handleCustomerDataChange}
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                />
+              </div>
+              <div className="flex justify-end gap-2 mt-4">
+                <button
+                  onClick={() => handleCustomerSelect(false)}
+                  className="px-4 py-2 text-gray-700 hover:text-gray-900"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => {
+                    setCustomer({ name: customerData.name, document: customerData.document });
+                    setIsCustomerModalOpen(false);
+                  }}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+                  disabled={!customerData.name || !customerData.document}
+                >
+                  Guardar
+                </button>
+              </div>
             </div>
-            <div className="mt-4 flex justify-end">
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Método de Pago */}
+      {isPaymentModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Método de Pago</h2>
+            {error && (
+              <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
+                {error}
+              </div>
+            )}
+            <div className="space-y-3">
+              {['efectivo', 'nequi', 'transferencia'].map((method) => (
+                <button
+                  key={method}
+                  onClick={() => setSelectedPaymentMethod(method as any)}
+                  className={`w-full px-4 py-3 border rounded-md text-left font-medium ${
+                    selectedPaymentMethod === method
+                      ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                      : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  {method.charAt(0).toUpperCase() + method.slice(1)}
+                </button>
+              ))}
+            </div>
+            <div className="mt-6 flex justify-end gap-3">
               <button
-                onClick={() => setIsCustomerModalOpen(false)}
+                onClick={() => {
+                  setIsPaymentModalOpen(false);
+                  setSelectedPaymentMethod('');
+                  setError(null);
+                }}
                 className="px-4 py-2 text-gray-700 hover:text-gray-900"
+                disabled={isLoading}
               >
                 Cancelar
+              </button>
+              <button
+                onClick={handleCreateSale}
+                className="px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:bg-indigo-400"
+                disabled={!selectedPaymentMethod || isLoading}
+              >
+                {isLoading ? 'Procesando...' : 'Confirmar Pago'}
               </button>
             </div>
           </div>

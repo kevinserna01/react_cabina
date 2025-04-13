@@ -14,8 +14,9 @@ export interface CartItem {
 }
 
 export interface Customer {
-  id: string;
+  id?: string;
   name: string;
+  document: string;
   email?: string;
   phone?: string;
 }
