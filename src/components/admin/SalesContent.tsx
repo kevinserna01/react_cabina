@@ -1,97 +1,61 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 interface Sale {
-  code: string;
-  fecha: string;
+  id: string;
+  date: string;
   total: number;
-  productos: Array<{
-    code: string;
-    cantidad: number;
-    nombre?: string;
-    precio?: number;
-  }>;
-  metodoPago: string;
-  estado: 'completed' | 'cancelled';
-  cliente?: {
-    nombre: string;
-    documento: string;
-  } | null;
+  items: number;
+  paymentMethod: string;
+  status: 'completed' | 'cancelled';
+  customer?: string;
 }
 
 const SalesContent = () => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [sales, setSales] = useState<Sale[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  // Función para formatear el precio en COP
-  const formatPrice = (price: number): string => {
-    return new Intl.NumberFormat('es-CO', {
-      style: 'currency',
-      currency: 'COP',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(price);
-  };
-
-  useEffect(() => {
-    const fetchSales = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const response = await fetch('https://back-papeleria-two.vercel.app/v1/papeleria/getSalesapi', {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error('Error al cargar las ventas');
-        }
-
-        const result = await response.json();
-
-        if (result.status === "Success") {
-          setSales(result.data);
-        } else {
-          throw new Error(result.message || 'Error al cargar las ventas');
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        setError(error instanceof Error ? error.message : 'Error al cargar las ventas');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchSales();
-  }, []);
+  // Mock data - Replace with real data from your backend
+  const [sales] = useState<Sale[]>([
+    {
+      id: 'VTA-001',
+      date: '2024-02-20 15:30',
+      total: 25.50,
+      items: 3,
+      paymentMethod: 'Efectivo',
+      status: 'completed'
+    },
+    {
+      id: 'VTA-002',
+      date: '2024-02-20 16:45',
+      total: 42.75,
+      items: 5,
+      paymentMethod: 'Tarjeta',
+      status: 'completed'
+    },
+    {
+      id: 'VTA-003',
+      date: '2024-02-20 17:15',
+      total: 12.00,
+      items: 2,
+      paymentMethod: 'Efectivo',
+      status: 'cancelled'
+    }
+  ]);
 
   const filteredSales = sales.filter(sale => {
-    if (statusFilter !== 'all' && sale.estado !== statusFilter) return false;
-    if (startDate && new Date(sale.fecha) < new Date(startDate)) return false;
-    if (endDate && new Date(sale.fecha) > new Date(endDate)) return false;
+    if (statusFilter !== 'all' && sale.status !== statusFilter) return false;
+    if (startDate && new Date(sale.date) < new Date(startDate)) return false;
+    if (endDate && new Date(sale.date) > new Date(endDate)) return false;
     return true;
   });
 
   const totalSales = filteredSales
-    .filter(sale => sale.estado === 'completed')
+    .filter(sale => sale.status === 'completed')
     .reduce((sum, sale) => sum + sale.total, 0);
-
-  const getTotalItems = (sale: Sale) => {
-    return sale.productos.reduce((sum, item) => sum + item.cantidad, 0);
-  };
 
   return (
     <div className="space-y-6">
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
-          {error}
-        </div>
-      )}
-
       {/* Filtros y Resumen */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
@@ -144,7 +108,7 @@ const SalesContent = () => {
             <div>
               <p className="text-sm text-gray-500">Total de Ventas</p>
               <p className="text-2xl font-semibold text-gray-900">
-                {formatPrice(totalSales)}
+                ${totalSales.toFixed(2)}
               </p>
             </div>
             <div>
@@ -159,85 +123,73 @@ const SalesContent = () => {
 
       {/* Tabla de Ventas */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        {isLoading ? (
-          <div className="flex justify-center items-center h-32">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Código
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Fecha
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Cliente
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Items
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Total
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Método de Pago
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Estado
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Acciones
-                  </th>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  ID Venta
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Fecha
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Items
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Total
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Método de Pago
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Estado
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Acciones
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {filteredSales.map((sale) => (
+                <tr key={sale.id}>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {sale.id}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {new Date(sale.date).toLocaleString()}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {sale.items}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    ${sale.total.toFixed(2)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {sale.paymentMethod}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                      ${sale.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                      {sale.status === 'completed' ? 'Completada' : 'Cancelada'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <button
+                      className="text-blue-600 hover:text-blue-800"
+                      aria-label="Ver detalles"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    </button>
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredSales.map((sale) => (
-                  <tr key={sale.code}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {sale.code}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {new Date(sale.fecha).toLocaleString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {sale.cliente ? sale.cliente.nombre : 'Sin cliente'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {getTotalItems(sale)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatPrice(sale.total)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {sale.metodoPago}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                        ${sale.estado === 'completed' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                        {sale.estado === 'completed' ? 'Completada' : 'Cancelada'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      <button
-                        className="text-blue-600 hover:text-blue-800"
-                        aria-label="Ver detalles"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

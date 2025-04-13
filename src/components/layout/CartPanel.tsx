@@ -1,5 +1,5 @@
-import { Minus, Plus, ShoppingCart, User, X, CreditCard } from 'lucide-react';
-import { useState } from 'react';
+import { Minus, Plus, ShoppingCart, User, X, CreditCard, Receipt } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { useCartStore } from '../../store/cartStore';
 
 // Función para formatear el precio en COP
@@ -17,6 +17,21 @@ interface CustomerData {
   document: string;
 }
 
+// Función para generar el código de venta
+const generateSaleCode = (): string => {
+  const lastCode = localStorage.getItem('lastSaleCode');
+  let nextNumber = 1;
+
+  if (lastCode) {
+    const lastNumber = parseInt(lastCode.split('-')[1]);
+    nextNumber = lastNumber + 1;
+  }
+
+  const code = `VTA-${String(nextNumber).padStart(3, '0')}`;
+  localStorage.setItem('lastSaleCode', code);
+  return code;
+};
+
 const CartPanel = () => {
   const { items, total, updateQuantity, removeItem, setCustomer, clearCart } = useCartStore();
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
@@ -26,36 +41,13 @@ const CartPanel = () => {
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'Efectivo' | 'Nequi' | 'Transferencia' | ''>('');
   const [isCustomerFormOpen, setIsCustomerFormOpen] = useState(false);
   const [isWithoutCustomer, setIsWithoutCustomer] = useState(false);
+  const [saleCode, setSaleCode] = useState<string>('');
 
-  // Función para generar el código de venta
-  const generateSaleCode = async () => {
-    try {
-      const response = await fetch('https://back-papeleria-two.vercel.app/v1/papeleria/getLastSaleCodeapi', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Error al obtener el último código de venta');
-      }
-
-      const result = await response.json();
-      const lastCode = result.data?.lastCode || 'VTA-000';
-      
-      // Extraer el número del código
-      const currentNumber = parseInt(lastCode.split('-')[1]);
-      // Incrementar el número y formatearlo con ceros a la izquierda
-      const nextNumber = (currentNumber + 1).toString().padStart(3, '0');
-      // Generar el nuevo código
-      return `VTA-${nextNumber}`;
-    } catch (error) {
-      console.error('Error al generar código de venta:', error);
-      // Si hay un error, generar un código basado en timestamp
-      const timestamp = Date.now().toString().slice(-3);
-      return `VTA-${timestamp}`;
+  useEffect(() => {
+    if (isCheckoutModalOpen) {
+      setSaleCode(generateSaleCode());
     }
-  };
+  }, [isCheckoutModalOpen]);
 
   const handleCustomerDataChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -75,9 +67,6 @@ const CartPanel = () => {
     setError(null);
 
     try {
-      // Generar el código de venta
-      const saleCode = await generateSaleCode();
-
       const saleData = {
         code: saleCode,
         productos: items.map(item => ({
@@ -88,8 +77,7 @@ const CartPanel = () => {
         cliente: customerData.name ? {
           nombre: customerData.name,
           documento: customerData.document
-        } : null,
-        fecha: new Date().toISOString()
+        } : null
       };
 
       const response = await fetch('https://back-papeleria-two.vercel.app/v1/papeleria/createSaleapi', {
@@ -113,10 +101,10 @@ const CartPanel = () => {
       setSelectedPaymentMethod('');
       setCustomerData({ name: '', document: '' });
       setCustomer(null);
-      setIsWithoutCustomer(false);
+      setSaleCode('');
 
-      // Mostrar mensaje de éxito con el código de venta
-      alert(`Venta ${saleCode} realizada con éxito`);
+      // Mostrar mensaje de éxito
+      alert('Venta realizada con éxito');
 
     } catch (error) {
       console.error('Error:', error);
@@ -231,8 +219,14 @@ const CartPanel = () => {
       {isCheckoutModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl p-6">
-            <div className="flex justify-between items-start">
-              <h2 className="text-2xl font-semibold text-gray-900">Resumen de Compra</h2>
+            <div className="flex justify-between items-start mb-6">
+              <div>
+                <h2 className="text-2xl font-semibold text-gray-900">Resumen de Compra</h2>
+                <div className="mt-2 flex items-center text-gray-600">
+                  <Receipt className="h-4 w-4 mr-2" />
+                  <span className="text-sm font-medium">Código de venta: {saleCode}</span>
+                </div>
+              </div>
               <button
                 onClick={() => setIsCheckoutModalOpen(false)}
                 className="text-gray-400 hover:text-gray-500"
