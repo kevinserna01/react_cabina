@@ -17,8 +17,29 @@ interface CustomerData {
   document: string;
 }
 
+// Función para verificar si un código de venta existe
+const checkSaleCode = async (code: string): Promise<boolean> => {
+  try {
+    const response = await fetch(`https://back-papeleria-two.vercel.app/v1/papeleria/checkSaleCodeapi/${code}`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error('Error al verificar el código de venta');
+    }
+    
+    const result = await response.json();
+    return result.exists;
+  } catch (error) {
+    console.error('Error checking sale code:', error);
+    return false;
+  }
+};
+
 // Función para generar el código de venta
-const generateSaleCode = (): string => {
+const generateSaleCode = async (): Promise<string> => {
   const lastCode = localStorage.getItem('lastSaleCode');
   let nextNumber = 1;
 
@@ -27,7 +48,16 @@ const generateSaleCode = (): string => {
     nextNumber = lastNumber + 1;
   }
 
-  const code = `VTA-${String(nextNumber).padStart(3, '0')}`;
+  let code = `VTA-${String(nextNumber).padStart(3, '0')}`;
+  let codeExists = await checkSaleCode(code);
+
+  // Si el código existe, buscar el siguiente disponible
+  while (codeExists) {
+    nextNumber++;
+    code = `VTA-${String(nextNumber).padStart(3, '0')}`;
+    codeExists = await checkSaleCode(code);
+  }
+
   localStorage.setItem('lastSaleCode', code);
   return code;
 };
@@ -42,12 +72,26 @@ const CartPanel = () => {
   const [isCustomerFormOpen, setIsCustomerFormOpen] = useState(false);
   const [isWithoutCustomer, setIsWithoutCustomer] = useState(false);
   const [saleCode, setSaleCode] = useState<string>('');
+  const [isGeneratingCode, setIsGeneratingCode] = useState(false);
 
   useEffect(() => {
-    if (isCheckoutModalOpen) {
-      setSaleCode(generateSaleCode());
-    }
-  }, [isCheckoutModalOpen]);
+    const generateNewCode = async () => {
+      if (isCheckoutModalOpen && !saleCode) {
+        setIsGeneratingCode(true);
+        try {
+          const newCode = await generateSaleCode();
+          setSaleCode(newCode);
+        } catch (error) {
+          console.error('Error generating sale code:', error);
+          setError('Error al generar el código de venta');
+        } finally {
+          setIsGeneratingCode(false);
+        }
+      }
+    };
+
+    generateNewCode();
+  }, [isCheckoutModalOpen, saleCode]);
 
   const handleCustomerDataChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -224,7 +268,9 @@ const CartPanel = () => {
                 <h2 className="text-2xl font-semibold text-gray-900">Resumen de Compra</h2>
                 <div className="mt-2 flex items-center text-gray-600">
                   <Receipt className="h-4 w-4 mr-2" />
-                  <span className="text-sm font-medium">Código de venta: {saleCode}</span>
+                  <span className="text-sm font-medium">
+                    {isGeneratingCode ? 'Generando código...' : `Código de venta: ${saleCode}`}
+                  </span>
                 </div>
               </div>
               <button
