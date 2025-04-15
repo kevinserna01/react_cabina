@@ -17,24 +17,39 @@ interface CustomerData {
   document: string;
 }
 
-// Función para verificar si un código de venta existe
-const checkSaleCode = async (code: string): Promise<boolean> => {
+// Función para verificar y reservar un código de venta
+const checkAndReserveSaleCode = async (code: string): Promise<boolean> => {
   try {
-    const response = await fetch(`https://back-papeleria-two.vercel.app/v1/papeleria/checkSaleCodeapi/${code}`, {
+    const response = await fetch(`https://back-papeleria-two.vercel.app/v1/papeleria/checkAndReserveSaleCodeapi/${code}`, {
+      method: 'POST',
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('token')}`
       }
     });
     
     if (!response.ok) {
-      throw new Error('Error al verificar el código de venta');
+      throw new Error('Error al verificar y reservar el código de venta');
     }
     
     const result = await response.json();
-    return result.exists;
+    return result.reserved;
   } catch (error) {
-    console.error('Error checking sale code:', error);
+    console.error('Error checking and reserving sale code:', error);
     return false;
+  }
+};
+
+// Función para liberar un código de venta reservado
+const releaseSaleCode = async (code: string): Promise<void> => {
+  try {
+    await fetch(`https://back-papeleria-two.vercel.app/v1/papeleria/releaseSaleCodeapi/${code}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+  } catch (error) {
+    console.error('Error releasing sale code:', error);
   }
 };
 
@@ -49,13 +64,13 @@ const generateSaleCode = async (): Promise<string> => {
   }
 
   let code = `VTA-${String(nextNumber).padStart(3, '0')}`;
-  let codeExists = await checkSaleCode(code);
+  let codeReserved = await checkAndReserveSaleCode(code);
 
-  // Si el código existe, buscar el siguiente disponible
-  while (codeExists) {
+  // Si el código no está disponible, buscar el siguiente disponible
+  while (!codeReserved) {
     nextNumber++;
     code = `VTA-${String(nextNumber).padStart(3, '0')}`;
-    codeExists = await checkSaleCode(code);
+    codeReserved = await checkAndReserveSaleCode(code);
   }
 
   localStorage.setItem('lastSaleCode', code);
@@ -74,6 +89,16 @@ const CartPanel = () => {
   const [saleCode, setSaleCode] = useState<string>('');
   const [isGeneratingCode, setIsGeneratingCode] = useState(false);
 
+  // Efecto para liberar el código cuando se cierra el modal sin completar la venta
+  useEffect(() => {
+    return () => {
+      if (saleCode && !isCheckoutModalOpen) {
+        releaseSaleCode(saleCode);
+      }
+    };
+  }, [saleCode, isCheckoutModalOpen]);
+
+  // Efecto para generar nuevo código cuando se abre el modal
   useEffect(() => {
     const generateNewCode = async () => {
       if (isCheckoutModalOpen && !saleCode) {
