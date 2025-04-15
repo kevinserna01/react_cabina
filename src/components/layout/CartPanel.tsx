@@ -53,28 +53,54 @@ const releaseSaleCode = async (code: string): Promise<void> => {
   }
 };
 
+// Función para obtener el último código de venta registrado
+const getLastRegisteredSaleCode = async (): Promise<string | null> => {
+  try {
+    const response = await fetch('https://back-papeleria-two.vercel.app/v1/papeleria/getLastSaleCodeapi', {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error('Error al obtener el último código de venta');
+    }
+    
+    const result = await response.json();
+    return result.lastCode;
+  } catch (error) {
+    console.error('Error getting last sale code:', error);
+    return null;
+  }
+};
+
 // Función para generar el código de venta
 const generateSaleCode = async (): Promise<string> => {
-  const lastCode = localStorage.getItem('lastSaleCode');
-  let nextNumber = 1;
+  try {
+    // Obtener el último código registrado del backend
+    const lastCode = await getLastRegisteredSaleCode();
+    let nextNumber = 1;
 
-  if (lastCode) {
-    const lastNumber = parseInt(lastCode.split('-')[1]);
-    nextNumber = lastNumber + 1;
+    if (lastCode) {
+      const lastNumber = parseInt(lastCode.split('-')[1]);
+      nextNumber = lastNumber + 1;
+    }
+
+    let code = `VTA-${String(nextNumber).padStart(3, '0')}`;
+    let codeReserved = await checkAndReserveSaleCode(code);
+
+    // Si el código no está disponible, buscar el siguiente disponible
+    while (!codeReserved) {
+      nextNumber++;
+      code = `VTA-${String(nextNumber).padStart(3, '0')}`;
+      codeReserved = await checkAndReserveSaleCode(code);
+    }
+
+    return code;
+  } catch (error) {
+    console.error('Error generating sale code:', error);
+    throw error;
   }
-
-  let code = `VTA-${String(nextNumber).padStart(3, '0')}`;
-  let codeReserved = await checkAndReserveSaleCode(code);
-
-  // Si el código no está disponible, buscar el siguiente disponible
-  while (!codeReserved) {
-    nextNumber++;
-    code = `VTA-${String(nextNumber).padStart(3, '0')}`;
-    codeReserved = await checkAndReserveSaleCode(code);
-  }
-
-  localStorage.setItem('lastSaleCode', code);
-  return code;
 };
 
 const CartPanel = () => {
