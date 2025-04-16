@@ -1,33 +1,41 @@
 import { useState, useEffect } from 'react';
 import moment from 'moment-timezone';
+import { Eye } from 'lucide-react';
+import SalesPDF from './SalesPDF';
 
-interface Sale {
-  id: string;
+export interface Product {
   code: string;
-  date: string;
+  name: string;
+  categoria: string;
+  cantidad: number;
+  precioUnitario: number;
   total: number;
-  items: Array<{
-    product: {
-      name: string;
-      price: number;
-    };
-    quantity: number;
-  }>;
-  paymentMethod: string;
-  status: 'completed' | 'cancelled';
-  customer?: {
-    name: string;
-    document: string;
-  };
+}
+
+export interface Sale {
+  _id: string;
+  code: string;
+  fecha: string;
+  hora: string;
+  cliente: {
+    nombre: string;
+    documento: string;
+  } | null;
+  productos: Product[];
+  totalVenta: number;
+  metodoPago: string;
+  createdAt: string;
+  fechaColombia: string;
 }
 
 const SalesContent = () => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
   const [sales, setSales] = useState<Sale[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
+  const [isPDFModalOpen, setIsPDFModalOpen] = useState(false);
 
   // Función para obtener las ventas del backend
   const fetchSales = async () => {
@@ -58,22 +66,22 @@ const SalesContent = () => {
   }, []);
 
   const filteredSales = sales.filter(sale => {
-    if (statusFilter !== 'all' && sale.status !== statusFilter) return false;
-    
-    const saleDate = moment(sale.date);
+    const saleDate = moment(sale.fechaColombia);
     if (startDate && saleDate.isBefore(startDate, 'day')) return false;
     if (endDate && saleDate.isAfter(endDate, 'day')) return false;
-    
     return true;
   });
 
   const totalSales = filteredSales
-    .filter(sale => sale.status === 'completed')
-    .reduce((sum, sale) => sum + (sale.total || 0), 0);
+    .reduce((sum, sale) => sum + (sale.totalVenta || 0), 0);
 
   const totalItems = filteredSales
-    .filter(sale => sale.status === 'completed')
-    .reduce((sum, sale) => sum + (sale.items?.reduce((itemSum, item) => itemSum + (item.quantity || 0), 0) || 0), 0);
+    .reduce((sum, sale) => sum + sale.productos.reduce((itemSum, item) => itemSum + (item.cantidad || 0), 0), 0);
+
+  const handleViewPDF = (sale: Sale) => {
+    setSelectedSale(sale);
+    setIsPDFModalOpen(true);
+  };
 
   if (isLoading) {
     return (
@@ -122,20 +130,6 @@ const SalesContent = () => {
                 />
               </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Estado
-              </label>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="all">Todos</option>
-                <option value="completed">Completadas</option>
-                <option value="cancelled">Cancelada</option>
-              </select>
-            </div>
           </div>
         </div>
 
@@ -151,7 +145,7 @@ const SalesContent = () => {
             <div>
               <p className="text-sm text-gray-500">Número de Transacciones</p>
               <p className="text-2xl font-semibold text-gray-900">
-                {filteredSales.filter(sale => sale.status === 'completed').length}
+                {filteredSales.length}
               </p>
             </div>
             <div>
@@ -189,36 +183,39 @@ const SalesContent = () => {
                   Método de Pago
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Estado
+                  Acciones
                 </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredSales.map((sale) => (
-                <tr key={sale.id} className="hover:bg-gray-50">
+                <tr key={sale._id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     {sale.code}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {moment(sale.date).format('MMMM D, YYYY h:mm A')}
+                    {sale.fechaColombia}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {sale.customer?.name || 'Sin cliente'}
+                    {sale.cliente ? `${sale.cliente.nombre} (${sale.cliente.documento})` : 'Sin cliente'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {sale.items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0}
+                    {sale.productos.reduce((sum, item) => sum + item.cantidad, 0)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    ${(sale.total || 0).toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                    ${(sale.totalVenta || 0).toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {sale.paymentMethod || '-'}
+                    {sale.metodoPago}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                      ${sale.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                      {sale.status === 'completed' ? 'Completada' : 'Cancelada'}
-                    </span>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <button
+                      onClick={() => handleViewPDF(sale)}
+                      className="text-blue-600 hover:text-blue-800 p-2 rounded-full hover:bg-blue-50"
+                      title="Ver PDF"
+                    >
+                      <Eye className="h-5 w-5" />
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -226,6 +223,28 @@ const SalesContent = () => {
           </table>
         </div>
       </div>
+
+      {/* Modal para PDF */}
+      {isPDFModalOpen && selectedSale && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl p-6">
+            <div className="flex justify-between items-start mb-4">
+              <h2 className="text-xl font-semibold">Comprobante de Venta</h2>
+              <button
+                onClick={() => setIsPDFModalOpen(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="h-[80vh]">
+              <SalesPDF sale={selectedSale} />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
