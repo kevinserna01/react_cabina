@@ -1,58 +1,96 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 interface Sale {
   id: string;
+  code: string;
   date: string;
   total: number;
-  items: number;
+  items: Array<{
+    product: {
+      name: string;
+      price: number;
+    };
+    quantity: number;
+  }>;
   paymentMethod: string;
   status: 'completed' | 'cancelled';
-  customer?: string;
+  customer?: {
+    name: string;
+    document: string;
+  };
 }
 
 const SalesContent = () => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [sales, setSales] = useState<Sale[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Mock data - Replace with real data from your backend
-  const [sales] = useState<Sale[]>([
-    {
-      id: 'VTA-001',
-      date: '2024-02-20 15:30',
-      total: 25.50,
-      items: 3,
-      paymentMethod: 'Efectivo',
-      status: 'completed'
-    },
-    {
-      id: 'VTA-002',
-      date: '2024-02-20 16:45',
-      total: 42.75,
-      items: 5,
-      paymentMethod: 'Tarjeta',
-      status: 'completed'
-    },
-    {
-      id: 'VTA-003',
-      date: '2024-02-20 17:15',
-      total: 12.00,
-      items: 2,
-      paymentMethod: 'Efectivo',
-      status: 'cancelled'
+  // Función para obtener las ventas del backend
+  const fetchSales = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch('https://back-papeleria-two.vercel.app/v1/papeleria/salesapi', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Error al obtener las ventas');
+      }
+      
+      const data = await response.json();
+      setSales(data);
+    } catch (error) {
+      console.error('Error fetching sales:', error);
+      setError('Error al cargar las ventas');
+    } finally {
+      setIsLoading(false);
     }
-  ]);
+  };
+
+  useEffect(() => {
+    fetchSales();
+  }, []);
 
   const filteredSales = sales.filter(sale => {
     if (statusFilter !== 'all' && sale.status !== statusFilter) return false;
-    if (startDate && new Date(sale.date) < new Date(startDate)) return false;
-    if (endDate && new Date(sale.date) > new Date(endDate)) return false;
+    
+    const saleDate = new Date(sale.date);
+    if (startDate && saleDate < new Date(startDate)) return false;
+    if (endDate && saleDate > new Date(endDate)) return false;
+    
     return true;
   });
 
   const totalSales = filteredSales
     .filter(sale => sale.status === 'completed')
     .reduce((sum, sale) => sum + sale.total, 0);
+
+  const totalItems = filteredSales
+    .filter(sale => sale.status === 'completed')
+    .reduce((sum, sale) => sum + sale.items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+        {error}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -108,13 +146,19 @@ const SalesContent = () => {
             <div>
               <p className="text-sm text-gray-500">Total de Ventas</p>
               <p className="text-2xl font-semibold text-gray-900">
-                ${totalSales.toFixed(2)}
+                ${totalSales.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
               </p>
             </div>
             <div>
               <p className="text-sm text-gray-500">Número de Transacciones</p>
               <p className="text-2xl font-semibold text-gray-900">
-                {filteredSales.length}
+                {filteredSales.filter(sale => sale.status === 'completed').length}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Total de Items Vendidos</p>
+              <p className="text-2xl font-semibold text-gray-900">
+                {totalItems}
               </p>
             </div>
           </div>
@@ -128,10 +172,13 @@ const SalesContent = () => {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  ID Venta
+                  Código
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Fecha
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Cliente
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Items
@@ -145,25 +192,25 @@ const SalesContent = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Estado
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Acciones
-                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredSales.map((sale) => (
                 <tr key={sale.id}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {sale.id}
+                    {sale.code}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {new Date(sale.date).toLocaleString()}
+                    {format(new Date(sale.date), "PPP p", { locale: es })}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {sale.items}
+                    {sale.customer ? `${sale.customer.name} (${sale.customer.document})` : 'Sin cliente'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    ${sale.total.toFixed(2)}
+                    {sale.items.reduce((sum, item) => sum + item.quantity, 0)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    ${sale.total.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {sale.paymentMethod}
@@ -173,17 +220,6 @@ const SalesContent = () => {
                       ${sale.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                       {sale.status === 'completed' ? 'Completada' : 'Cancelada'}
                     </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    <button
-                      className="text-blue-600 hover:text-blue-800"
-                      aria-label="Ver detalles"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                      </svg>
-                    </button>
                   </td>
                 </tr>
               ))}
