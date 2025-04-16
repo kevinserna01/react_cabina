@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import moment from 'moment-timezone';
 
 interface Sale {
   id: string;
@@ -61,20 +60,20 @@ const SalesContent = () => {
   const filteredSales = sales.filter(sale => {
     if (statusFilter !== 'all' && sale.status !== statusFilter) return false;
     
-    const saleDate = new Date(sale.date);
-    if (startDate && saleDate < new Date(startDate)) return false;
-    if (endDate && saleDate > new Date(endDate)) return false;
+    const saleDate = moment(sale.date);
+    if (startDate && saleDate.isBefore(startDate, 'day')) return false;
+    if (endDate && saleDate.isAfter(endDate, 'day')) return false;
     
     return true;
   });
 
   const totalSales = filteredSales
     .filter(sale => sale.status === 'completed')
-    .reduce((sum, sale) => sum + sale.total, 0);
+    .reduce((sum, sale) => sum + (sale.total || 0), 0);
 
   const totalItems = filteredSales
     .filter(sale => sale.status === 'completed')
-    .reduce((sum, sale) => sum + sale.items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0);
+    .reduce((sum, sale) => sum + (sale.items?.reduce((itemSum, item) => itemSum + (item.quantity || 0), 0) || 0), 0);
 
   if (isLoading) {
     return (
@@ -134,7 +133,7 @@ const SalesContent = () => {
               >
                 <option value="all">Todos</option>
                 <option value="completed">Completadas</option>
-                <option value="cancelled">Canceladas</option>
+                <option value="cancelled">Cancelada</option>
               </select>
             </div>
           </div>
@@ -146,7 +145,7 @@ const SalesContent = () => {
             <div>
               <p className="text-sm text-gray-500">Total de Ventas</p>
               <p className="text-2xl font-semibold text-gray-900">
-                ${totalSales.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                ${(totalSales || 0).toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
               </p>
             </div>
             <div>
@@ -196,24 +195,24 @@ const SalesContent = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredSales.map((sale) => (
-                <tr key={sale.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <tr key={sale.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     {sale.code}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {format(new Date(sale.date), "PPP p", { locale: es })}
+                    {moment(sale.date).format('MMMM D, YYYY h:mm A')}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {sale.customer ? `${sale.customer.name} (${sale.customer.document})` : 'Sin cliente'}
+                    {sale.customer?.name || 'Sin cliente'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {sale.items.reduce((sum, item) => sum + item.quantity, 0)}
+                    {sale.items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    ${sale.total.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                    ${(sale.total || 0).toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {sale.paymentMethod}
+                    {sale.paymentMethod || '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
