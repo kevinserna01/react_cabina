@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+import moment from 'moment';
 
 interface SalesData {
   date: string;
@@ -17,43 +19,121 @@ interface ProductSales {
   revenue: number;
 }
 
+interface ApiResponse {
+  salesByDay: SalesData[];
+  categoryData: CategorySales[];
+  topProducts: ProductSales[];
+  summary: {
+    totalSales: number;
+    averageDailySales: number;
+    bestDay: {
+      date: string;
+      amount: number;
+    };
+  };
+}
+
+// Colores para los gráficos
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
+
 const ReportsContent = () => {
   const [timeRange, setTimeRange] = useState('week');
   const [reportType, setReportType] = useState('sales');
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [data, setData] = useState<ApiResponse | null>(null);
 
-  // Mock data - Replace with real data from your backend
-  const [salesByDay] = useState<SalesData[]>([
-    { date: 'Lunes', amount: 450.75 },
-    { date: 'Martes', amount: 375.25 },
-    { date: 'Miércoles', amount: 625.50 },
-    { date: 'Jueves', amount: 550.00 },
-    { date: 'Viernes', amount: 825.75 },
-    { date: 'Sábado', amount: 950.25 },
-    { date: 'Domingo', amount: 325.50 }
-  ]);
+  // Función para obtener el rango de fechas basado en el filtro
+  const getDateRange = () => {
+    const now = moment();
+    let startDate = now.clone();
 
-  const [categoryData] = useState<CategorySales[]>([
-    { category: 'Cuadernos', amount: 1250.75, percentage: 35 },
-    { category: 'Útiles', amount: 850.50, percentage: 25 },
-    { category: 'Papelería', amount: 750.25, percentage: 20 },
-    { category: 'Arte', amount: 650.00, percentage: 20 }
-  ]);
+    switch (timeRange) {
+      case 'week':
+        startDate = now.clone().subtract(7, 'days');
+        break;
+      case 'month':
+        startDate = now.clone().startOf('month');
+        break;
+      case 'year':
+        startDate = now.clone().startOf('year');
+        break;
+    }
 
-  const [topProducts] = useState<ProductSales[]>([
-    { name: 'Cuaderno Universitario', units: 45, revenue: 157.50 },
-    { name: 'Lápiz 2B', units: 120, revenue: 90.00 },
-    { name: 'Borrador', units: 80, revenue: 40.00 },
-    { name: 'Cartulina A4', units: 60, revenue: 180.00 }
-  ]);
+    return {
+      startDate: startDate.format('YYYY-MM-DD'),
+      endDate: now.format('YYYY-MM-DD')
+    };
+  };
 
-  // Calcular el total de ventas para el período
-  const totalSales = salesByDay.reduce((sum, day) => sum + day.amount, 0);
-  const averageDailySales = totalSales / salesByDay.length;
+  // Función para obtener los datos del reporte
+  const fetchReportData = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const { startDate, endDate } = getDateRange();
 
-  // Encontrar el día con más ventas
-  const bestDay = salesByDay.reduce((max, day) => 
-    day.amount > max.amount ? day : max
-  );
+      const response = await fetch(
+        `https://back-papeleria-two.vercel.app/v1/papeleria/reportsapi?startDate=${startDate}&endDate=${endDate}&type=${reportType}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Error al obtener los datos del reporte');
+      }
+
+      const responseData = await response.json();
+      setData(responseData);
+    } catch (error) {
+      console.error('Error fetching report data:', error);
+      setError('Error al cargar los datos del reporte');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Efecto para cargar datos cuando cambien los filtros
+  useEffect(() => {
+    fetchReportData();
+  }, [timeRange, reportType]);
+
+  // Formateador de moneda
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(value);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+        {error}
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded">
+        No hay datos disponibles para mostrar.
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -84,67 +164,109 @@ const ReportsContent = () => {
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <h3 className="text-sm font-medium text-gray-500">Ventas Totales</h3>
           <p className="mt-2 text-3xl font-semibold text-gray-900">
-            ${totalSales.toFixed(2)}
+            {formatCurrency(data.summary.totalSales)}
           </p>
         </div>
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <h3 className="text-sm font-medium text-gray-500">Promedio Diario</h3>
           <p className="mt-2 text-3xl font-semibold text-gray-900">
-            ${averageDailySales.toFixed(2)}
+            {formatCurrency(data.summary.averageDailySales)}
           </p>
         </div>
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <h3 className="text-sm font-medium text-gray-500">Mejor Día</h3>
           <p className="mt-2 text-3xl font-semibold text-gray-900">
-            {bestDay.date}
+            {data.summary.bestDay.date}
           </p>
-          <p className="text-sm text-gray-500">${bestDay.amount.toFixed(2)}</p>
+          <p className="text-sm text-gray-500">{formatCurrency(data.summary.bestDay.amount)}</p>
         </div>
       </div>
 
       {/* Gráfico de Ventas por Día */}
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
         <h3 className="text-lg font-medium text-gray-900 mb-4">Ventas por Día</h3>
-        <div className="h-64">
-          <div className="flex h-full items-end space-x-2">
-            {salesByDay.map((day) => {
-              const height = (day.amount / bestDay.amount) * 100;
-              return (
-                <div
-                  key={day.date}
-                  className="flex-1 flex flex-col items-center"
-                >
-                  <div
-                    className="w-full bg-blue-500 rounded-t"
-                    style={{ height: `${height}%` }}
-                  />
-                  <div className="mt-2 text-xs text-gray-600">{day.date}</div>
-                  <div className="text-xs font-medium">${day.amount}</div>
-                </div>
-              );
-            })}
-          </div>
+        <div className="h-80">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={data.salesByDay}
+              margin={{
+                top: 20,
+                right: 30,
+                left: 20,
+                bottom: 5,
+              }}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis 
+                dataKey="date" 
+                tick={{ fill: '#6B7280' }}
+              />
+              <YAxis 
+                tickFormatter={(value) => formatCurrency(value)}
+                tick={{ fill: '#6B7280' }}
+              />
+              <Tooltip 
+                formatter={(value) => formatCurrency(Number(value))}
+                contentStyle={{
+                  backgroundColor: 'white',
+                  border: '1px solid #E5E7EB',
+                  borderRadius: '0.375rem',
+                  boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
+                }}
+              />
+              <Bar 
+                dataKey="amount" 
+                fill="#3B82F6" 
+                radius={[4, 4, 0, 0]}
+              />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       </div>
 
       {/* Ventas por Categoría */}
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
         <h3 className="text-lg font-medium text-gray-900 mb-4">Ventas por Categoría</h3>
-        <div className="space-y-4">
-          {categoryData.map((category) => (
-            <div key={category.category}>
-              <div className="flex justify-between text-sm text-gray-600">
-                <span>{category.category}</span>
-                <span>${category.amount.toFixed(2)}</span>
-              </div>
-              <div className="mt-1 h-2 bg-gray-200 rounded-full">
-                <div
-                  className="h-2 bg-blue-500 rounded-full"
-                  style={{ width: `${category.percentage}%` }}
-                />
-              </div>
-            </div>
-          ))}
+        <div className="h-80">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={data.categoryData}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                nameKey="category"
+                label={({ category, percent }) => `${category} ${(percent * 100).toFixed(0)}%`}
+                outerRadius={80}
+                fill="#8884d8"
+                dataKey="amount"
+              >
+                {data.categoryData.map((_, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip 
+                formatter={(value) => formatCurrency(Number(value))}
+                labelFormatter={(_, entry) => entry[0].payload.category}
+                contentStyle={{
+                  backgroundColor: 'white',
+                  border: '1px solid #E5E7EB',
+                  borderRadius: '0.375rem',
+                  boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
+                }}
+              />
+              <Legend 
+                verticalAlign="bottom" 
+                height={36}
+                formatter={(_, entry: any) => {
+                  if (entry && entry.payload) {
+                    return <span className="text-sm text-gray-600">{entry.payload.category}</span>;
+                  }
+                  return '';
+                }}
+              />
+            </PieChart>
+          </ResponsiveContainer>
         </div>
       </div>
 
@@ -168,7 +290,7 @@ const ReportsContent = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {topProducts.map((product) => (
+                {data.topProducts.map((product) => (
                   <tr key={product.name}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {product.name}
@@ -177,7 +299,7 @@ const ReportsContent = () => {
                       {product.units}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      ${product.revenue.toFixed(2)}
+                      {formatCurrency(product.revenue)}
                     </td>
                   </tr>
                 ))}

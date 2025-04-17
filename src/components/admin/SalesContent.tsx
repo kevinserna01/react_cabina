@@ -31,6 +31,7 @@ export interface Sale {
 const SalesContent = () => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('');
   const [sales, setSales] = useState<Sale[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -69,6 +70,7 @@ const SalesContent = () => {
     const saleDate = moment(sale.fechaColombia);
     if (startDate && saleDate.isBefore(startDate, 'day')) return false;
     if (endDate && saleDate.isAfter(endDate, 'day')) return false;
+    if (selectedPaymentMethod && sale.metodoPago !== selectedPaymentMethod) return false;
     return true;
   });
 
@@ -129,6 +131,21 @@ const SalesContent = () => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Método de Pago
+              </label>
+              <select
+                value={selectedPaymentMethod}
+                onChange={(e) => setSelectedPaymentMethod(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Todos</option>
+                <option value="Efectivo">Efectivo</option>
+                <option value="Nequi">Nequi</option>
+                <option value="Transferencia">Transferencia</option>
+              </select>
             </div>
           </div>
         </div>
