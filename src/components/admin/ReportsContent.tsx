@@ -28,6 +28,12 @@ interface TotalSales {
   TotalVentas: number;
 }
 
+interface CategoryData {
+  Categoria: string;
+  CantidadVendida: number;
+  TotalGenerado: number;
+}
+
 interface ApiResponse {
   status: string;
   message: string;
@@ -35,6 +41,7 @@ interface ApiResponse {
     ventas: Sale[];
     total: TotalSales[];
     top: TopProduct[];
+    categorias?: CategoryData[];
   };
 }
 
@@ -87,39 +94,41 @@ const ReportsContent = () => {
 
   // Función para obtener el rango de fechas basado en el filtro
   const getDateRange = () => {
+    // Configurar moment para usar la zona horaria de Colombia
+    moment.tz.setDefault('America/Bogota');
     const now = moment();
 
     switch (timeRange) {
       case 'day':
         return {
-          startDate: moment(selectedDate).format('YYYY-MM-DD'),
-          endDate: moment(selectedDate).format('YYYY-MM-DD')
+          startDate: moment(selectedDate).startOf('day').format('YYYY-MM-DD HH:mm:ss'),
+          endDate: moment(selectedDate).endOf('day').format('YYYY-MM-DD HH:mm:ss')
         };
       case 'week':
         const startOfWeek = moment(selectedDate || now).startOf('week');
         const endOfWeek = moment(selectedDate || now).endOf('week');
         return {
-          startDate: startOfWeek.format('YYYY-MM-DD'),
-          endDate: endOfWeek.format('YYYY-MM-DD')
+          startDate: startOfWeek.format('YYYY-MM-DD HH:mm:ss'),
+          endDate: endOfWeek.format('YYYY-MM-DD HH:mm:ss')
         };
       case 'month':
         const startOfMonth = moment(selectedDate || now).startOf('month');
         const endOfMonth = moment(selectedDate || now).endOf('month');
         return {
-          startDate: startOfMonth.format('YYYY-MM-DD'),
-          endDate: endOfMonth.format('YYYY-MM-DD')
+          startDate: startOfMonth.format('YYYY-MM-DD HH:mm:ss'),
+          endDate: endOfMonth.format('YYYY-MM-DD HH:mm:ss')
         };
       case 'year':
         const startOfYear = moment(selectedDate || now).startOf('year');
         const endOfYear = moment(selectedDate || now).endOf('year');
         return {
-          startDate: startOfYear.format('YYYY-MM-DD'),
-          endDate: endOfYear.format('YYYY-MM-DD')
+          startDate: startOfYear.format('YYYY-MM-DD HH:mm:ss'),
+          endDate: endOfYear.format('YYYY-MM-DD HH:mm:ss')
         };
       default:
         return {
-          startDate: moment(selectedDate).format('YYYY-MM-DD'),
-          endDate: moment(selectedDate).format('YYYY-MM-DD')
+          startDate: moment(selectedDate).startOf('day').format('YYYY-MM-DD HH:mm:ss'),
+          endDate: moment(selectedDate).endOf('day').format('YYYY-MM-DD HH:mm:ss')
         };
     }
   };
@@ -127,16 +136,16 @@ const ReportsContent = () => {
   // Función para filtrar ventas por rango de fecha
   const filterSalesByDateRange = (ventas: Sale[]) => {
     const { startDate, endDate } = getDateRange();
-    const start = moment(startDate);
-    const end = moment(endDate);
+    const start = moment.tz(startDate, 'America/Bogota');
+    const end = moment.tz(endDate, 'America/Bogota');
     
     return ventas.filter(venta => {
-      const ventaDate = moment(venta.Fecha);
+      const ventaDate = moment.tz(venta.Fecha, 'America/Bogota');
       if (timeRange === 'day') {
-        // Para día específico, comparamos solo la fecha sin la hora
-        return ventaDate.format('YYYY-MM-DD') === moment(selectedDate).format('YYYY-MM-DD');
+        // Para día específico, comparamos la fecha completa incluyendo hora
+        return ventaDate.isBetween(start, end, 'second', '[]');
       }
-      // Para otros rangos, usamos el between
+      // Para otros rangos, usamos el between con inclusión de límites
       return ventaDate.isBetween(start, end, 'day', '[]');
     });
   };
@@ -283,38 +292,52 @@ const ReportsContent = () => {
 
   // Función para procesar datos de ventas por categoría
   const processCategorySales = (ventas: Sale[]) => {
-    // Inicializar acumulador de ventas por categoría
-    const categoryAccumulator: Record<string, number> = {};
+    // Si tenemos datos de categorías directamente del backend, usarlos
+    if (data?.data?.categorias) {
+      const categoryData = data.data.categorias.map(cat => ({
+        categoria: cat.Categoria,
+        total: cat.TotalGenerado,
+        porcentaje: 0 // Se calculará después
+      }));
+
+      const totalVentas = categoryData.reduce((sum, cat) => sum + cat.total, 0);
+      return categoryData.map(cat => ({
+        ...cat,
+        porcentaje: (cat.total / totalVentas) * 100
+      })).sort((a, b) => b.total - a.total);
+    }
+
+    // Si no hay datos de categorías del backend, calcularlos de las ventas (caso de respaldo)
+    const categoryAccumulator: Record<string, { total: number }> = {};
     
-    // Procesar cada venta y sus productos
     ventas.forEach(venta => {
       if (venta.Productos && Array.isArray(venta.Productos)) {
         venta.Productos.forEach(producto => {
           if (producto && producto.categoria && producto.total) {
             const categoria = producto.categoria;
-            const ventaCategoria = producto.total;
-            categoryAccumulator[categoria] = (categoryAccumulator[categoria] || 0) + ventaCategoria;
+            if (!categoryAccumulator[categoria]) {
+              categoryAccumulator[categoria] = { total: 0 };
+            }
+            categoryAccumulator[categoria].total += producto.total;
           }
         });
       }
     });
 
-    // Si no hay datos de categorías, devolver array vacío
     if (Object.keys(categoryAccumulator).length === 0) {
       return [];
     }
 
-    // Calcular el total general de ventas
-    const totalVentas = Object.values(categoryAccumulator).reduce((sum, total) => sum + total, 0);
+    const totalVentas = Object.values(categoryAccumulator)
+      .reduce((sum, { total }) => sum + total, 0);
 
-    // Convertir a array y calcular porcentajes
     return Object.entries(categoryAccumulator)
-      .map(([categoria, total]) => ({
+      .map(([categoria, { total }]) => ({
         categoria,
         total,
         porcentaje: (total / totalVentas) * 100
       }))
-      .sort((a, b) => b.total - a.total); // Ordenar de mayor a menor
+      .sort((a, b) => b.total - a.total);
   };
 
   // Función para obtener los datos del reporte
@@ -332,12 +355,18 @@ const ReportsContent = () => {
         selectedDate
       });
 
-      // Construir la URL con los parámetros
-      const url = new URL('https://back-papeleria-two.vercel.app/v1/papeleria/reportsapi');
-      url.searchParams.append('startDate', startDate);
-      url.searchParams.append('endDate', endDate);
+      let url;
       if (timeRange === 'day') {
-        url.searchParams.append('specificDate', 'true');
+        // Usar el endpoint específico para día
+        url = new URL('https://back-papeleria-two.vercel.app/v1/papeleria/reportsapi/day');
+        // Enviar la fecha con la zona horaria correcta
+        const formattedDate = moment.tz(selectedDate, 'America/Bogota').format('YYYY-MM-DD');
+        url.searchParams.append('date', formattedDate);
+      } else {
+        // Usar el endpoint general para otros rangos
+        url = new URL('https://back-papeleria-two.vercel.app/v1/papeleria/reportsapi');
+        url.searchParams.append('startDate', startDate);
+        url.searchParams.append('endDate', endDate);
       }
 
       const response = await fetch(url.toString(), {
@@ -405,9 +434,10 @@ const ReportsContent = () => {
 
   // Efecto para procesar los datos cuando cambian
   useEffect(() => {
-    if (data?.data.ventas) {
-      const filteredSales = filterSalesByDateRange(data.data.ventas);
+    if (data?.data) {
+      const filteredSales = data.data.ventas ? filterSalesByDateRange(data.data.ventas) : [];
       setSummary(calculateSummary(filteredSales));
+      
       if (timeRange === 'day') {
         setDailySales([{
           fecha: moment(selectedDate).format('DD/MM'),
@@ -416,9 +446,12 @@ const ReportsContent = () => {
       } else {
         setDailySales(processDailySales(filteredSales));
       }
-      setCategorySales(processCategorySales(filteredSales));
+
+      // Procesar datos de categorías independientemente del timeRange
+      const categoryData = processCategorySales(filteredSales);
+      setCategorySales(categoryData);
     }
-  }, [data?.data.ventas, timeRange, selectedDate]);
+  }, [data?.data, timeRange, selectedDate]);
 
   if (isLoading) {
     return (
@@ -436,7 +469,7 @@ const ReportsContent = () => {
     );
   }
 
-  if (!data) {
+  if (!data || !data.data) {
     return (
       <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded">
         No hay datos disponibles para mostrar.
@@ -444,7 +477,7 @@ const ReportsContent = () => {
     );
   }
 
-  const filteredSales = filterSales(data.data.ventas);
+  const filteredSales = data.data.ventas ? filterSales(data.data.ventas) : [];
   const sortedSales = sortSales(filteredSales);
 
   return (
@@ -888,13 +921,13 @@ const ReportsContent = () => {
                     </td>
                   </tr>
                 ))}
-                {reportType === 'top' && data.data.top.map((producto, index) => (
+                {reportType === 'top' && data.data.top && data.data.top.map((producto, index) => (
                   <tr key={index} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{producto.Producto}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{producto.Cantidad}</td>
                   </tr>
                 ))}
-                {reportType === 'total' && data.data.total.map((total, index) => (
+                {reportType === 'total' && data.data.total && data.data.total.map((total, index) => (
                   <tr key={index} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {new Intl.NumberFormat('es-CO', {
