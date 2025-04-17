@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import moment from 'moment';
 import 'moment/locale/es';  // Importar localización en español
+import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 
 interface Sale {
   Código: string;
@@ -8,6 +9,14 @@ interface Sale {
   Total: number;
   Método: string;
   Fecha: string;
+  Productos: {
+    code: string;
+    name: string;
+    categoria: string;
+    cantidad: number;
+    precioUnitario: number;
+    total: number;
+  }[];
 }
 
 interface TopProduct {
@@ -36,6 +45,31 @@ interface Summary {
   metodoPagoPopular: string;
 }
 
+// Colores para los gráficos
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
+
+interface DailySales {
+  fecha: string;
+  total: number;
+}
+
+interface MonthlySales {
+  mes: string;
+  total: number;
+  monthIndex?: number; // Optional property for sorting
+}
+
+interface YearlySales {
+  año: string;
+  total: number;
+}
+
+interface CategorySales {
+  categoria: string;
+  total: number;
+  porcentaje: number;
+}
+
 const ReportsContent = () => {
   const [timeRange, setTimeRange] = useState('day');
   const [selectedDate, setSelectedDate] = useState(moment().format('YYYY-MM-DD'));
@@ -46,8 +80,66 @@ const ReportsContent = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
   const [summary, setSummary] = useState<Summary | null>(null);
+  const [dailySales, setDailySales] = useState<DailySales[]>([]);
+  const [categorySales, setCategorySales] = useState<CategorySales[]>([]);
 
   moment.locale('es'); // Configurar moment en español
+
+  // Función para obtener el rango de fechas basado en el filtro
+  const getDateRange = () => {
+    const now = moment();
+
+    switch (timeRange) {
+      case 'day':
+        return {
+          startDate: moment(selectedDate).format('YYYY-MM-DD'),
+          endDate: moment(selectedDate).format('YYYY-MM-DD')
+        };
+      case 'week':
+        const startOfWeek = moment(selectedDate || now).startOf('week');
+        const endOfWeek = moment(selectedDate || now).endOf('week');
+        return {
+          startDate: startOfWeek.format('YYYY-MM-DD'),
+          endDate: endOfWeek.format('YYYY-MM-DD')
+        };
+      case 'month':
+        const startOfMonth = moment(selectedDate || now).startOf('month');
+        const endOfMonth = moment(selectedDate || now).endOf('month');
+        return {
+          startDate: startOfMonth.format('YYYY-MM-DD'),
+          endDate: endOfMonth.format('YYYY-MM-DD')
+        };
+      case 'year':
+        const startOfYear = moment(selectedDate || now).startOf('year');
+        const endOfYear = moment(selectedDate || now).endOf('year');
+        return {
+          startDate: startOfYear.format('YYYY-MM-DD'),
+          endDate: endOfYear.format('YYYY-MM-DD')
+        };
+      default:
+        return {
+          startDate: moment(selectedDate).format('YYYY-MM-DD'),
+          endDate: moment(selectedDate).format('YYYY-MM-DD')
+        };
+    }
+  };
+
+  // Función para filtrar ventas por rango de fecha
+  const filterSalesByDateRange = (ventas: Sale[]) => {
+    const { startDate, endDate } = getDateRange();
+    const start = moment(startDate);
+    const end = moment(endDate);
+    
+    return ventas.filter(venta => {
+      const ventaDate = moment(venta.Fecha);
+      if (timeRange === 'day') {
+        // Para día específico, comparamos solo la fecha sin la hora
+        return ventaDate.format('YYYY-MM-DD') === moment(selectedDate).format('YYYY-MM-DD');
+      }
+      // Para otros rangos, usamos el between
+      return ventaDate.isBetween(start, end, 'day', '[]');
+    });
+  };
 
   // Función para calcular el resumen
   const calculateSummary = (ventas: Sale[]) => {
@@ -111,35 +203,118 @@ const ReportsContent = () => {
     });
   };
 
-  // Función para obtener el rango de fechas basado en el filtro
-  const getDateRange = () => {
-    const now = moment();
+  // Función para procesar datos de ventas diarias
+  const processDailySales = (ventas: Sale[]) => {
+    const { startDate, endDate } = getDateRange();
+    const start = moment(startDate);
+    const end = moment(endDate);
+    const days: DailySales[] = [];
 
-    if (timeRange === 'day') {
-      return {
-        startDate: selectedDate,
-        endDate: selectedDate
-      };
+    // Crear array con todos los días en el rango
+    let currentDate = start.clone();
+    while (currentDate.isSameOrBefore(end)) {
+      days.push({
+        fecha: currentDate.format('DD/MM'),
+        total: 0
+      });
+      currentDate.add(1, 'day');
     }
 
-    let startDate = now.clone();
+    // Agregar las ventas a los días correspondientes
+    ventas.forEach(venta => {
+      const ventaDate = moment(venta.Fecha);
+      if (ventaDate.isBetween(start, end, 'day', '[]')) {
+        const fechaKey = ventaDate.format('DD/MM');
+        const dayIndex = days.findIndex(day => day.fecha === fechaKey);
+        if (dayIndex !== -1) {
+          days[dayIndex].total += venta.Total;
+        }
+      }
+    });
 
-    switch (timeRange) {
-      case 'week':
-        startDate = now.clone().subtract(7, 'days');
-        break;
-      case 'month':
-        startDate = now.clone().startOf('month');
-        break;
-      case 'year':
-        startDate = now.clone().startOf('year');
-        break;
+    return days;
+  };
+
+  // Función para procesar datos de ventas mensuales
+  const processMonthlyData = (ventas: Sale[]) => {
+    const months = moment.months();
+    const monthlyData: MonthlySales[] = months.map((month, index) => ({
+      mes: month,
+      total: 0,
+      monthIndex: index
+    }));
+
+    // Agrupar ventas por mes
+    ventas.forEach(venta => {
+      const ventaDate = moment(venta.Fecha);
+      const monthIndex = ventaDate.month();
+      monthlyData[monthIndex].total += venta.Total;
+    });
+
+    // Ordenar los meses cronológicamente y eliminar el campo auxiliar
+    return monthlyData
+      .sort((a, b) => a.monthIndex! - b.monthIndex!)
+      .map(({ mes, total }) => ({ mes, total }));
+  };
+
+  // Función para procesar datos de ventas anuales
+  const processYearlyData = (ventas: Sale[]): YearlySales[] => {
+    // Obtener el año actual y generar array con los últimos 5 años
+    const currentYear = moment().year();
+    const years = Array.from({ length: 5 }, (_, i) => (currentYear - 4 + i).toString());
+    
+    // Inicializar el mapa con todos los años en 0
+    const yearTotals = new Map<string, number>();
+    years.forEach(year => yearTotals.set(year, 0));
+
+    // Procesar cada venta y acumular por año
+    ventas.forEach(venta => {
+      const year = moment(venta.Fecha).format('YYYY');
+      if (yearTotals.has(year)) {
+        yearTotals.set(year, yearTotals.get(year)! + venta.Total);
+      }
+    });
+
+    // Convertir a array y ordenar
+    return Array.from(yearTotals.entries())
+      .map(([año, total]) => ({ año, total }))
+      .sort((a, b) => parseInt(a.año) - parseInt(b.año));
+  };
+
+  // Función para procesar datos de ventas por categoría
+  const processCategorySales = (ventas: Sale[]) => {
+    // Inicializar acumulador de ventas por categoría
+    const categoryAccumulator: Record<string, number> = {};
+    
+    // Procesar cada venta y sus productos
+    ventas.forEach(venta => {
+      if (venta.Productos && Array.isArray(venta.Productos)) {
+        venta.Productos.forEach(producto => {
+          if (producto && producto.categoria && producto.total) {
+            const categoria = producto.categoria;
+            const ventaCategoria = producto.total;
+            categoryAccumulator[categoria] = (categoryAccumulator[categoria] || 0) + ventaCategoria;
+          }
+        });
+      }
+    });
+
+    // Si no hay datos de categorías, devolver array vacío
+    if (Object.keys(categoryAccumulator).length === 0) {
+      return [];
     }
 
-    return {
-      startDate: startDate.format('YYYY-MM-DD'),
-      endDate: now.format('YYYY-MM-DD')
-    };
+    // Calcular el total general de ventas
+    const totalVentas = Object.values(categoryAccumulator).reduce((sum, total) => sum + total, 0);
+
+    // Convertir a array y calcular porcentajes
+    return Object.entries(categoryAccumulator)
+      .map(([categoria, total]) => ({
+        categoria,
+        total,
+        porcentaje: (total / totalVentas) * 100
+      }))
+      .sort((a, b) => b.total - a.total); // Ordenar de mayor a menor
   };
 
   // Función para obtener los datos del reporte
@@ -149,20 +324,34 @@ const ReportsContent = () => {
       setError(null);
       const { startDate, endDate } = getDateRange();
 
-      const response = await fetch(
-        `https://back-papeleria-two.vercel.app/v1/papeleria/reportsapi?startDate=${startDate}&endDate=${endDate}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
+      // Log para depuración
+      console.log('Fetching data with params:', {
+        timeRange,
+        startDate,
+        endDate,
+        selectedDate
+      });
+
+      // Construir la URL con los parámetros
+      const url = new URL('https://back-papeleria-two.vercel.app/v1/papeleria/reportsapi');
+      url.searchParams.append('startDate', startDate);
+      url.searchParams.append('endDate', endDate);
+      if (timeRange === 'day') {
+        url.searchParams.append('specificDate', 'true');
+      }
+
+      const response = await fetch(url.toString(), {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
-      );
+      });
 
       if (!response.ok) {
         throw new Error('Error al obtener los datos del reporte');
       }
 
       const responseData = await response.json();
+      console.log('API Response:', responseData);
       setData(responseData);
     } catch (error) {
       console.error('Error fetching report data:', error);
@@ -212,13 +401,24 @@ const ReportsContent = () => {
   // Efecto para cargar datos cuando cambien los filtros
   useEffect(() => {
     fetchReportData();
-  }, [timeRange, reportType]);
+  }, [timeRange, reportType, selectedDate]); // Añadir selectedDate como dependencia
 
+  // Efecto para procesar los datos cuando cambian
   useEffect(() => {
     if (data?.data.ventas) {
-      setSummary(calculateSummary(data.data.ventas));
+      const filteredSales = filterSalesByDateRange(data.data.ventas);
+      setSummary(calculateSummary(filteredSales));
+      if (timeRange === 'day') {
+        setDailySales([{
+          fecha: moment(selectedDate).format('DD/MM'),
+          total: filteredSales.reduce((sum, venta) => sum + venta.Total, 0)
+        }]);
+      } else {
+        setDailySales(processDailySales(filteredSales));
+      }
+      setCategorySales(processCategorySales(filteredSales));
     }
-  }, [data?.data.ventas]);
+  }, [data?.data.ventas, timeRange, selectedDate]);
 
   if (isLoading) {
     return (
@@ -327,6 +527,290 @@ const ReportsContent = () => {
             <p className="mt-2 text-2xl font-semibold text-gray-900">
               {summary.metodoPagoPopular}
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* Gráficos */}
+      {reportType === 'ventas' && (
+        <div className="space-y-6">
+          {timeRange === 'day' && (
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Ventas del Día</h3>
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={dailySales}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis 
+                      dataKey="fecha"
+                      interval={0}
+                      height={60}
+                      tick={props => (
+                        <g transform={`translate(${props.x},${props.y})`}>
+                          <text
+                            x={0}
+                            y={0}
+                            dy={16}
+                            textAnchor="middle"
+                            fill="#6B7280"
+                            fontSize={12}
+                          >
+                            {props.payload.value}
+                          </text>
+                        </g>
+                      )}
+                    />
+                    <YAxis
+                      tickFormatter={(value) => new Intl.NumberFormat('es-CO', {
+                        style: 'currency',
+                        currency: 'COP',
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0
+                      }).format(value)}
+                    />
+                    <Tooltip
+                      formatter={(value: number) => new Intl.NumberFormat('es-CO', {
+                        style: 'currency',
+                        currency: 'COP',
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0
+                      }).format(value)}
+                      labelStyle={{ color: '#374151' }}
+                      contentStyle={{
+                        backgroundColor: 'white',
+                        border: '1px solid #E5E7EB',
+                        borderRadius: '0.375rem',
+                        boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
+                      }}
+                    />
+                    <Bar 
+                      dataKey="total"
+                      fill="#3B82F6"
+                      radius={[4, 4, 0, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+
+          {timeRange === 'week' && (
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Ventas por Día</h3>
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={dailySales}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis 
+                      dataKey="fecha"
+                      interval={0}
+                      height={60}
+                      tick={props => (
+                        <g transform={`translate(${props.x},${props.y})`}>
+                          <text
+                            x={0}
+                            y={0}
+                            dy={16}
+                            textAnchor="middle"
+                            fill="#6B7280"
+                            fontSize={12}
+                          >
+                            {props.payload.value}
+                          </text>
+                        </g>
+                      )}
+                    />
+                    <YAxis
+                      tickFormatter={(value) => new Intl.NumberFormat('es-CO', {
+                        style: 'currency',
+                        currency: 'COP',
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0
+                      }).format(value)}
+                    />
+                    <Tooltip
+                      formatter={(value: number) => new Intl.NumberFormat('es-CO', {
+                        style: 'currency',
+                        currency: 'COP',
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0
+                      }).format(value)}
+                      labelStyle={{ color: '#374151' }}
+                      contentStyle={{
+                        backgroundColor: 'white',
+                        border: '1px solid #E5E7EB',
+                        borderRadius: '0.375rem',
+                        boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
+                      }}
+                    />
+                    <Bar 
+                      dataKey="total"
+                      fill="#3B82F6"
+                      radius={[4, 4, 0, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+
+          {timeRange === 'month' && (
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Ventas por Mes (Línea)</h3>
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={processMonthlyData(data.data.ventas)}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis 
+                      dataKey="mes"
+                      interval={0}
+                      height={60}
+                      tick={props => (
+                        <g transform={`translate(${props.x},${props.y})`}>
+                          <text
+                            x={0}
+                            y={0}
+                            dy={16}
+                            textAnchor="middle"
+                            fill="#6B7280"
+                            fontSize={12}
+                          >
+                            {props.payload.value}
+                          </text>
+                        </g>
+                      )}
+                    />
+                    <YAxis
+                      tickFormatter={(value) => new Intl.NumberFormat('es-CO', {
+                        style: 'currency',
+                        currency: 'COP',
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0
+                      }).format(value)}
+                    />
+                    <Tooltip
+                      formatter={(value: number) => new Intl.NumberFormat('es-CO', {
+                        style: 'currency',
+                        currency: 'COP',
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0
+                      }).format(value)}
+                      contentStyle={{
+                        backgroundColor: 'white',
+                        border: '1px solid #E5E7EB',
+                        borderRadius: '0.375rem',
+                        boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
+                      }}
+                    />
+                    <Line 
+                      type="monotone"
+                      dataKey="total"
+                      stroke="#10B981"
+                      strokeWidth={2}
+                      dot={{ fill: '#10B981', r: 4 }}
+                      activeDot={{ r: 6 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+
+          {timeRange === 'year' && (
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Ventas por Año (Barras)</h3>
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={processYearlyData(data.data.ventas)}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis 
+                      dataKey="año"
+                      interval={0}
+                    />
+                    <YAxis
+                      tickFormatter={(value) => new Intl.NumberFormat('es-CO', {
+                        style: 'currency',
+                        currency: 'COP',
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0
+                      }).format(value)}
+                    />
+                    <Tooltip
+                      formatter={(value: number) => new Intl.NumberFormat('es-CO', {
+                        style: 'currency',
+                        currency: 'COP',
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0
+                      }).format(value)}
+                      contentStyle={{
+                        backgroundColor: 'white',
+                        border: '1px solid #E5E7EB',
+                        borderRadius: '0.375rem',
+                        boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
+                      }}
+                    />
+                    <Bar 
+                      dataKey="total"
+                      fill="#22C55E"
+                      radius={[4, 4, 0, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+
+          {/* Gráfico de Ventas por Categoría */}
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Ventas por Categoría</h3>
+            <div className="h-80">
+              {categorySales.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={categorySales}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="total"
+                      nameKey="categoria"
+                      label={({ categoria, porcentaje }) => `${categoria} (${porcentaje.toFixed(1)}%)`}
+                    >
+                      {categorySales.map((_, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(value: number) => new Intl.NumberFormat('es-CO', {
+                        style: 'currency',
+                        currency: 'COP',
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0
+                      }).format(value)}
+                      contentStyle={{
+                        backgroundColor: 'white',
+                        border: '1px solid #E5E7EB',
+                        borderRadius: '0.375rem',
+                        boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
+                      }}
+                    />
+                    <Legend
+                      verticalAlign="bottom"
+                      height={36}
+                      formatter={(value) => (
+                        <span className="text-sm text-gray-600">{value}</span>
+                      )}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-full flex items-center justify-center text-gray-500">
+                  No hay datos de categorías disponibles
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
