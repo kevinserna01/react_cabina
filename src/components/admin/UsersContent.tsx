@@ -81,13 +81,17 @@ const UsersContent: React.FC = () => {
       let response;
       
       if (selectedUser) {
-        // Para actualización, solo enviar email y/o password si se proporcionaron
-        const updateData: { email?: string; password?: string } = {};
+        // Para actualización, solo enviar email, password y status
+        const updateData: { email?: string; password?: string; status?: 'active' | 'inactive' } = {};
+        
         if (formData.email !== selectedUser.email) {
           updateData.email = formData.email;
         }
         if (formData.password) {
           updateData.password = formData.password;
+        }
+        if (formData.status !== selectedUser.status) {
+          updateData.status = formData.status;
         }
 
         // Si no hay cambios, no hacer la petición
@@ -109,7 +113,25 @@ const UsersContent: React.FC = () => {
         );
 
         if (!response.ok) {
-          throw new Error('Error al actualizar el usuario');
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Error al actualizar el usuario');
+        }
+
+        const result = await response.json();
+        
+        if (result.status === "Success") {
+          setShowModal(false);
+          setSelectedUser(null);
+          setFormData({
+            name: '',
+            email: '',
+            password: '',
+            role: 'worker',
+            status: 'active'
+          });
+          fetchUsers();
+        } else {
+          throw new Error(result.message || 'Error en la operación');
         }
       } else {
         // Para creación, enviar todos los datos
@@ -123,25 +145,26 @@ const UsersContent: React.FC = () => {
         });
 
         if (!response.ok) {
-          throw new Error('Error al crear el usuario');
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Error al crear el usuario');
         }
-      }
 
-      const result = await response.json();
-      
-      if (result.status === "Success") {
-        setShowModal(false);
-        setSelectedUser(null);
-        setFormData({
-          name: '',
-          email: '',
-          password: '',
-          role: 'worker',
-          status: 'active'
-        });
-        fetchUsers();
-      } else {
-        throw new Error(result.message || 'Error en la operación');
+        const result = await response.json();
+        
+        if (result.status === "Success") {
+          setShowModal(false);
+          setSelectedUser(null);
+          setFormData({
+            name: '',
+            email: '',
+            password: '',
+            role: 'worker',
+            status: 'active'
+          });
+          fetchUsers();
+        } else {
+          throw new Error(result.message || 'Error en la operación');
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido');
@@ -269,7 +292,10 @@ const UsersContent: React.FC = () => {
                     value={formData.name}
                     onChange={handleInputChange}
                     required
-                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    disabled={!!selectedUser}
+                    className={`shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline ${
+                      selectedUser ? 'bg-gray-100 cursor-not-allowed' : ''
+                    }`}
                   />
                 </div>
                 <div className="mb-4">
@@ -304,11 +330,10 @@ const UsersContent: React.FC = () => {
                   </label>
                   <select
                     name="role"
-                    value={formData.role}
-                    onChange={handleInputChange}
-                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    value="worker"
+                    disabled
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 bg-gray-100 cursor-not-allowed"
                   >
-                    <option value="admin">Administrador</option>
                     <option value="worker">Trabajador</option>
                   </select>
                 </div>
