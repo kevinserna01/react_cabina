@@ -44,7 +44,6 @@ const LoginGeneral: React.FC = () => {
         // Guardar token y datos del usuario
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
-        localStorage.setItem('userRole', data.user.role);
 
         // Redirigir según el rol
         if (data.user.role === 'admin') {
