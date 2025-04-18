@@ -17,7 +17,8 @@ const UsersContent: React.FC = () => {
     name: '',
     email: '',
     password: '',
-    role: 'worker' as 'admin' | 'worker'
+    role: 'worker' as 'admin' | 'worker',
+    status: 'active' as 'active' | 'inactive'
   });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -66,7 +67,8 @@ const UsersContent: React.FC = () => {
       name: user.name,
       email: user.email,
       password: '',
-      role: user.role
+      role: user.role,
+      status: user.status
     });
     setShowModal(true);
   };
@@ -134,7 +136,8 @@ const UsersContent: React.FC = () => {
           name: '',
           email: '',
           password: '',
-          role: 'worker'
+          role: 'worker',
+          status: 'active'
         });
         fetchUsers();
       } else {
@@ -164,7 +167,8 @@ const UsersContent: React.FC = () => {
               name: '',
               email: '',
               password: '',
-              role: 'worker'
+              role: 'worker',
+              status: 'active'
             });
             setShowModal(true);
           }}
@@ -308,6 +312,22 @@ const UsersContent: React.FC = () => {
                     <option value="worker">Trabajador</option>
                   </select>
                 </div>
+                {selectedUser && (
+                  <div className="mb-4">
+                    <label className="block text-gray-700 text-sm font-bold mb-2">
+                      Estado
+                    </label>
+                    <select
+                      name="status"
+                      value={formData.status}
+                      onChange={handleInputChange}
+                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    >
+                      <option value="active">Activo</option>
+                      <option value="inactive">Inactivo</option>
+                    </select>
+                  </div>
+                )}
                 <div className="flex items-center justify-end mt-6">
                   <button
                     type="button"
