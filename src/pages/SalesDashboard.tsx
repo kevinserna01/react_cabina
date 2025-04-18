@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import Navbar from '../components/layout/Navbar';
 import SearchBar from '../components/sales/SearchBar';
 import ProductCard from '../components/sales/ProductCard';
 import CartPanel from '../components/layout/CartPanel';
@@ -58,6 +57,7 @@ const SalesDashboard = () => {
 
   const handleLogout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
     navigate('/login');
   };
 
@@ -73,7 +73,17 @@ const SalesDashboard = () => {
 
   return (
     <div className="h-screen flex flex-col bg-gray-100">
-      <Navbar onLogout={handleLogout} />
+      <header className="bg-white shadow">
+        <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+          <h1 className="text-2xl font-bold text-gray-900">Panel de Ventas</h1>
+          <button
+            onClick={handleLogout}
+            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+          >
+            Cerrar Sesión
+          </button>
+        </div>
+      </header>
       
       <div className="flex-1 flex overflow-hidden">
         <main className="flex-1 p-4 overflow-y-auto">
