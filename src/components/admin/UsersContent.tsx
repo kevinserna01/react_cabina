@@ -29,7 +29,7 @@ const UsersContent: React.FC = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const response = await fetch('https://back-papeleria-two.vercel.app/v1/papeleria/usersapi', {
+      const response = await fetch('https://back-papeleria-two.vercel.app/v1/papeleria/getUsersapi', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
           'Content-Type': 'application/json'
@@ -76,21 +76,53 @@ const UsersContent: React.FC = () => {
     setError(null);
 
     try {
-      const url = selectedUser 
-        ? `https://back-papeleria-two.vercel.app/v1/papeleria/usersapi/${selectedUser.id}`
-        : 'https://back-papeleria-two.vercel.app/v1/papeleria/usersapi';
+      let response;
       
-      const response = await fetch(url, {
-        method: selectedUser ? 'PUT' : 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
-      });
+      if (selectedUser) {
+        // Para actualización, solo enviar email y/o password si se proporcionaron
+        const updateData: { email?: string; password?: string } = {};
+        if (formData.email !== selectedUser.email) {
+          updateData.email = formData.email;
+        }
+        if (formData.password) {
+          updateData.password = formData.password;
+        }
 
-      if (!response.ok) {
-        throw new Error(selectedUser ? 'Error al actualizar el usuario' : 'Error al crear el usuario');
+        // Si no hay cambios, no hacer la petición
+        if (Object.keys(updateData).length === 0) {
+          setShowModal(false);
+          return;
+        }
+
+        response = await fetch(
+          `https://back-papeleria-two.vercel.app/v1/papeleria/updateUserapi/${selectedUser.id}`,
+          {
+            method: 'PUT',
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(updateData)
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error('Error al actualizar el usuario');
+        }
+      } else {
+        // Para creación, enviar todos los datos
+        response = await fetch('https://back-papeleria-two.vercel.app/v1/papeleria/createUserapi', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(formData)
+        });
+
+        if (!response.ok) {
+          throw new Error('Error al crear el usuario');
+        }
       }
 
       const result = await response.json();
@@ -106,7 +138,7 @@ const UsersContent: React.FC = () => {
         });
         fetchUsers();
       } else {
-        throw new Error(result.message || (selectedUser ? 'Error al actualizar el usuario' : 'Error al crear el usuario'));
+        throw new Error(result.message || 'Error en la operación');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido');
