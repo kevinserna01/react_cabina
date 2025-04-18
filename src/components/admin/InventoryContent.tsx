@@ -49,6 +49,7 @@ const InventoryContent = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<InventoryItem | null>(null);
   const [successMessage, setSuccessMessage] = useState('');
+  const [stockToAdd, setStockToAdd] = useState<string>('');
 
   const categories = ['Cuadernos', 'Útiles', 'Papelería', 'Arte'];
 
@@ -272,7 +273,60 @@ const InventoryContent = () => {
 
       setIsEditModalOpen(false);
       setEditingProduct(null);
+      setStockToAdd('');
       setSuccessMessage(`Inventario actualizado correctamente: ${editingProduct.name}`);
+      setShowSuccess(true);
+      setTimeout(() => {
+        setShowSuccess(false);
+        setSuccessMessage('');
+      }, 3000);
+    } catch (error) {
+      console.error('Error:', error);
+      setErrorMessage(error instanceof Error ? error.message : 'Error al actualizar el inventario');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAddStock = async () => {
+    if (!editingProduct || !stockToAdd) return;
+    
+    const quantityToAdd = parseInt(stockToAdd);
+    if (isNaN(quantityToAdd) || quantityToAdd <= 0) {
+      setErrorMessage('Por favor ingrese una cantidad válida');
+      return;
+    }
+
+    setIsLoading(true);
+    setErrorMessage('');
+
+    try {
+      const response = await fetch('https://back-papeleria-two.vercel.app/v1/papeleria/updateInventoryProductapi', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          code: editingProduct.code,
+          stock: Number(editingProduct.stock) + quantityToAdd,
+          minStock: Number(editingProduct.minStock)
+        })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || 'Error al actualizar el inventario');
+      }
+
+      setInventory(prev => prev.map(item => 
+        item.code === editingProduct.code ? { ...item, ...result.data } : item
+      ));
+
+      setEditingProduct(prev => prev ? { ...prev, stock: Number(prev.stock) + quantityToAdd } : null);
+      setStockToAdd('');
+      setSuccessMessage(`Se agregaron ${quantityToAdd} unidades al stock de ${editingProduct.name}`);
       setShowSuccess(true);
       setTimeout(() => {
         setShowSuccess(false);
@@ -748,7 +802,7 @@ const InventoryContent = () => {
 
               <div>
                 <label htmlFor="edit-stock" className="block text-sm font-medium text-gray-700">
-                  Stock
+                  Stock Actual
                 </label>
                 <input
                   type="number"
@@ -760,6 +814,31 @@ const InventoryContent = () => {
                   min="0"
                   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 />
+              </div>
+
+              <div className="flex items-end gap-2">
+                <div className="flex-1">
+                  <label htmlFor="add-stock" className="block text-sm font-medium text-gray-700">
+                    Agregar al Stock
+                  </label>
+                  <input
+                    type="number"
+                    id="add-stock"
+                    value={stockToAdd}
+                    onChange={(e) => setStockToAdd(e.target.value.replace(/[^0-9]/g, ''))}
+                    min="1"
+                    placeholder="Cantidad a agregar"
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleAddStock}
+                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:bg-green-400"
+                  disabled={isLoading || !stockToAdd}
+                >
+                  {isLoading ? 'Agregando...' : 'Agregar'}
+                </button>
               </div>
 
               <div>
@@ -784,6 +863,7 @@ const InventoryContent = () => {
                   onClick={() => {
                     setIsEditModalOpen(false);
                     setEditingProduct(null);
+                    setStockToAdd('');
                   }}
                   className="px-4 py-2 text-gray-700 hover:text-gray-900"
                   disabled={isLoading}
