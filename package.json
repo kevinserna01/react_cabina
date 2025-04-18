@@ -13,6 +13,8 @@
     "@react-pdf/renderer": "^4.3.0",
     "@types/date-fns": "^2.6.3",
     "@types/react-router-dom": "^5.3.3",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "lucide-react": "^0.359.0",
     "moment-timezone": "^0.5.48",
@@ -20,6 +22,7 @@
     "react-dom": "^18.2.0",
     "react-router-dom": "^7.5.0",
     "recharts": "^2.15.2",
+    "tailwind-merge": "^3.2.0",
     "zustand": "^4.5.2"
   },
   "devDependencies": {

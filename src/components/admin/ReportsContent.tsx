@@ -547,14 +547,14 @@ const ReportsContent = () => {
                 currency: 'COP',
                 minimumFractionDigits: 0
               }).format(summary.promedioVenta)}
-            </p>
-          </div>
+          </p>
+        </div>
           <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
             <h4 className="text-sm font-medium text-gray-500">Total Transacciones</h4>
             <p className="mt-2 text-2xl font-semibold text-gray-900">
               {summary.totalTransacciones}
-            </p>
-          </div>
+          </p>
+        </div>
           <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
             <h4 className="text-sm font-medium text-gray-500">Método de Pago Popular</h4>
             <p className="mt-2 text-2xl font-semibold text-gray-900">
@@ -623,13 +623,13 @@ const ReportsContent = () => {
                     />
                   </BarChart>
                 </ResponsiveContainer>
-              </div>
-            </div>
+        </div>
+      </div>
           )}
 
           {timeRange === 'week' && (
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Ventas por Día</h3>
+      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <h3 className="text-lg font-medium text-gray-900 mb-4">Ventas por Día</h3>
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={dailySales}>
@@ -683,12 +683,12 @@ const ReportsContent = () => {
                     />
                   </BarChart>
                 </ResponsiveContainer>
-              </div>
-            </div>
+          </div>
+        </div>
           )}
 
           {timeRange === 'month' && (
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
               <h3 className="text-lg font-medium text-gray-900 mb-4">Ventas por Mes (Línea)</h3>
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
@@ -879,19 +879,19 @@ const ReportsContent = () => {
                         onClick={() => handleSort('Total')}
                       >
                         Total {sortConfig?.key === 'Total' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
-                      </th>
+                  </th>
                       <th 
                         className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
                         onClick={() => handleSort('Método')}
                       >
                         Método {sortConfig?.key === 'Método' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
-                      </th>
+                  </th>
                       <th 
                         className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
                         onClick={() => handleSort('Fecha')}
                       >
                         Fecha {sortConfig?.key === 'Fecha' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
-                      </th>
+                  </th>
                     </>
                   )}
                   {reportType === 'top' && (

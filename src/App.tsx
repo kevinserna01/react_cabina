@@ -37,7 +37,7 @@ const App: React.FC = () => {
         <Route
           path="/sales/*"
           element={
-            <ProtectedRoute allowedRoles={['cashier']}>
+            <ProtectedRoute allowedRoles={['worker']}>
               <SalesDashboard />
             </ProtectedRoute>
           }

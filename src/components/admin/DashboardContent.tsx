@@ -1,17 +1,18 @@
 import { useState, useEffect } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import moment from 'moment';
 import 'moment/locale/es';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 interface SalesSummary {
   daily: number;
   weekly: number;
   monthly: number;
-  dailySales: { date: string; total: number }[];
 }
 
 interface TopProduct {
   id: string;
+  _id?: string;
   name: string;
   sales: number;
   revenue: number;
@@ -20,6 +21,7 @@ interface TopProduct {
 
 interface LowStockItem {
   id: string;
+  _id?: string;
   name: string;
   stock: number;
   minStock: number;
@@ -41,14 +43,13 @@ const DashboardContent = () => {
   const [salesSummary, setSalesSummary] = useState<SalesSummary>({
     daily: 0,
     weekly: 0,
-    monthly: 0,
-    dailySales: []
+    monthly: 0
   });
   const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
   const [lowStockItems, setLowStockItems] = useState<LowStockItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedTimeRange, setSelectedTimeRange] = useState<'day' | 'week' | 'month'>('day');
+  const [showLowStockAlert, setShowLowStockAlert] = useState(false);
 
   // Función para formatear moneda
   const formatCurrency = (value: number) => {
@@ -79,9 +80,33 @@ const DashboardContent = () => {
       const result: ApiResponse = await response.json();
 
       if (result.status === "Success") {
-        setSalesSummary(result.data.salesSummary);
-        setTopProducts(result.data.topProducts);
-        setLowStockItems(result.data.lowStockItems);
+        // Asegurarse de que los datos tengan el formato correcto
+        const formattedData = {
+          salesSummary: {
+            daily: result.data.salesSummary.daily || 0,
+            weekly: result.data.salesSummary.weekly || 0,
+            monthly: result.data.salesSummary.monthly || 0
+          },
+          topProducts: result.data.topProducts.map((product: any) => ({
+            id: product._id || product.id || 'unknown',
+            name: product.name || 'Producto sin nombre',
+            category: product.category || 'Sin categoría',
+            sales: Number(product.sales) || 0,
+            revenue: Number(product.revenue) || 0
+          })),
+          lowStockItems: result.data.lowStockItems.map((item: any) => ({
+            id: item._id || item.id || 'unknown',
+            name: item.name || 'Producto sin nombre',
+            stock: Number(item.stock) || 0,
+            minStock: Number(item.minStock) || 0,
+            category: item.category || 'Sin categoría',
+            lastUpdate: item.lastUpdate || new Date().toISOString()
+          }))
+        };
+
+        setSalesSummary(formattedData.salesSummary);
+        setTopProducts(formattedData.topProducts);
+        setLowStockItems(formattedData.lowStockItems);
       } else {
         throw new Error(result.message || 'Error al procesar los datos');
       }
@@ -100,6 +125,17 @@ const DashboardContent = () => {
 
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    if (lowStockItems.length > 0) {
+      setShowLowStockAlert(true);
+      // Ocultar la alerta después de 10 segundos
+      const timer = setTimeout(() => {
+        setShowLowStockAlert(false);
+      }, 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [lowStockItems]);
 
   // Función para obtener el color de la alerta según el nivel de stock
   const getStockAlertColor = (stock: number, minStock: number) => {
@@ -127,41 +163,28 @@ const DashboardContent = () => {
 
   return (
     <div className="space-y-6">
-      {/* Filtro de tiempo */}
-      <div className="flex justify-end">
-        <div className="inline-flex rounded-md shadow-sm">
-          <button
-            onClick={() => setSelectedTimeRange('day')}
-            className={`px-4 py-2 text-sm font-medium rounded-l-md ${
-              selectedTimeRange === 'day'
-                ? 'bg-blue-600 text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-50'
-            }`}
-          >
-            Hoy
-          </button>
-          <button
-            onClick={() => setSelectedTimeRange('week')}
-            className={`px-4 py-2 text-sm font-medium ${
-              selectedTimeRange === 'week'
-                ? 'bg-blue-600 text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-50'
-            }`}
-          >
-            Esta Semana
-          </button>
-          <button
-            onClick={() => setSelectedTimeRange('month')}
-            className={`px-4 py-2 text-sm font-medium rounded-r-md ${
-              selectedTimeRange === 'month'
-                ? 'bg-blue-600 text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-50'
-            }`}
-          >
-            Este Mes
-          </button>
+      {/* Alerta de Stock Bajo */}
+      {showLowStockAlert && lowStockItems.length > 0 && (
+        <div className="fixed top-4 right-4 z-50 animate-fade-in">
+          <Alert variant="destructive" className="bg-red-50 border-red-200">
+            <AlertCircle className="h-4 w-4 text-red-500" />
+            <AlertTitle className="text-red-800">¡Alerta de Stock Bajo!</AlertTitle>
+            <AlertDescription className="text-red-700">
+              Los siguientes productos tienen stock bajo:
+              <ul className="mt-2 list-disc list-inside">
+                {lowStockItems.slice(0, 3).map((item) => (
+                  <li key={item.id}>
+                    {item.name} - Stock actual: {item.stock} (Mínimo: {item.minStock})
+                  </li>
+                ))}
+                {lowStockItems.length > 3 && (
+                  <li>... y {lowStockItems.length - 3} productos más</li>
+                )}
+              </ul>
+            </AlertDescription>
+          </Alert>
         </div>
-      </div>
+      )}
 
       {/* Resumen de Ventas */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -170,20 +193,6 @@ const DashboardContent = () => {
           <p className="mt-2 text-3xl font-semibold text-gray-900">
             {formatCurrency(salesSummary.daily)}
           </p>
-          <div className="mt-4 h-40">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={salesSummary.dailySales}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip
-                  formatter={(value: number) => formatCurrency(value)}
-                  labelStyle={{ color: '#374151' }}
-                />
-                <Bar dataKey="total" fill="#3B82F6" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
         </div>
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
           <h3 className="text-sm font-medium text-gray-500">Ventas esta Semana</h3>
@@ -228,22 +237,30 @@ const DashboardContent = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {topProducts.map((product) => (
-                    <tr key={product.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {product.name}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {product.category}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {product.sales}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {formatCurrency(product.revenue)}
+                  {topProducts.length > 0 ? (
+                    topProducts.map((product) => (
+                      <tr key={product.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {product.name}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {product.category}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {product.sales}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {formatCurrency(product.revenue)}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={4} className="px-6 py-4 text-center text-sm text-gray-500">
+                        No hay datos de productos vendidos
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>

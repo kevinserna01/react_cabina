@@ -9,7 +9,7 @@ interface LoginResponse {
     id: string;
     name: string;
     email: string;
-    role: 'admin' | 'cashier';
+    role: 'admin' | 'worker';
   };
 }
 

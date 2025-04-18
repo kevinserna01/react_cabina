@@ -1,20 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, PencilIcon } from '@heroicons/react/24/outline';
 
 interface User {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'cashier';
+  role: 'admin' | 'worker';
   status: 'active' | 'inactive';
 }
 
 const UsersContent: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    role: 'worker' as 'admin' | 'worker'
+  });
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchUsers();
@@ -23,7 +29,6 @@ const UsersContent: React.FC = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      setError(null);
       const response = await fetch('https://back-papeleria-two.vercel.app/v1/papeleria/usersapi', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -32,55 +37,76 @@ const UsersContent: React.FC = () => {
       });
 
       if (!response.ok) {
-        const errorData = await response.text();
-        console.error('Error response:', errorData);
-        throw new Error(response.status === 401 ? 'No autorizado. Por favor, inicie sesión nuevamente.' : 'Error al cargar usuarios');
+        throw new Error('Error al cargar usuarios');
       }
 
       const data = await response.json();
       
       if (data.status === "Success" && Array.isArray(data.data)) {
         setUsers(data.data);
-      } else {
-        throw new Error('Formato de respuesta inválido');
       }
     } catch (err) {
-      console.error('Error fetching users:', err);
-      setError(err instanceof Error ? err.message : 'Error desconocido al cargar usuarios');
+      setError(err instanceof Error ? err.message : 'Error al cargar usuarios');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
   const handleEdit = (user: User) => {
     setSelectedUser(user);
+    setFormData({
+      name: user.name,
+      email: user.email,
+      password: '',
+      role: user.role
+    });
     setShowModal(true);
   };
 
-  const handleDelete = async (userId: string) => {
-    if (!confirm('¿Estás seguro de que deseas eliminar este usuario?')) {
-      return;
-    }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
 
     try {
-      const response = await fetch(`https://back-papeleria-two.vercel.app/v1/papeleria/usersapi/${userId}`, {
-        method: 'DELETE',
+      const url = selectedUser 
+        ? `https://back-papeleria-two.vercel.app/v1/papeleria/usersapi/${selectedUser.id}`
+        : 'https://back-papeleria-two.vercel.app/v1/papeleria/usersapi';
+      
+      const response = await fetch(url, {
+        method: selectedUser ? 'PUT' : 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
           'Content-Type': 'application/json'
-        }
+        },
+        body: JSON.stringify(formData)
       });
 
       if (!response.ok) {
-        throw new Error('Error al eliminar usuario');
+        throw new Error(selectedUser ? 'Error al actualizar el usuario' : 'Error al crear el usuario');
       }
 
       const result = await response.json();
       
       if (result.status === "Success") {
-        setUsers(users.filter(user => user.id !== userId));
+        setShowModal(false);
+        setSelectedUser(null);
+        setFormData({
+          name: '',
+          email: '',
+          password: '',
+          role: 'worker'
+        });
+        fetchUsers();
       } else {
-        throw new Error(result.message || 'Error al eliminar usuario');
+        throw new Error(result.message || (selectedUser ? 'Error al actualizar el usuario' : 'Error al crear el usuario'));
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido');
@@ -95,14 +121,6 @@ const UsersContent: React.FC = () => {
     );
   }
 
-  if (error) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-red-500">{error}</div>
-      </div>
-    );
-  }
-
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
@@ -110,6 +128,12 @@ const UsersContent: React.FC = () => {
         <button
           onClick={() => {
             setSelectedUser(null);
+            setFormData({
+              name: '',
+              email: '',
+              password: '',
+              role: 'worker'
+            });
             setShowModal(true);
           }}
           className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
@@ -119,69 +143,71 @@ const UsersContent: React.FC = () => {
         </button>
       </div>
 
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Nombre
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Email
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Rol
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Estado
-              </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Acciones
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {users.map((user) => (
-              <tr key={user.id}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  {user.name}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {user.email}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {user.role === 'admin' ? 'Administrador' : 'Cajero'}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span
-                    className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      user.status === 'active'
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'
-                    }`}
-                  >
-                    {user.status === 'active' ? 'Activo' : 'Inactivo'}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <button
-                    onClick={() => handleEdit(user)}
-                    className="text-blue-600 hover:text-blue-900 mr-4"
-                  >
-                    <PencilIcon className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(user.id)}
-                    className="text-red-600 hover:text-red-900"
-                  >
-                    <TrashIcon className="w-5 h-5" />
-                  </button>
-                </td>
+      {users.length === 0 ? (
+        <div className="bg-white rounded-lg shadow p-6">
+          <p className="text-gray-600 text-center">
+            No hay usuarios registrados. Crea un nuevo usuario para comenzar.
+          </p>
+        </div>
+      ) : (
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Nombre
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Email
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Rol
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Estado
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Acciones
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {users.map((user) => (
+                <tr key={user.id}>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    {user.name}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {user.email}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {user.role === 'admin' ? 'Administrador' : 'Trabajador'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span
+                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        user.status === 'active'
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-red-100 text-red-800'
+                      }`}
+                    >
+                      {user.status === 'active' ? 'Activo' : 'Inactivo'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <button
+                      onClick={() => handleEdit(user)}
+                      className="text-blue-600 hover:text-blue-900"
+                    >
+                      <PencilIcon className="w-5 h-5" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* Modal para crear/editar usuario */}
       {showModal && (
@@ -191,15 +217,23 @@ const UsersContent: React.FC = () => {
               <h3 className="text-lg leading-6 font-medium text-gray-900">
                 {selectedUser ? 'Editar Usuario' : 'Nuevo Usuario'}
               </h3>
-              <form className="mt-4">
+              {error && (
+                <div className="mt-2 text-sm text-red-600">
+                  {error}
+                </div>
+              )}
+              <form onSubmit={handleSubmit} className="mt-4">
                 <div className="mb-4">
                   <label className="block text-gray-700 text-sm font-bold mb-2">
                     Nombre
                   </label>
                   <input
                     type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    required
                     className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    defaultValue={selectedUser?.name}
                   />
                 </div>
                 <div className="mb-4">
@@ -208,8 +242,24 @@ const UsersContent: React.FC = () => {
                   </label>
                   <input
                     type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    required
                     className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    defaultValue={selectedUser?.email}
+                  />
+                </div>
+                <div className="mb-4">
+                  <label className="block text-gray-700 text-sm font-bold mb-2">
+                    Contraseña
+                  </label>
+                  <input
+                    type="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    required={!selectedUser}
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                   />
                 </div>
                 <div className="mb-4">
@@ -217,11 +267,13 @@ const UsersContent: React.FC = () => {
                     Rol
                   </label>
                   <select
+                    name="role"
+                    value={formData.role}
+                    onChange={handleInputChange}
                     className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    defaultValue={selectedUser?.role}
                   >
                     <option value="admin">Administrador</option>
-                    <option value="cashier">Cajero</option>
+                    <option value="worker">Trabajador</option>
                   </select>
                 </div>
                 <div className="flex items-center justify-end mt-6">
@@ -236,7 +288,7 @@ const UsersContent: React.FC = () => {
                     type="submit"
                     className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
                   >
-                    Guardar
+                    {selectedUser ? 'Actualizar' : 'Crear Usuario'}
                   </button>
                 </div>
               </form>
