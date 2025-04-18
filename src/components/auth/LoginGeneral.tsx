@@ -26,7 +26,7 @@ const LoginGeneral: React.FC = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('https://back-papeleria-two.vercel.app/v1/papeleria/loginapi', {
+      const response = await fetch('https://back-papeleria-two.vercel.app/v1/papeleria/loginUserapi', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
