@@ -13,7 +13,7 @@ interface LoginResponse {
   };
 }
 
-const Login: React.FC = () => {
+const LoginGeneral: React.FC = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -49,7 +49,7 @@ const Login: React.FC = () => {
         if (data.user.role === 'admin') {
           navigate('/admin');
         } else {
-          navigate('/sales');
+          navigate('/');
         }
       } else {
         throw new Error('Respuesta inválida del servidor');
@@ -133,4 +133,4 @@ const Login: React.FC = () => {
   );
 };
 
-export default Login; 
+export default LoginGeneral; 

@@ -1,26 +1,37 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import { createBrowserRouter, RouterProvider } from 'react-router-dom'
+import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom'
 import SalesDashboard from './pages/SalesDashboard'
 import AdminDashboard from './pages/AdminDashboard'
-import Login from './pages/Login'
+import LoginGeneral from './components/auth/LoginGeneral'
 import ProtectedRoute from './components/ProtectedRoute'
 import './index.css'
+
+// Verificar si hay un usuario autenticado
+const isAuthenticated = !!localStorage.getItem('token')
 
 const router = createBrowserRouter([
   {
     path: '/',
-    element: <SalesDashboard />
+    element: isAuthenticated ? <Navigate to="/sales" replace /> : <Navigate to="/login" replace />
   },
   {
     path: '/login',
-    element: <Login />
+    element: isAuthenticated ? <Navigate to="/sales" replace /> : <LoginGeneral />
   },
   {
     path: '/admin',
     element: (
-      <ProtectedRoute>
+      <ProtectedRoute allowedRoles={['admin']}>
         <AdminDashboard />
+      </ProtectedRoute>
+    )
+  },
+  {
+    path: '/sales',
+    element: (
+      <ProtectedRoute allowedRoles={['worker']}>
+        <SalesDashboard />
       </ProtectedRoute>
     )
   }
