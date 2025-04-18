@@ -30,15 +30,20 @@ const UsersContent: React.FC = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
+      const token = localStorage.getItem('token');
+      console.log('Token being sent:', token); // Debug log
+      
       const response = await fetch('https://back-papeleria-two.vercel.app/v1/papeleria/getUsersapi', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
 
       if (!response.ok) {
-        throw new Error('Error al cargar usuarios');
+        const errorData = await response.json();
+        console.log('Error response:', errorData); // Debug log
+        throw new Error(errorData.message || 'Error al cargar usuarios');
       }
 
       const data = await response.json();

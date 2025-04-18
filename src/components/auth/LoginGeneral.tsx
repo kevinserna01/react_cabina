@@ -35,8 +35,9 @@ const LoginGeneral: React.FC = () => {
       });
 
       const data: LoginResponse = await response.json();
+      console.log('API Response:', data); // Debug log
 
-      if (!response.ok) {
+      if (data.status === "Error" || !response.ok) {
         throw new Error(data.message || 'Error al iniciar sesión');
       }
 
@@ -44,6 +45,7 @@ const LoginGeneral: React.FC = () => {
         // Guardar token y datos del usuario
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
+        localStorage.setItem('userRole', data.user.role);
 
         // Redirigir según el rol
         if (data.user.role === 'admin') {
@@ -55,6 +57,7 @@ const LoginGeneral: React.FC = () => {
         throw new Error('Respuesta inválida del servidor');
       }
     } catch (err) {
+      console.error('Login error:', err); // Debug log
       setError(err instanceof Error ? err.message : 'Error al iniciar sesión');
     } finally {
       setLoading(false);
