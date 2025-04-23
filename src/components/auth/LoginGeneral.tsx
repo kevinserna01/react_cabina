@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 interface LoginResponse {
   status: string;
   message: string;
-  token?: string;
   user?: {
     id: string;
     name: string;
@@ -35,15 +34,14 @@ const LoginGeneral: React.FC = () => {
       });
 
       const data: LoginResponse = await response.json();
-      console.log('API Response:', data); // Debug log
+      console.log('API Response:', data);
 
       if (data.status === "Error" || !response.ok) {
         throw new Error(data.message || 'Error al iniciar sesión');
       }
 
-      if (data.status === "Success" && data.token && data.user) {
-        // Guardar token y datos del usuario
-        localStorage.setItem('token', data.token);
+      if (data.status === "Success" && data.user) {
+        // Guardar datos del usuario
         localStorage.setItem('user', JSON.stringify(data.user));
         localStorage.setItem('userRole', data.user.role);
 
@@ -57,7 +55,7 @@ const LoginGeneral: React.FC = () => {
         throw new Error('Respuesta inválida del servidor');
       }
     } catch (err) {
-      console.error('Login error:', err); // Debug log
+      console.error('Login error:', err);
       setError(err instanceof Error ? err.message : 'Error al iniciar sesión');
     } finally {
       setLoading(false);

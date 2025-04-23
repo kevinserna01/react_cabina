@@ -371,7 +371,7 @@ const ReportsContent = () => {
 
       const response = await fetch(url.toString(), {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Content-Type': 'application/json'
         }
       });
 
@@ -400,7 +400,7 @@ const ReportsContent = () => {
         `https://back-papeleria-two.vercel.app/v1/papeleria/reportsapi?startDate=${startDate}&endDate=${endDate}&type=${reportType}&format=${format}`,
         {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Content-Type': 'application/json'
           }
         }
       );
@@ -630,11 +630,11 @@ const ReportsContent = () => {
           {timeRange === 'week' && (
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
         <h3 className="text-lg font-medium text-gray-900 mb-4">Ventas por Día</h3>
-              <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
+        <div className="h-80">
+          <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={dailySales}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis 
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis 
                       dataKey="fecha"
                       interval={0}
                       height={60}
@@ -652,16 +652,16 @@ const ReportsContent = () => {
                           </text>
                         </g>
                       )}
-                    />
-                    <YAxis
+              />
+              <YAxis 
                       tickFormatter={(value) => new Intl.NumberFormat('es-CO', {
                         style: 'currency',
                         currency: 'COP',
                         minimumFractionDigits: 0,
                         maximumFractionDigits: 0
                       }).format(value)}
-                    />
-                    <Tooltip
+              />
+              <Tooltip 
                       formatter={(value: number) => new Intl.NumberFormat('es-CO', {
                         style: 'currency',
                         currency: 'COP',
@@ -669,22 +669,22 @@ const ReportsContent = () => {
                         maximumFractionDigits: 0
                       }).format(value)}
                       labelStyle={{ color: '#374151' }}
-                      contentStyle={{
-                        backgroundColor: 'white',
-                        border: '1px solid #E5E7EB',
-                        borderRadius: '0.375rem',
+                contentStyle={{
+                  backgroundColor: 'white',
+                  border: '1px solid #E5E7EB',
+                  borderRadius: '0.375rem',
                         boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
-                      }}
-                    />
-                    <Bar 
+                }}
+              />
+              <Bar 
                       dataKey="total"
-                      fill="#3B82F6"
-                      radius={[4, 4, 0, 0]}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-          </div>
+                fill="#3B82F6" 
+                radius={[4, 4, 0, 0]}
+              />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
+      </div>
           )}
 
           {timeRange === 'month' && (
@@ -794,50 +794,50 @@ const ReportsContent = () => {
           )}
 
           {/* Gráfico de Ventas por Categoría */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Ventas por Categoría</h3>
-            <div className="h-80">
+      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <h3 className="text-lg font-medium text-gray-900 mb-4">Ventas por Categoría</h3>
+        <div className="h-80">
               {categorySales.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
                       data={categorySales}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      outerRadius={80}
-                      fill="#8884d8"
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                outerRadius={80}
+                fill="#8884d8"
                       dataKey="total"
                       nameKey="categoria"
                       label={({ categoria, porcentaje }) => `${categoria} (${porcentaje.toFixed(1)}%)`}
-                    >
+              >
                       {categorySales.map((_, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip 
                       formatter={(value: number) => new Intl.NumberFormat('es-CO', {
                         style: 'currency',
                         currency: 'COP',
                         minimumFractionDigits: 0,
                         maximumFractionDigits: 0
                       }).format(value)}
-                      contentStyle={{
-                        backgroundColor: 'white',
-                        border: '1px solid #E5E7EB',
-                        borderRadius: '0.375rem',
+                contentStyle={{
+                  backgroundColor: 'white',
+                  border: '1px solid #E5E7EB',
+                  borderRadius: '0.375rem',
                         boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
-                      }}
-                    />
-                    <Legend
-                      verticalAlign="bottom"
-                      height={36}
+                }}
+              />
+              <Legend 
+                verticalAlign="bottom" 
+                height={36}
                       formatter={(value) => (
                         <span className="text-sm text-gray-600">{value}</span>
                       )}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
+              />
+            </PieChart>
+          </ResponsiveContainer>
               ) : (
                 <div className="h-full flex items-center justify-center text-gray-500">
                   No hay datos de categorías disponibles

@@ -38,20 +38,21 @@ const SalesContent = () => {
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
   const [isPDFModalOpen, setIsPDFModalOpen] = useState(false);
 
-  // Función para obtener las ventas del backend
+  // Función para obtener las ventas
   const fetchSales = async () => {
     try {
       setIsLoading(true);
+      setError(null);
       const response = await fetch('https://back-papeleria-two.vercel.app/v1/papeleria/salesapi', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Content-Type': 'application/json'
         }
       });
-      
+
       if (!response.ok) {
         throw new Error('Error al obtener las ventas');
       }
-      
+
       const data = await response.json();
       setSales(data);
     } catch (error) {
@@ -83,6 +84,70 @@ const SalesContent = () => {
   const handleViewPDF = (sale: Sale) => {
     setSelectedSale(sale);
     setIsPDFModalOpen(true);
+  };
+
+  // Función para exportar las ventas a PDF
+  const handleExportPDF = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await fetch('https://back-papeleria-two.vercel.app/v1/papeleria/salesapi/export-pdf', {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al exportar a PDF');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'ventas.pdf';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Error exporting to PDF:', error);
+      setError('Error al exportar a PDF');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Función para exportar las ventas a Excel
+  const handleExportExcel = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await fetch('https://back-papeleria-two.vercel.app/v1/papeleria/salesapi/export-excel', {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al exportar a Excel');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'ventas.xlsx';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Error exporting to Excel:', error);
+      setError('Error al exportar a Excel');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (isLoading) {
@@ -177,6 +242,23 @@ const SalesContent = () => {
 
       {/* Tabla de Ventas */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div className="flex justify-between items-center p-4 border-b">
+          <h3 className="text-lg font-medium text-gray-900">Ventas</h3>
+          <div className="space-x-2">
+            <button
+              onClick={handleExportPDF}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              Exportar PDF
+            </button>
+            <button
+              onClick={handleExportExcel}
+              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+            >
+              Exportar Excel
+            </button>
+          </div>
+        </div>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">

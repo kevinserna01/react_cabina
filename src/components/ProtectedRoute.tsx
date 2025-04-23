@@ -7,15 +7,16 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles = [] }) => {
-  const token = localStorage.getItem('token');
+  const user = localStorage.getItem('user');
   const userRole = localStorage.getItem('userRole');
 
-  if (!token) {
+  if (!user) {
     return <Navigate to="/login" replace />;
   }
 
   if (allowedRoles.length > 0 && (!userRole || !allowedRoles.includes(userRole))) {
-    return <Navigate to="/sales" replace />;
+    // Redirect admins to admin dashboard and workers to sales dashboard
+    return <Navigate to={userRole === 'admin' ? '/admin' : '/sales'} replace />;
   }
 
   return <>{children}</>;

@@ -30,19 +30,16 @@ const UsersContent: React.FC = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
-      console.log('Token being sent:', token); // Debug log
       
       const response = await fetch('https://back-papeleria-two.vercel.app/v1/papeleria/getUsersapi', {
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.log('Error response:', errorData); // Debug log
+        console.log('Error response:', errorData);
         throw new Error(errorData.message || 'Error al cargar usuarios');
       }
 
@@ -86,7 +83,6 @@ const UsersContent: React.FC = () => {
       let response;
       
       if (selectedUser) {
-        // Para actualización, solo enviar email, password y status
         const updateData: { email?: string; password?: string; status?: 'active' | 'inactive' } = {};
         
         if (formData.email !== selectedUser.email) {
@@ -99,7 +95,6 @@ const UsersContent: React.FC = () => {
           updateData.status = formData.status;
         }
 
-        // Si no hay cambios, no hacer la petición
         if (Object.keys(updateData).length === 0) {
           setShowModal(false);
           return;
@@ -110,7 +105,6 @@ const UsersContent: React.FC = () => {
           {
             method: 'PUT',
             headers: {
-              'Authorization': `Bearer ${localStorage.getItem('token')}`,
               'Content-Type': 'application/json'
             },
             body: JSON.stringify(updateData)
@@ -139,11 +133,9 @@ const UsersContent: React.FC = () => {
           throw new Error(result.message || 'Error en la operación');
         }
       } else {
-        // Para creación, enviar todos los datos
         response = await fetch('https://back-papeleria-two.vercel.app/v1/papeleria/createUserapi', {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify(formData)

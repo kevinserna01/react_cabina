@@ -7,17 +7,22 @@ import LoginGeneral from './components/auth/LoginGeneral'
 import ProtectedRoute from './components/ProtectedRoute'
 import './index.css'
 
-// Verificar si hay un usuario autenticado
-const isAuthenticated = !!localStorage.getItem('token')
+// Verificar si hay un usuario autenticado usando los datos del usuario
+const isAuthenticated = !!localStorage.getItem('user')
+const userRole = localStorage.getItem('userRole')
 
 const router = createBrowserRouter([
   {
     path: '/',
-    element: isAuthenticated ? <Navigate to="/sales" replace /> : <Navigate to="/login" replace />
+    element: isAuthenticated ? 
+      (userRole === 'admin' ? <Navigate to="/admin" replace /> : <Navigate to="/sales" replace />) 
+      : <Navigate to="/login" replace />
   },
   {
     path: '/login',
-    element: isAuthenticated ? <Navigate to="/sales" replace /> : <LoginGeneral />
+    element: isAuthenticated ? 
+      (userRole === 'admin' ? <Navigate to="/admin" replace /> : <Navigate to="/sales" replace />) 
+      : <LoginGeneral />
   },
   {
     path: '/admin',
