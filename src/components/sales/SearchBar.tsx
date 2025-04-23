@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Search } from 'lucide-react';
 import { Product } from '../../types';
 
 interface SearchBarProps {
@@ -7,100 +6,79 @@ interface SearchBarProps {
   onProductSelect: (product: Product) => void;
 }
 
-const SearchBar = ({ products, onProductSelect }: SearchBarProps) => {
-  const [query, setQuery] = useState('');
-  const [showResults, setShowResults] = useState(false);
+const SearchBar: React.FC<SearchBarProps> = ({ products, onProductSelect }) => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  const filteredProducts = (products || []).filter(product => {
-    if (!product) return false;
-    
-    const searchQuery = query.toLowerCase();
-    const productName = (product.name || '').toLowerCase();
-    const productCode = (product.code || '').toLowerCase();
-    
-    return productName.includes(searchQuery) || productCode.includes(searchQuery);
-  }).slice(0, 5);
+  const handleSearch = (term: string) => {
+    setSearchTerm(term);
+    if (term.trim() === '') {
+      setFilteredProducts([]);
+      setIsDropdownOpen(false);
+      return;
+    }
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setQuery(value);
-    setShowResults(true);
+    const filtered = products.filter(product => 
+      product.name.toLowerCase().includes(term.toLowerCase()) ||
+      product.code.toLowerCase().includes(term.toLowerCase())
+    );
+    
+    setFilteredProducts(filtered);
+    setIsDropdownOpen(filtered.length > 0);
   };
 
   const handleProductClick = (product: Product) => {
-    if (product.stock > 0) {
-      onProductSelect(product);
-      setQuery('');
-      setShowResults(false);
-    }
-  };
-
-  // Cerrar los resultados cuando se hace clic fuera del componente
-  const handleClickOutside = () => {
-    setShowResults(false);
-  };
-
-  React.useEffect(() => {
-    document.addEventListener('click', handleClickOutside);
-    return () => {
-      document.removeEventListener('click', handleClickOutside);
-    };
-  }, []);
-
-  const handleSearchContainerClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
+    onProductSelect(product);
+    setSearchTerm('');
+    setFilteredProducts([]);
+    setIsDropdownOpen(false);
   };
 
   return (
-    <div className="relative w-full max-w-xl" onClick={handleSearchContainerClick}>
+    <div className="relative">
       <div className="relative">
         <input
           type="text"
-          value={query}
-          onChange={handleInputChange}
-          className="w-full px-4 py-2 pl-10 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          value={searchTerm}
+          onChange={(e) => handleSearch(e.target.value)}
           placeholder="Buscar productos por nombre o código..."
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
-        <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+        {searchTerm && (
+          <button
+            onClick={() => {
+              setSearchTerm('');
+              setFilteredProducts([]);
+              setIsDropdownOpen(false);
+            }}
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        )}
       </div>
 
-      {showResults && query && (
-        <div className="absolute z-10 w-full mt-1 bg-white rounded-md shadow-lg">
-          {filteredProducts.length > 0 ? (
-            <ul className="py-1">
-              {filteredProducts.map(product => (
-                <li
-                  key={product.id}
-                  onClick={() => handleProductClick(product)}
-                  className={`px-4 py-2 cursor-pointer ${
-                    product.stock > 0 
-                      ? 'hover:bg-gray-100' 
-                      : 'opacity-50 cursor-not-allowed'
-                  }`}
-                >
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium">{product.name}</span>
-                    <span className={`text-sm ${
-                      product.stock === 0 
-                        ? 'text-red-500' 
-                        : product.stock <= 5 
-                          ? 'text-orange-500' 
-                          : 'text-gray-500'
-                    }`}>
-                      {product.stock === 0 ? 'Sin stock' : `Stock: ${product.stock}`}
-                    </span>
-                  </div>
-                  <div className="text-sm text-gray-500">
-                    Código: {product.code}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div className="px-4 py-2 text-sm text-gray-500">
-              No se encontraron productos
+      {isDropdownOpen && (
+        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+          {filteredProducts.map((product) => (
+            <div
+              key={product.id}
+              onClick={() => handleProductClick(product)}
+              className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex justify-between items-center"
+            >
+              <div>
+                <p className="font-medium">{product.name}</p>
+                <p className="text-sm text-gray-500">Código: {product.code}</p>
+              </div>
+              <div className="text-right">
+                <p className="font-medium">{product.price.toLocaleString('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 })}</p>
+                <p className="text-sm text-gray-500">Stock: {product.stock}</p>
+              </div>
             </div>
-          )}
+          ))}
         </div>
       )}
     </div>

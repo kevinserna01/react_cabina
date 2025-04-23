@@ -1,6 +1,7 @@
 import { Minus, Plus, ShoppingCart, User, X, CreditCard, Receipt } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useCartStore } from '../../store/cartStore';
+import { Product } from '../../types';
 
 // Función para formatear el precio en COP
 const formatPrice = (price: number): string => {
@@ -103,7 +104,11 @@ const generateSaleCode = async (): Promise<string> => {
   }
 };
 
-const CartPanel = () => {
+interface CartPanelProps {
+  onStockUpdate: (productId: string, quantity: number) => void;
+}
+
+const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
   const { items, total, updateQuantity, removeItem, setCustomer, clearCart } = useCartStore();
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -229,6 +234,31 @@ const CartPanel = () => {
     }
   };
 
+  const handleQuantityChange = (product: Product, newQuantity: number) => {
+    const oldQuantity = items.find(item => item.product.id === product.id)?.quantity || 0;
+    const quantityDiff = newQuantity - oldQuantity;
+    
+    if (quantityDiff !== 0) {
+      onStockUpdate(product.id, -quantityDiff);
+      updateQuantity(product.id, newQuantity);
+    }
+  };
+
+  const handleRemoveItem = (product: Product) => {
+    const item = items.find(item => item.product.id === product.id);
+    if (item) {
+      onStockUpdate(product.id, item.quantity);
+      removeItem(product.id);
+    }
+  };
+
+  const handleClearCart = () => {
+    items.forEach(item => {
+      onStockUpdate(item.product.id, item.quantity);
+    });
+    clearCart();
+  };
+
   return (
     <div className="w-96 h-full bg-white shadow-lg flex flex-col">
       <div className="p-4 border-b">
@@ -239,7 +269,7 @@ const CartPanel = () => {
           </h2>
           {items.length > 0 && (
             <button
-              onClick={clearCart}
+              onClick={handleClearCart}
               className="text-sm text-red-600 hover:text-red-800"
             >
               Limpiar
@@ -267,7 +297,13 @@ const CartPanel = () => {
                 </div>
                 <div className="flex items-center space-x-2">
                   <button
-                    onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                    onClick={() => handleRemoveItem(item.product)}
+                    className="p-1 rounded-full hover:bg-gray-100"
+                  >
+                    <X className="h-4 w-4 text-red-600" />
+                  </button>
+                  <button
+                    onClick={() => handleQuantityChange(item.product, item.quantity - 1)}
                     className="p-1 rounded-full hover:bg-gray-100"
                   >
                     <Minus className="h-4 w-4 text-gray-600" />
@@ -276,16 +312,10 @@ const CartPanel = () => {
                     {item.quantity}
                   </span>
                   <button
-                    onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                    onClick={() => handleQuantityChange(item.product, item.quantity + 1)}
                     className="p-1 rounded-full hover:bg-gray-100"
                   >
                     <Plus className="h-4 w-4 text-gray-600" />
-                  </button>
-                  <button
-                    onClick={() => removeItem(item.product.id)}
-                    className="p-1 rounded-full hover:bg-gray-100"
-                  >
-                    <X className="h-4 w-4 text-red-600" />
                   </button>
                 </div>
               </li>

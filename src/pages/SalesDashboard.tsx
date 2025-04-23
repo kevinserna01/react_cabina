@@ -13,6 +13,16 @@ const SalesDashboard = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const updateProductStock = (productId: string, quantity: number) => {
+    setProducts(prevProducts => 
+      prevProducts.map(p => 
+        p.id === productId 
+          ? { ...p, stock: p.stock + quantity } 
+          : p
+      )
+    );
+  };
+
   useEffect(() => {
     const fetchProducts = async () => {
       setIsLoading(true);
@@ -63,6 +73,15 @@ const SalesDashboard = () => {
 
   const handleProductSelect = (product: Product) => {
     if (product.stock > 0) {
+      // Actualizar el stock en el estado local
+      setProducts(prevProducts => 
+        prevProducts.map(p => 
+          p.id === product.id 
+            ? { ...p, stock: p.stock - 1 } 
+            : p
+        )
+      );
+      // Agregar al carrito
       addItem(product);
     }
   };
@@ -120,7 +139,7 @@ const SalesDashboard = () => {
         </main>
 
         <aside className="border-l border-gray-200">
-          <CartPanel />
+          <CartPanel onStockUpdate={updateProductStock} />
         </aside>
       </div>
 

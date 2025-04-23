@@ -9,6 +9,7 @@ interface LoginResponse {
     name: string;
     email: string;
     role: 'admin' | 'worker';
+    status: 'active' | 'inactive';
   };
 }
 
@@ -41,9 +42,15 @@ const LoginGeneral: React.FC = () => {
       }
 
       if (data.status === "Success" && data.user) {
+        // Verificar el estado del usuario
+        if (data.user.status === 'inactive') {
+          throw new Error('Tu cuenta está inactiva. Por favor, contacta al administrador.');
+        }
+
         // Guardar datos del usuario
         localStorage.setItem('user', JSON.stringify(data.user));
         localStorage.setItem('userRole', data.user.role);
+        localStorage.setItem('userStatus', data.user.status);
 
         // Redirigir según el rol
         if (data.user.role === 'admin') {

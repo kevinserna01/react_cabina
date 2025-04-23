@@ -67,11 +67,19 @@ const DashboardContent = () => {
       setIsLoading(true);
       setError(null);
 
-      const response = await fetch('https://back-papeleria-two.vercel.app/v1/papeleria/dashboardapi', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+      // Obtener la fecha actual y el rango de la semana en la zona horaria de Bogotá
+      const today = moment().tz('America/Bogota').format('YYYY-MM-DD');
+      const startOfWeek = moment().tz('America/Bogota').startOf('week').format('YYYY-MM-DD');
+      const endOfWeek = moment().tz('America/Bogota').endOf('week').format('YYYY-MM-DD');
+      
+      const response = await fetch(
+        `https://back-papeleria-two.vercel.app/v1/papeleria/dashboardapi?date=${today}&weekStart=${startOfWeek}&weekEnd=${endOfWeek}`, 
+        {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
         }
-      });
+      );
 
       if (!response.ok) {
         throw new Error('Error al cargar los datos del dashboard');
@@ -103,6 +111,12 @@ const DashboardContent = () => {
             lastUpdate: item.lastUpdate || new Date().toISOString()
           }))
         };
+
+        // Log para depuración
+        console.log('Fecha enviada al backend:', today);
+        console.log('Rango semanal enviado:', startOfWeek, 'a', endOfWeek);
+        console.log('Ventas del día:', formattedData.salesSummary.daily);
+        console.log('Ventas de la semana:', formattedData.salesSummary.weekly);
 
         setSalesSummary(formattedData.salesSummary);
         setTopProducts(formattedData.topProducts);
@@ -240,16 +254,16 @@ const DashboardContent = () => {
                   {topProducts.length > 0 ? (
                     topProducts.map((product) => (
                       <tr key={product.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {product.name}
-                        </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {product.name}
+                      </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {product.category}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {product.sales}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {product.sales}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {formatCurrency(product.revenue)}
                         </td>
                       </tr>
@@ -280,15 +294,15 @@ const DashboardContent = () => {
           <div className="mt-4">
             {lowStockItems.length > 0 ? (
               lowStockItems.map((item) => (
-                <div
-                  key={item.id}
+              <div
+                key={item.id}
                   className="flex items-center justify-between py-3 border-b border-gray-200 last:border-0 hover:bg-gray-50"
-                >
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">{item.name}</p>
-                    <p className="text-sm text-gray-500">
-                      Stock actual: {item.stock} / Mínimo requerido: {item.minStock}
-                    </p>
+              >
+                <div>
+                  <p className="text-sm font-medium text-gray-900">{item.name}</p>
+                  <p className="text-sm text-gray-500">
+                    Stock actual: {item.stock} / Mínimo requerido: {item.minStock}
+                  </p>
                     <p className="text-xs text-gray-400">
                       Última actualización: {moment(item.lastUpdate).format('DD/MM/YYYY HH:mm')}
                     </p>
