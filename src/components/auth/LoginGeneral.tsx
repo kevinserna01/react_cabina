@@ -19,6 +19,8 @@ const LoginGeneral: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+  const [welcomeName, setWelcomeName] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,22 +44,23 @@ const LoginGeneral: React.FC = () => {
       }
 
       if (data.status === "Success" && data.user) {
-        // Verificar el estado del usuario
         if (data.user.status === 'inactive') {
           throw new Error('Tu cuenta está inactiva. Por favor, contacta al administrador.');
         }
-
-        // Guardar datos del usuario
         localStorage.setItem('user', JSON.stringify(data.user));
         localStorage.setItem('userRole', data.user.role);
         localStorage.setItem('userStatus', data.user.status);
-
-        // Redirigir según el rol
-        if (data.user.role === 'admin') {
-          navigate('/admin');
-        } else {
-          navigate('/sales');
-        }
+        setWelcomeName(data.user.name);
+        setShowWelcomeModal(true);
+        setTimeout(() => {
+          setShowWelcomeModal(false);
+          if (data.user && data.user.role === 'admin') {
+            navigate('/admin');
+          } else {
+            navigate('/sales');
+          }
+        }, 1500);
+        return;
       } else {
         throw new Error('Respuesta inválida del servidor');
       }
@@ -137,6 +140,14 @@ const LoginGeneral: React.FC = () => {
           </div>
         </form>
       </div>
+      {showWelcomeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" aria-modal="true" role="dialog" tabIndex={0}>
+          <div className="bg-white rounded-lg shadow-lg p-8 max-w-sm w-full text-center focus:outline-none" role="alertdialog" aria-label="Bienvenida">
+            <h3 className="text-2xl font-bold text-gray-800 mb-2">¡Bienvenido{welcomeName ? `, ${welcomeName}` : ''}!</h3>
+            <p className="text-gray-600">Redirigiendo a tu panel...</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

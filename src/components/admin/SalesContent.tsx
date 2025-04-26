@@ -336,38 +336,6 @@ const SalesContent = () => {
     }
   };
 
-  // Función para exportar las ventas a Excel
-  const handleExportExcel = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const response = await fetch('https://back-papeleria-two.vercel.app/v1/papeleria/salesapi/export-excel', {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Error al exportar a Excel');
-      }
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'ventas.xlsx';
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    } catch (error) {
-      console.error('Error exporting to Excel:', error);
-      setError('Error al exportar a Excel');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -468,12 +436,6 @@ const SalesContent = () => {
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               Exportar PDF
-            </button>
-            <button
-              onClick={handleExportExcel}
-              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
-            >
-              Exportar Excel
             </button>
           </div>
         </div>

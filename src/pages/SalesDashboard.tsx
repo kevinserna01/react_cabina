@@ -5,6 +5,7 @@ import CartPanel from '../components/layout/CartPanel';
 import { useCartStore } from '../store/cartStore';
 import { Product } from '../types';
 import { useNavigate } from 'react-router-dom';
+import React from 'react';
 
 const SalesDashboard = () => {
   const { addItem } = useCartStore();
@@ -12,6 +13,8 @@ const SalesDashboard = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sessionSeconds, setSessionSeconds] = useState(0);
+  const [userName, setUserName] = useState<string>('');
 
   const updateProductStock = (productId: string, quantity: number) => {
     setProducts(prevProducts => 
@@ -65,6 +68,33 @@ const SalesDashboard = () => {
     fetchProducts();
   }, []);
 
+  // Obtener nombre del usuario al montar
+  React.useEffect(() => {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        setUserName(user.name || '');
+      } catch {
+        setUserName('');
+      }
+    }
+  }, []);
+
+  // Contador de sesión
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      setSessionSeconds((prev) => prev + 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const formatSessionTime = (seconds: number) => {
+    const mm = String(Math.floor(seconds / 60)).padStart(2, '0');
+    const ss = String(seconds % 60).padStart(2, '0');
+    return `${mm}:${ss}`;
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -87,20 +117,36 @@ const SalesDashboard = () => {
   };
 
   const handleAdminAccess = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
     navigate('/login');
   };
 
   return (
     <div className="h-screen flex flex-col bg-gray-100">
       <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-900">Panel de Ventas</h1>
-          <button
-            onClick={handleLogout}
-            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-          >
-            Cerrar Sesión
-          </button>
+        <div className="py-4 pl-0 pr-4 sm:pl-0 sm:pr-6 lg:pl-0 lg:pr-8 flex items-center justify-between">
+          {/* Logo, nombre papelería y usuario */}
+          <div className="flex items-center flex-1 min-w-0 gap-1">
+            <img src="/assets/logo.png" alt="Logo Papelería" className="h-16 w-16 object-contain" />
+            <div className="flex flex-col justify-center min-w-0">
+              <span className="text-2xl font-bold text-gray-900 truncate" aria-label="Nombre de la papelería">La Cabina Telecomunicaciones</span>
+              <span className="text-sm text-gray-600 truncate" aria-label="Nombre del usuario">{userName}</span>
+            </div>
+          </div>
+          {/* Contador de sesión y logout */}
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-gray-600" aria-label="Tiempo de sesión">{formatSessionTime(sessionSeconds)}</span>
+            <button
+              onClick={handleLogout}
+              className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+              aria-label="Cerrar sesión"
+              tabIndex={0}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleLogout(); }}
+            >
+              Cerrar Sesión
+            </button>
+          </div>
         </div>
       </header>
       

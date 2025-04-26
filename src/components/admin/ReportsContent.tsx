@@ -500,13 +500,13 @@ const ReportsContent = () => {
   const [selectedDate, setSelectedDate] = useState(moment().format('YYYY-MM-DD'));
   const [reportType, setReportType] = useState('ventas');
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<ApiResponse | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
   const [summary, setSummary] = useState<Summary | null>(null);
   const [dailySales, setDailySales] = useState<DailySales[]>([]);
   const [categorySales, setCategorySales] = useState<CategorySales[]>([]);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   moment.locale('es'); // Configurar moment en español
 
@@ -762,7 +762,6 @@ const ReportsContent = () => {
   const fetchReportData = async () => {
     try {
       setIsLoading(true);
-      setError(null);
       const { startDate, endDate } = getDateRange();
 
       // Log para depuración
@@ -802,69 +801,53 @@ const ReportsContent = () => {
       setData(responseData);
     } catch (error) {
       console.error('Error fetching report data:', error);
-      setError('Error al cargar los datos del reporte');
     } finally {
       setIsLoading(false);
     }
   };
 
   // Función para exportar reportes
-  const handleExport = async (format: 'pdf' | 'excel') => {
+  const handleExport = async () => {
     try {
       setIsLoading(true);
+      setExportError(null);
       const { startDate, endDate } = getDateRange();
       
-      if (format === 'pdf') {
-        // Generar el PDF directamente
-        const blob = await pdf(
-          <ReportPDF 
-            data={data?.data}
-            timeRange={timeRange}
-            startDate={startDate}
-            endDate={endDate}
-            summary={summary}
-            dailySales={dailySales}
-            categorySales={categorySales}
-          />
-        ).toBlob();
-
-        // Descargar el PDF
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `reporte-${moment().format('YYYY-MM-DD')}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-      } else {
-        // Exportar a Excel (mantener la lógica existente)
-        const response = await fetch(
-          `https://back-papeleria-two.vercel.app/v1/papeleria/reportsapi/export?startDate=${startDate}&endDate=${endDate}&type=${reportType}&format=${format}`,
-          {
-            headers: {
-              'Content-Type': 'application/json'
-            }
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error('Error al exportar el reporte');
+      // Validar si hay datos para exportar en el día seleccionado
+      if (timeRange === 'day') {
+        const ventas = data?.data?.ventas || [];
+        const filtered = filterSalesByDateRange(ventas);
+        if (!filtered.length) {
+          setExportError('No hay datos para exportar en el día seleccionado.');
+          setIsLoading(false);
+          return;
         }
-
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `reporte-${reportType}.${format}`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
       }
+      
+      // Generar el PDF directamente
+      const blob = await pdf(
+        <ReportPDF 
+          data={data?.data}
+          timeRange={timeRange}
+          startDate={startDate}
+          endDate={endDate}
+          summary={summary}
+          dailySales={dailySales}
+          categorySales={categorySales}
+        />
+      ).toBlob();
+
+      // Descargar el PDF
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `reporte-${moment().format('YYYY-MM-DD')}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      URL.revokeObjectURL(url);
+      document.body.removeChild(a);
     } catch (error) {
       console.error('Error exporting report:', error);
-      setError('Error al exportar el reporte');
     } finally {
       setIsLoading(false);
     }
@@ -904,19 +887,21 @@ const ReportsContent = () => {
     );
   }
 
-  if (error) {
-    return (
-      <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-        {error}
-      </div>
-    );
-  }
+  // Mostrar error de exportación si existe
+  const exportErrorBanner = exportError ? (
+    <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded mb-4">
+      {exportError}
+    </div>
+  ) : null;
 
   if (!data || !data.data) {
     return (
-      <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded">
-        No hay datos disponibles para mostrar.
-      </div>
+      <>
+        {exportErrorBanner}
+        <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded">
+          No hay datos disponibles para mostrar.
+        </div>
+      </>
     );
   }
 
@@ -925,6 +910,7 @@ const ReportsContent = () => {
 
   return (
     <div className="space-y-6">
+      {exportErrorBanner}
       {/* Controles de Reporte */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-4">
         <select
@@ -1390,18 +1376,11 @@ const ReportsContent = () => {
       {/* Botones de Exportación */}
       <div className="flex justify-end gap-4">
         <button
-          onClick={() => handleExport('pdf')}
+          onClick={handleExport}
           disabled={isLoading}
           className="px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:bg-gray-400 disabled:cursor-not-allowed"
         >
           {isLoading ? 'Exportando...' : 'Exportar PDF'}
-        </button>
-        <button
-          onClick={() => handleExport('excel')}
-          disabled={isLoading}
-          className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:bg-green-400 disabled:cursor-not-allowed"
-        >
-          {isLoading ? 'Exportando...' : 'Exportar Excel'}
         </button>
       </div>
     </div>

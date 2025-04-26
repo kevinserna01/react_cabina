@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { PlusIcon, PencilIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, PencilIcon, TrashIcon, EyeIcon, EyeSlashIcon, ClipboardIcon, CheckIcon } from '@heroicons/react/24/outline';
 
 interface User {
   id: string;
@@ -22,6 +22,13 @@ const UsersContent: React.FC = () => {
   });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [createdUserInfo, setCreatedUserInfo] = useState<{ email: string; password: string } | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [showDeleteSuccess, setShowDeleteSuccess] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -73,6 +80,34 @@ const UsersContent: React.FC = () => {
       status: user.status
     });
     setShowModal(true);
+  };
+
+  const handleDelete = (user: User) => {
+    setUserToDelete(user);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!userToDelete) return;
+    setError(null);
+    try {
+      const response = await fetch(`https://back-papeleria-two.vercel.app/v1/papeleria/deleteUserapi/${userToDelete.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al eliminar el usuario');
+      }
+      setShowDeleteModal(false);
+      setUserToDelete(null);
+      setShowDeleteSuccess(true);
+      fetchUsers();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al eliminar usuario');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -151,6 +186,8 @@ const UsersContent: React.FC = () => {
         if (result.status === "Success") {
           setShowModal(false);
           setSelectedUser(null);
+          setCreatedUserInfo({ email: formData.email, password: formData.password });
+          setShowSuccessModal(true);
           setFormData({
             name: '',
             email: '',
@@ -254,8 +291,18 @@ const UsersContent: React.FC = () => {
                     <button
                       onClick={() => handleEdit(user)}
                       className="text-blue-600 hover:text-blue-900"
+                      aria-label={`Editar usuario ${user.name}`}
                     >
                       <PencilIcon className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(user)}
+                      className="text-red-600 hover:text-red-900 ml-2"
+                      aria-label={`Eliminar usuario ${user.name}`}
+                      tabIndex={0}
+                      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') handleDelete(user); }}
+                    >
+                      <TrashIcon className="w-5 h-5" />
                     </button>
                   </td>
                 </tr>
@@ -280,26 +327,22 @@ const UsersContent: React.FC = () => {
               )}
               <form onSubmit={handleSubmit} className="mt-4">
                 <div className="mb-4">
-                  <label className="block text-gray-700 text-sm font-bold mb-2">
-                    Nombre
-                  </label>
+                  <label htmlFor="name" className="block text-gray-700 text-sm font-bold mb-2">Nombre</label>
                   <input
+                    id="name"
                     type="text"
                     name="name"
                     value={formData.name}
                     onChange={handleInputChange}
                     required
                     disabled={!!selectedUser}
-                    className={`shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline ${
-                      selectedUser ? 'bg-gray-100 cursor-not-allowed' : ''
-                    }`}
+                    className={`shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline ${selectedUser ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                   />
                 </div>
                 <div className="mb-4">
-                  <label className="block text-gray-700 text-sm font-bold mb-2">
-                    Email
-                  </label>
+                  <label htmlFor="email" className="block text-gray-700 text-sm font-bold mb-2">Email</label>
                   <input
+                    id="email"
                     type="email"
                     name="email"
                     value={formData.email}
@@ -309,17 +352,27 @@ const UsersContent: React.FC = () => {
                   />
                 </div>
                 <div className="mb-4">
-                  <label className="block text-gray-700 text-sm font-bold mb-2">
-                    Contraseña
-                  </label>
-                  <input
-                    type="password"
-                    name="password"
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    required={!selectedUser}
-                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                  />
+                  <label htmlFor="password" className="block text-gray-700 text-sm font-bold mb-2">Contraseña</label>
+                  <div className="relative">
+                    <input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      name="password"
+                      value={formData.password}
+                      onChange={handleInputChange}
+                      required={!selectedUser}
+                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline pr-10"
+                    />
+                    <button
+                      type="button"
+                      tabIndex={0}
+                      aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      className="absolute inset-y-0 right-2 flex items-center text-gray-500 focus:outline-none"
+                    >
+                      {showPassword ? <EyeSlashIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
+                    </button>
+                  </div>
                 </div>
                 <div className="mb-4">
                   <label className="block text-gray-700 text-sm font-bold mb-2">
@@ -367,6 +420,81 @@ const UsersContent: React.FC = () => {
                 </div>
               </form>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de confirmación de borrado */}
+      {showDeleteModal && userToDelete && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center" aria-modal="true" role="dialog" tabIndex={0}>
+          <div className="bg-white rounded-lg shadow-lg p-6 max-w-sm w-full text-center">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">¿Eliminar trabajador?</h3>
+            <p className="text-gray-700 mb-6">¿Estás seguro de que deseas eliminar al trabajador <span className="font-semibold">{userToDelete.name}</span>? Esta acción no se puede deshacer.</p>
+            <div className="flex justify-end gap-2">
+              <button
+                className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
+                onClick={() => { setShowDeleteModal(false); setUserToDelete(null); }}
+              >
+                Cancelar
+              </button>
+              <button
+                className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+                onClick={confirmDelete}
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de éxito al crear usuario */}
+      {showSuccessModal && createdUserInfo && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center" aria-modal="true" role="dialog" tabIndex={0}>
+          <div className="bg-white rounded-lg shadow-lg p-6 max-w-sm w-full text-center">
+            <h3 className="text-lg font-bold text-green-700 mb-4 flex items-center justify-center gap-2">
+              <CheckIcon className="w-6 h-6 text-green-600" /> Usuario creado exitosamente
+            </h3>
+            <div className="mb-2">
+              <span className="block text-gray-700 font-semibold">Email:</span>
+              <span className="block text-gray-900 mb-2">{createdUserInfo.email}</span>
+              <span className="block text-gray-700 font-semibold">Contraseña:</span>
+              <span className="block text-gray-900 mb-2">{createdUserInfo.password}</span>
+            </div>
+            <button
+              className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mx-auto mb-4"
+              onClick={() => {
+                navigator.clipboard.writeText(`Email: ${createdUserInfo.email}\nContraseña: ${createdUserInfo.password}`);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 1500);
+              }}
+            >
+              <ClipboardIcon className="w-5 h-5" />
+              {copied ? '¡Copiado!' : 'Copiar datos'}
+            </button>
+            <button
+              className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
+              onClick={() => { setShowSuccessModal(false); setCreatedUserInfo(null); }}
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de éxito al eliminar usuario */}
+      {showDeleteSuccess && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center" aria-modal="true" role="dialog" tabIndex={0}>
+          <div className="bg-white rounded-lg shadow-lg p-6 max-w-sm w-full text-center">
+            <h3 className="text-lg font-bold text-green-700 mb-4 flex items-center justify-center gap-2">
+              <CheckIcon className="w-6 h-6 text-green-600" /> Usuario eliminado exitosamente
+            </h3>
+            <button
+              className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
+              onClick={() => setShowDeleteSuccess(false)}
+            >
+              Cerrar
+            </button>
           </div>
         </div>
       )}
