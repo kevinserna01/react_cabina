@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import moment from 'moment-timezone';
 import { Eye } from 'lucide-react';
 import SalesPDF from './SalesPDF';
+import { Document, Page, Text, View, StyleSheet, pdf, Image, Svg, Path } from '@react-pdf/renderer';
 
 export interface Product {
   code: string;
@@ -27,6 +28,223 @@ export interface Sale {
   createdAt: string;
   fechaColombia: string;
 }
+
+// Agregar los íconos SVG
+const PhoneIcon = () => (
+  <Svg style={{ width: 12, height: 12, marginRight: 6 }} viewBox="0 0 24 24">
+    <Path fill="#0d8afe" d="M20 15.5c-1.2 0-2.4-.2-3.6-.6-.3-.1-.7 0-1 .2l-2.2 2.2c-2.8-1.4-5.1-3.8-6.6-6.6l2.2-2.2c.3-.3.4-.7.2-1-.3-1.1-.5-2.3-.5-3.5 0-.6-.4-1-1-1H4c-.6 0-1 .4-1 1 0 9.4 7.6 17 17 17 .6 0 1-.4 1-1v-3.5c0-.6-.4-1-1-1z"/>
+  </Svg>
+);
+
+const LocationIcon = () => (
+  <Svg style={{ width: 12, height: 12, marginRight: 6 }} viewBox="0 0 24 24">
+    <Path fill="#0d8afe" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+  </Svg>
+);
+
+// Estilos para el PDF de exportación
+const pdfStyles = StyleSheet.create({
+  page: {
+    flexDirection: 'column',
+    backgroundColor: '#ffffff',
+    padding: 30,
+    fontFamily: 'Helvetica',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 40,
+    borderBottom: 1,
+    borderBottomColor: '#0d8afe',
+    paddingBottom: 20,
+  },
+  headerLeft: {
+    flexDirection: 'column',
+    width: '40%',
+  },
+  headerRight: {
+    flexDirection: 'column',
+    width: '40%',
+    alignItems: 'flex-end',
+  },
+  title: {
+    fontSize: 24,
+    color: '#0d8afe',
+    marginBottom: 10,
+    fontWeight: 'bold',
+  },
+  dateText: {
+    fontSize: 10,
+    color: '#4B5563',
+    marginBottom: 4,
+  },
+  summarySection: {
+    marginBottom: 30,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 15,
+  },
+  summaryCard: {
+    width: '48%',
+    padding: 15,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    marginBottom: 15,
+  },
+  summaryLabel: {
+    fontSize: 10,
+    color: '#6B7280',
+    marginBottom: 4,
+  },
+  summaryValue: {
+    fontSize: 16,
+    color: '#111827',
+    fontWeight: 'bold',
+  },
+  table: {
+    marginTop: 20,
+  },
+  tableHeader: {
+    flexDirection: 'row',
+    backgroundColor: '#0d8afe',
+    padding: 8,
+  },
+  tableRow: {
+    flexDirection: 'row',
+    borderBottomColor: '#E5E7EB',
+    borderBottomWidth: 1,
+    padding: 8,
+  },
+  tableCell: {
+    flex: 1,
+    fontSize: 9,
+    color: '#111827',
+  },
+  headerCell: {
+    flex: 1,
+    fontSize: 9,
+    color: '#ffffff',
+    fontWeight: 'bold',
+  },
+  footer: {
+    position: 'absolute',
+    bottom: 30,
+    left: 30,
+    right: 30,
+    textAlign: 'center',
+    color: '#4B5563',
+    fontSize: 10,
+    borderTop: 1,
+    borderTopColor: '#E5E7EB',
+    paddingTop: 20,
+  },
+  logo: {
+    width: 120,
+    height: 120,
+    marginBottom: 10,
+  },
+  companyInfo: {
+    fontSize: 10,
+    color: '#4B5563',
+    marginBottom: 4,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+});
+
+// Componente para el PDF de exportación
+const SalesReportPDF = ({ sales, totalSales, totalItems, startDate, endDate }: { sales: Sale[], totalSales: number, totalItems: number, startDate: string, endDate: string }) => (
+  <Document>
+    <Page size="A4" style={pdfStyles.page}>
+      <View style={pdfStyles.header}>
+        <View style={pdfStyles.headerLeft}>
+          <Image
+            src="/assets/logo.png"
+            style={pdfStyles.logo}
+          />
+          <Text style={pdfStyles.companyInfo}>NIT: 38670789-4</Text>
+          <View style={pdfStyles.infoRow}>
+            <PhoneIcon />
+            <Text style={pdfStyles.companyInfo}>+57 310 4183311</Text>
+          </View>
+          <View style={pdfStyles.infoRow}>
+            <LocationIcon />
+            <Text style={pdfStyles.companyInfo}>Calle 17 N 14-25 Barrio La Pradera Jamundi</Text>
+          </View>
+          <Text style={pdfStyles.companyInfo}>Jamundi, Colombia</Text>
+        </View>
+        <View style={pdfStyles.headerRight}>
+          <Text style={pdfStyles.title}>VENTAS</Text>
+          <Text style={pdfStyles.dateText}>
+            Generado el: {moment().format('DD/MM/YYYY HH:mm')}
+          </Text>
+          {startDate && endDate && (
+            <Text style={pdfStyles.dateText}>
+              Período: {moment(startDate).format('DD/MM/YYYY')} - {moment(endDate).format('DD/MM/YYYY')}
+            </Text>
+          )}
+        </View>
+      </View>
+
+      <View style={pdfStyles.summarySection}>
+        <View style={pdfStyles.summaryCard}>
+          <Text style={pdfStyles.summaryLabel}>Total de Ventas</Text>
+          <Text style={pdfStyles.summaryValue}>
+            ${totalSales.toLocaleString('es-CO', { minimumFractionDigits: 0 })}
+          </Text>
+        </View>
+        <View style={pdfStyles.summaryCard}>
+          <Text style={pdfStyles.summaryLabel}>Número de Transacciones</Text>
+          <Text style={pdfStyles.summaryValue}>{sales.length}</Text>
+        </View>
+        <View style={pdfStyles.summaryCard}>
+          <Text style={pdfStyles.summaryLabel}>Total de Items Vendidos</Text>
+          <Text style={pdfStyles.summaryValue}>{totalItems}</Text>
+        </View>
+      </View>
+
+      <View style={pdfStyles.table}>
+        <View style={pdfStyles.tableHeader}>
+          <Text style={pdfStyles.headerCell}>Código</Text>
+          <Text style={pdfStyles.headerCell}>Fecha</Text>
+          <Text style={pdfStyles.headerCell}>Cliente</Text>
+          <Text style={pdfStyles.headerCell}>Items</Text>
+          <Text style={pdfStyles.headerCell}>Total</Text>
+          <Text style={pdfStyles.headerCell}>Método de Pago</Text>
+        </View>
+        {sales.map((sale, index) => (
+          <View key={index} style={pdfStyles.tableRow}>
+            <Text style={pdfStyles.tableCell}>{sale.code}</Text>
+            <Text style={pdfStyles.tableCell}>{sale.fechaColombia}</Text>
+            <Text style={pdfStyles.tableCell}>
+              {sale.cliente ? `${sale.cliente.nombre}` : 'Sin cliente'}
+            </Text>
+            <Text style={pdfStyles.tableCell}>
+              {sale.productos.reduce((sum, item) => sum + item.cantidad, 0)}
+            </Text>
+            <Text style={pdfStyles.tableCell}>
+              ${sale.totalVenta.toLocaleString('es-CO', { minimumFractionDigits: 0 })}
+            </Text>
+            <Text style={pdfStyles.tableCell}>{sale.metodoPago}</Text>
+          </View>
+        ))}
+      </View>
+
+      <View style={pdfStyles.footer}>
+        <Text>© {new Date().getFullYear()} Papelería - Todos los derechos reservados</Text>
+        <View style={[pdfStyles.infoRow, { justifyContent: 'center', marginTop: 8 }]}>
+          <PhoneIcon />
+          <Text>Para cualquier consulta, contáctenos al (+57) 310 4183311</Text>
+        </View>
+      </View>
+    </Page>
+  </Document>
+);
 
 const SalesContent = () => {
   const [startDate, setStartDate] = useState('');
@@ -86,29 +304,29 @@ const SalesContent = () => {
     setIsPDFModalOpen(true);
   };
 
-  // Función para exportar las ventas a PDF
+  // Actualizar la función handleExportPDF
   const handleExportPDF = async () => {
     try {
       setIsLoading(true);
       setError(null);
-      const response = await fetch('https://back-papeleria-two.vercel.app/v1/papeleria/salesapi/export-pdf', {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
 
-      if (!response.ok) {
-        throw new Error('Error al exportar a PDF');
-      }
+      const blob = await pdf(
+        <SalesReportPDF 
+          sales={filteredSales} 
+          totalSales={totalSales} 
+          totalItems={totalItems}
+          startDate={startDate}
+          endDate={endDate}
+        />
+      ).toBlob();
 
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
+      const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'ventas.pdf';
+      a.download = `reporte-ventas-${moment().format('YYYY-MM-DD')}.pdf`;
       document.body.appendChild(a);
       a.click();
-      window.URL.revokeObjectURL(url);
+      URL.revokeObjectURL(url);
       document.body.removeChild(a);
     } catch (error) {
       console.error('Error exporting to PDF:', error);

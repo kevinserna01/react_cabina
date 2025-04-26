@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import moment from 'moment';
 import 'moment/locale/es';  // Importar localización en español
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+import { Document, Page, Text, View, StyleSheet, Image, Svg, Path } from '@react-pdf/renderer';
+import { pdf } from '@react-pdf/renderer';
 
 interface Sale {
   Código: string;
@@ -76,6 +78,422 @@ interface CategorySales {
   total: number;
   porcentaje: number;
 }
+
+// Estilos para el PDF del reporte
+const pdfStyles = StyleSheet.create({
+  page: {
+    flexDirection: 'column',
+    backgroundColor: '#ffffff',
+    padding: 30,
+    fontFamily: 'Helvetica',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 40,
+    borderBottom: 1,
+    borderBottomColor: '#0d8afe',
+    paddingBottom: 20,
+  },
+  headerLeft: {
+    flexDirection: 'column',
+    width: '40%',
+  },
+  headerRight: {
+    flexDirection: 'column',
+    width: '40%',
+    alignItems: 'flex-end',
+  },
+  logo: {
+    width: 120,
+    height: 120,
+    marginBottom: 10,
+  },
+  companyInfo: {
+    fontSize: 10,
+    color: '#4B5563',
+    marginBottom: 4,
+  },
+  title: {
+    fontSize: 40,
+    color: '#0d8afe',
+    marginBottom: 10,
+    fontWeight: 'bold',
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#4B5563',
+    marginBottom: 20,
+  },
+  table: {
+    flexDirection: 'column',
+    marginBottom: 30,
+  },
+  tableHeader: {
+    flexDirection: 'row',
+    backgroundColor: '#0d8afe',
+    padding: 8,
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  tableRow: {
+    flexDirection: 'row',
+    borderBottomColor: '#E5E7EB',
+    borderBottomWidth: 1,
+    padding: 8,
+    fontSize: 11,
+  },
+  tableCell: {
+    flex: 1,
+  },
+  tableCellNarrow: {
+    width: '15%',
+  },
+  tableCellWide: {
+    width: '25%',
+  },
+  footer: {
+    position: 'absolute',
+    bottom: 30,
+    left: 30,
+    right: 30,
+    textAlign: 'center',
+    color: '#4B5563',
+    fontSize: 10,
+    borderTop: 1,
+    borderTopColor: '#E5E7EB',
+    paddingTop: 20,
+  },
+  summarySection: {
+    marginBottom: 30,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 15,
+    justifyContent: 'space-between',
+  },
+  summaryCard: {
+    width: '48%',
+    padding: 15,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    marginBottom: 15,
+  },
+  summaryIcon: {
+    width: 24,
+    height: 24,
+    marginBottom: 10,
+  },
+  summaryLabel: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginBottom: 8,
+  },
+  summaryValue: {
+    fontSize: 20,
+    color: '#111827',
+    fontWeight: 'bold',
+  },
+  summaryValueSmall: {
+    fontSize: 16,
+    color: '#111827',
+    fontWeight: 'bold',
+  },
+  icon: {
+    width: 12,
+    height: 12,
+    marginRight: 6,
+  },
+  iconContainer: {
+    marginRight: 5,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  infoText: {
+    fontSize: 10,
+    color: '#4B5563',
+  },
+  chartSection: {
+    marginBottom: 30,
+    padding: 20,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  chartTitle: {
+    fontSize: 16,
+    color: '#111827',
+    fontWeight: 'bold',
+    marginBottom: 15,
+  },
+  chartRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    padding: 8,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 4,
+  },
+  chartLabel: {
+    flex: 1,
+    fontSize: 10,
+    color: '#4B5563',
+  },
+  chartValue: {
+    fontSize: 10,
+    color: '#111827',
+    fontWeight: 'bold',
+  },
+  chartBar: {
+    height: 8,
+    backgroundColor: '#3B82F6',
+    borderRadius: 4,
+    marginTop: 4,
+  },
+  categoryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  categoryColor: {
+    width: 12,
+    height: 12,
+    marginRight: 8,
+    borderRadius: 2,
+  },
+  categoryLabel: {
+    flex: 1,
+    fontSize: 10,
+    color: '#4B5563',
+  },
+  categoryValue: {
+    fontSize: 10,
+    color: '#111827',
+    fontWeight: 'bold',
+  },
+});
+
+// SVG Icons como componentes (reutilizados de SalesPDF)
+const CalendarIcon = () => (
+  <Svg style={pdfStyles.icon} viewBox="0 0 24 24">
+    <Path fill="#0d8afe" d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
+  </Svg>
+);
+
+const PhoneIcon = () => (
+  <Svg style={pdfStyles.icon} viewBox="0 0 24 24">
+    <Path fill="#0d8afe" d="M20 15.5c-1.2 0-2.4-.2-3.6-.6-.3-.1-.7 0-1 .2l-2.2 2.2c-2.8-1.4-5.1-3.8-6.6-6.6l2.2-2.2c.3-.3.4-.7.2-1-.3-1.1-.5-2.3-.5-3.5 0-.6-.4-1-1-1H4c-.6 0-1 .4-1 1 0 9.4 7.6 17 17 17 .6 0 1-.4 1-1v-3.5c0-.6-.4-1-1-1z"/>
+  </Svg>
+);
+
+const LocationIcon = () => (
+  <Svg style={pdfStyles.icon} viewBox="0 0 24 24">
+    <Path fill="#0d8afe" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+  </Svg>
+);
+
+// Actualizar los íconos para usar el estilo correcto
+const MoneyIcon = () => (
+  <Svg style={{ width: 24, height: 24, marginBottom: 10 }} viewBox="0 0 24 24">
+    <Path fill="#0d8afe" d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/>
+  </Svg>
+);
+
+const AverageIcon = () => (
+  <Svg style={{ width: 24, height: 24, marginBottom: 10 }} viewBox="0 0 24 24">
+    <Path fill="#10B981" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H6v-2h6v2zm4-4H6v-2h10v2zm0-4H6V7h10v2z"/>
+  </Svg>
+);
+
+const TransactionIcon = () => (
+  <Svg style={{ width: 24, height: 24, marginBottom: 10 }} viewBox="0 0 24 24">
+    <Path fill="#6366F1" d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
+  </Svg>
+);
+
+const PaymentIcon = () => (
+  <Svg style={{ width: 24, height: 24, marginBottom: 10 }} viewBox="0 0 24 24">
+    <Path fill="#F59E0B" d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/>
+  </Svg>
+);
+
+// Componente ReportPDF
+const ReportPDF = ({ data, timeRange, startDate, endDate, summary, dailySales, categorySales }: any) => (
+  <Document>
+    <Page size="A4" style={pdfStyles.page}>
+      {/* Header */}
+      <View style={pdfStyles.header}>
+        <View style={pdfStyles.headerLeft}>
+          <Image
+            src="/assets/logo.png"
+            style={pdfStyles.logo}
+          />
+          <Text style={pdfStyles.companyInfo}>NIT: 38670789-4</Text>
+          <View style={pdfStyles.infoRow}>
+            <View style={pdfStyles.iconContainer}>
+              <PhoneIcon />
+            </View>
+            <Text style={pdfStyles.infoText}>+57 310 4183311</Text>
+          </View>
+          <View style={pdfStyles.infoRow}>
+            <View style={pdfStyles.iconContainer}>
+              <LocationIcon />
+            </View>
+            <Text style={pdfStyles.infoText}>Calle 17 N 14-25 Barrio La Pradera Jamundi</Text>
+          </View>
+        </View>
+        <View style={pdfStyles.headerRight}>
+          <Text style={pdfStyles.title}>REPORTE</Text>
+          <View style={pdfStyles.infoRow}>
+            <View style={pdfStyles.iconContainer}>
+              <CalendarIcon />
+            </View>
+            <Text style={pdfStyles.infoText}>
+              {timeRange === 'day' 
+                ? `Fecha: ${moment(startDate).format('DD/MM/YYYY')}`
+                : `Período: ${moment(startDate).format('DD/MM/YYYY')} - ${moment(endDate).format('DD/MM/YYYY')}`}
+            </Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Updated Summary Section */}
+      {summary && (
+        <View style={pdfStyles.summarySection}>
+          <View style={pdfStyles.summaryCard}>
+            <MoneyIcon />
+            <Text style={pdfStyles.summaryLabel}>Total Ventas</Text>
+            <Text style={pdfStyles.summaryValue}>
+              {formatCurrency(summary.totalVentas)}
+            </Text>
+          </View>
+          
+          <View style={pdfStyles.summaryCard}>
+            <AverageIcon />
+            <Text style={pdfStyles.summaryLabel}>Promedio por Venta</Text>
+            <Text style={pdfStyles.summaryValue}>
+              {formatCurrency(summary.promedioVenta)}
+            </Text>
+          </View>
+          
+          <View style={pdfStyles.summaryCard}>
+            <TransactionIcon />
+            <Text style={pdfStyles.summaryLabel}>Total Transacciones</Text>
+            <Text style={pdfStyles.summaryValue}>
+              {summary.totalTransacciones}
+            </Text>
+          </View>
+          
+          <View style={pdfStyles.summaryCard}>
+            <PaymentIcon />
+            <Text style={pdfStyles.summaryLabel}>Método de Pago Popular</Text>
+            <Text style={pdfStyles.summaryValueSmall}>
+              {summary.metodoPagoPopular}
+            </Text>
+          </View>
+        </View>
+      )}
+
+      {/* Gráfico de Ventas */}
+      <View style={pdfStyles.chartSection}>
+        <Text style={pdfStyles.chartTitle}>
+          {timeRange === 'day' ? 'Ventas del Día' : 'Ventas por Período'}
+        </Text>
+        {dailySales.map((sale: any, index: number) => {
+          const maxValue = Math.max(...dailySales.map((s: any) => s.total));
+          const percentage = (sale.total / maxValue) * 100;
+          
+          return (
+            <View key={index}>
+              <View style={pdfStyles.chartRow}>
+                <Text style={pdfStyles.chartLabel}>{sale.fecha}</Text>
+                <Text style={pdfStyles.chartValue}>
+                  {formatCurrency(sale.total)}
+                </Text>
+              </View>
+              <View style={{ width: '100%', height: 8, backgroundColor: '#F3F4F6', borderRadius: 4 }}>
+                <View style={[pdfStyles.chartBar, { width: `${percentage}%` }]} />
+              </View>
+            </View>
+          );
+        })}
+      </View>
+
+      {/* Gráfico de Categorías */}
+      {categorySales && categorySales.length > 0 && (
+        <View style={pdfStyles.chartSection}>
+          <Text style={pdfStyles.chartTitle}>Ventas por Categoría</Text>
+          {categorySales.map((category: any, index: number) => (
+            <View key={index} style={pdfStyles.categoryRow}>
+              <View
+                style={[
+                  pdfStyles.categoryColor,
+                  { backgroundColor: COLORS[index % COLORS.length] }
+                ]}
+              />
+              <Text style={pdfStyles.categoryLabel}>
+                {category.categoria}
+              </Text>
+              <Text style={pdfStyles.categoryValue}>
+                {formatCurrency(category.total)} ({category.porcentaje.toFixed(1)}%)
+              </Text>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {/* Tabla de Ventas */}
+      <View style={pdfStyles.table}>
+        <View style={pdfStyles.tableHeader}>
+          <Text style={[pdfStyles.tableCell, pdfStyles.tableCellNarrow]}>CÓDIGO</Text>
+          <Text style={[pdfStyles.tableCell, pdfStyles.tableCellWide]}>CLIENTE</Text>
+          <Text style={[pdfStyles.tableCell, pdfStyles.tableCellNarrow]}>TOTAL</Text>
+          <Text style={[pdfStyles.tableCell, pdfStyles.tableCellNarrow]}>MÉTODO</Text>
+          <Text style={[pdfStyles.tableCell, pdfStyles.tableCellWide]}>FECHA</Text>
+        </View>
+        {data.ventas.map((venta: Sale, index: number) => (
+          <View key={index} style={pdfStyles.tableRow}>
+            <Text style={[pdfStyles.tableCell, pdfStyles.tableCellNarrow]}>{venta.Código}</Text>
+            <Text style={[pdfStyles.tableCell, pdfStyles.tableCellWide]}>{venta.Cliente}</Text>
+            <Text style={[pdfStyles.tableCell, pdfStyles.tableCellNarrow]}>
+              {formatCurrency(venta.Total)}
+            </Text>
+            <Text style={[pdfStyles.tableCell, pdfStyles.tableCellNarrow]}>{venta.Método}</Text>
+            <Text style={[pdfStyles.tableCell, pdfStyles.tableCellWide]}>
+              {moment(venta.Fecha).format('DD/MM/YYYY HH:mm')}
+            </Text>
+          </View>
+        ))}
+      </View>
+
+      {/* Footer */}
+      <View style={pdfStyles.footer}>
+        <Text>Reporte generado el {moment().format('DD/MM/YYYY HH:mm')}</Text>
+        <View style={[pdfStyles.infoRow, { justifyContent: 'center', marginTop: 8 }]}>
+          <View style={pdfStyles.iconContainer}>
+            <PhoneIcon />
+          </View>
+          <Text>Para cualquier consulta, contáctenos al (+57) 310 4183311</Text>
+        </View>
+      </View>
+    </Page>
+  </Document>
+);
+
+// Función para formatear moneda
+const formatCurrency = (value: number) => {
+  return new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
+    minimumFractionDigits: 0
+  }).format(value);
+};
 
 const ReportsContent = () => {
   const [timeRange, setTimeRange] = useState('day');
@@ -396,29 +814,54 @@ const ReportsContent = () => {
       setIsLoading(true);
       const { startDate, endDate } = getDateRange();
       
-      const response = await fetch(
-        `https://back-papeleria-two.vercel.app/v1/papeleria/reportsapi?startDate=${startDate}&endDate=${endDate}&type=${reportType}&format=${format}`,
-        {
-          headers: {
-            'Content-Type': 'application/json'
+      if (format === 'pdf') {
+        // Generar el PDF directamente
+        const blob = await pdf(
+          <ReportPDF 
+            data={data?.data}
+            timeRange={timeRange}
+            startDate={startDate}
+            endDate={endDate}
+            summary={summary}
+            dailySales={dailySales}
+            categorySales={categorySales}
+          />
+        ).toBlob();
+
+        // Descargar el PDF
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `reporte-${moment().format('YYYY-MM-DD')}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else {
+        // Exportar a Excel (mantener la lógica existente)
+        const response = await fetch(
+          `https://back-papeleria-two.vercel.app/v1/papeleria/reportsapi/export?startDate=${startDate}&endDate=${endDate}&type=${reportType}&format=${format}`,
+          {
+            headers: {
+              'Content-Type': 'application/json'
+            }
           }
+        );
+
+        if (!response.ok) {
+          throw new Error('Error al exportar el reporte');
         }
-      );
 
-      if (!response.ok) {
-        throw new Error('Error al exportar el reporte');
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `reporte-${reportType}.${format}`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
       }
-
-      // Crear blob y descargar archivo
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `reporte-${reportType}.${format}`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
     } catch (error) {
       console.error('Error exporting report:', error);
       setError('Error al exportar el reporte');
