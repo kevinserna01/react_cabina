@@ -243,7 +243,7 @@ const UsersContent: React.FC = () => {
           </p>
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="overflow-x-auto w-full">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
@@ -314,8 +314,8 @@ const UsersContent: React.FC = () => {
 
       {/* Modal para crear/editar usuario */}
       {showModal && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-2 sm:p-0">
+          <div className="relative mx-2 sm:mx-auto w-full max-w-md p-2 sm:p-5 border shadow-lg rounded-md bg-white">
             <div className="mt-3">
               <h3 className="text-lg leading-6 font-medium text-gray-900">
                 {selectedUser ? 'Editar Usuario' : 'Nuevo Usuario'}
@@ -325,8 +325,8 @@ const UsersContent: React.FC = () => {
                   {error}
                 </div>
               )}
-              <form onSubmit={handleSubmit} className="mt-4">
-                <div className="mb-4">
+              <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+                <div>
                   <label htmlFor="name" className="block text-gray-700 text-sm font-bold mb-2">Nombre</label>
                   <input
                     id="name"
@@ -339,7 +339,7 @@ const UsersContent: React.FC = () => {
                     className={`shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline ${selectedUser ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                   />
                 </div>
-                <div className="mb-4">
+                <div>
                   <label htmlFor="email" className="block text-gray-700 text-sm font-bold mb-2">Email</label>
                   <input
                     id="email"
@@ -351,7 +351,7 @@ const UsersContent: React.FC = () => {
                     className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                   />
                 </div>
-                <div className="mb-4">
+                <div>
                   <label htmlFor="password" className="block text-gray-700 text-sm font-bold mb-2">Contraseña</label>
                   <div className="relative">
                     <input
@@ -374,10 +374,8 @@ const UsersContent: React.FC = () => {
                     </button>
                   </div>
                 </div>
-                <div className="mb-4">
-                  <label className="block text-gray-700 text-sm font-bold mb-2">
-                    Rol
-                  </label>
+                <div>
+                  <label className="block text-gray-700 text-sm font-bold mb-2">Rol</label>
                   <select
                     name="role"
                     value="worker"
@@ -388,10 +386,8 @@ const UsersContent: React.FC = () => {
                   </select>
                 </div>
                 {selectedUser && (
-                  <div className="mb-4">
-                    <label className="block text-gray-700 text-sm font-bold mb-2">
-                      Estado
-                    </label>
+                  <div>
+                    <label className="block text-gray-700 text-sm font-bold mb-2">Estado</label>
                     <select
                       name="status"
                       value={formData.status}
@@ -403,17 +399,17 @@ const UsersContent: React.FC = () => {
                     </select>
                   </div>
                 )}
-                <div className="flex items-center justify-end mt-6">
+                <div className="flex items-center justify-end mt-6 gap-2">
                   <button
                     type="button"
-                    className="bg-gray-300 text-gray-700 px-4 py-2 rounded mr-2 hover:bg-gray-400"
+                    className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400 w-full sm:w-auto"
                     onClick={() => setShowModal(false)}
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
-                    className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                    className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 w-full sm:w-auto"
                   >
                     {selectedUser ? 'Actualizar' : 'Crear Usuario'}
                   </button>
@@ -426,19 +422,19 @@ const UsersContent: React.FC = () => {
 
       {/* Modal de confirmación de borrado */}
       {showDeleteModal && userToDelete && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center" aria-modal="true" role="dialog" tabIndex={0}>
-          <div className="bg-white rounded-lg shadow-lg p-6 max-w-sm w-full text-center">
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-2 sm:p-0" aria-modal="true" role="dialog" tabIndex={0}>
+          <div className="bg-white rounded-lg shadow-lg p-2 sm:p-6 max-w-sm w-full text-center mx-2 sm:mx-auto">
             <h3 className="text-lg font-bold text-gray-900 mb-4">¿Eliminar trabajador?</h3>
             <p className="text-gray-700 mb-6">¿Estás seguro de que deseas eliminar al trabajador <span className="font-semibold">{userToDelete.name}</span>? Esta acción no se puede deshacer.</p>
-            <div className="flex justify-end gap-2">
+            <div className="flex flex-col sm:flex-row justify-end gap-2">
               <button
-                className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
+                className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400 w-full sm:w-auto"
                 onClick={() => { setShowDeleteModal(false); setUserToDelete(null); }}
               >
                 Cancelar
               </button>
               <button
-                className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+                className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 w-full sm:w-auto"
                 onClick={confirmDelete}
               >
                 Eliminar
@@ -450,8 +446,8 @@ const UsersContent: React.FC = () => {
 
       {/* Modal de éxito al crear usuario */}
       {showSuccessModal && createdUserInfo && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center" aria-modal="true" role="dialog" tabIndex={0}>
-          <div className="bg-white rounded-lg shadow-lg p-6 max-w-sm w-full text-center">
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-2 sm:p-0" aria-modal="true" role="dialog" tabIndex={0}>
+          <div className="bg-white rounded-lg shadow-lg p-2 sm:p-6 max-w-sm w-full text-center mx-2 sm:mx-auto">
             <h3 className="text-lg font-bold text-green-700 mb-4 flex items-center justify-center gap-2">
               <CheckIcon className="w-6 h-6 text-green-600" /> Usuario creado exitosamente
             </h3>
@@ -462,7 +458,7 @@ const UsersContent: React.FC = () => {
               <span className="block text-gray-900 mb-2">{createdUserInfo.password}</span>
             </div>
             <button
-              className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mx-auto mb-4"
+              className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mx-auto mb-4 w-full sm:w-auto"
               onClick={() => {
                 navigator.clipboard.writeText(`Email: ${createdUserInfo.email}\nContraseña: ${createdUserInfo.password}`);
                 setCopied(true);
@@ -473,7 +469,7 @@ const UsersContent: React.FC = () => {
               {copied ? '¡Copiado!' : 'Copiar datos'}
             </button>
             <button
-              className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
+              className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400 w-full sm:w-auto"
               onClick={() => { setShowSuccessModal(false); setCreatedUserInfo(null); }}
             >
               Cerrar
@@ -484,13 +480,13 @@ const UsersContent: React.FC = () => {
 
       {/* Modal de éxito al eliminar usuario */}
       {showDeleteSuccess && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center" aria-modal="true" role="dialog" tabIndex={0}>
-          <div className="bg-white rounded-lg shadow-lg p-6 max-w-sm w-full text-center">
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-2 sm:p-0" aria-modal="true" role="dialog" tabIndex={0}>
+          <div className="bg-white rounded-lg shadow-lg p-2 sm:p-6 max-w-sm w-full text-center mx-2 sm:mx-auto">
             <h3 className="text-lg font-bold text-green-700 mb-4 flex items-center justify-center gap-2">
               <CheckIcon className="w-6 h-6 text-green-600" /> Usuario eliminado exitosamente
             </h3>
             <button
-              className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
+              className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400 w-full sm:w-auto"
               onClick={() => setShowDeleteSuccess(false)}
             >
               Cerrar
