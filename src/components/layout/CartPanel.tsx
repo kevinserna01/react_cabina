@@ -342,60 +342,61 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
 
       {/* Modal de Resumen y Confirmación */}
       {isCheckoutModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl p-6">
-            <div className="flex justify-between items-start mb-6">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl p-2 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 sm:mb-6 gap-2 sm:gap-0">
               <div>
-                <h2 className="text-2xl font-semibold text-gray-900">Resumen de Compra</h2>
-                <div className="mt-2 flex items-center text-gray-600">
+                <h2 className="text-xl sm:text-2xl font-semibold text-gray-900">Resumen de Compra</h2>
+                <div className="mt-1 sm:mt-2 flex items-center text-gray-600">
                   <Receipt className="h-4 w-4 mr-2" />
-                  <span className="text-sm font-medium">
+                  <span className="text-xs sm:text-sm font-medium">
                     {isGeneratingCode ? 'Generando código...' : `Código de venta: ${saleCode}`}
                   </span>
                 </div>
               </div>
               <button
                 onClick={() => setIsCheckoutModalOpen(false)}
-                className="text-gray-400 hover:text-gray-500"
+                className="text-gray-400 hover:text-gray-500 self-end"
+                aria-label="Cerrar resumen de compra"
               >
                 <X className="h-6 w-6" />
               </button>
             </div>
 
-            <div className="mt-6 grid grid-cols-5 gap-6">
-              {/* Lista de productos (3 columnas) */}
-              <div className="col-span-3 bg-gray-50 rounded-lg p-4">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Productos</h3>
-                <div className="space-y-3">
+            <div className="mt-4 sm:mt-6 grid grid-cols-1 lg:grid-cols-5 gap-4 sm:gap-6">
+              {/* Lista de productos (3 columnas en desktop) */}
+              <div className="lg:col-span-3 bg-gray-50 rounded-lg p-3 sm:p-4">
+                <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2 sm:mb-4">Productos</h3>
+                <div className="space-y-2 sm:space-y-3">
                   {items.map((item) => (
-                    <div key={item.product.id} className="flex justify-between items-center bg-white p-3 rounded-md shadow-sm">
+                    <div key={item.product.id} className="flex flex-col sm:flex-row sm:justify-between sm:items-center bg-white p-2 sm:p-3 rounded-md shadow-sm">
                       <div>
-                        <p className="font-medium text-gray-900">{item.product.name}</p>
-                        <p className="text-sm text-gray-500">Cantidad: {item.quantity}</p>
+                        <p className="font-medium text-gray-900 text-sm sm:text-base">{item.product.name}</p>
+                        <p className="text-xs sm:text-sm text-gray-500">Cantidad: {item.quantity}</p>
                       </div>
-                      <p className="font-medium text-gray-900">{formatPrice(item.product.price * item.quantity)}</p>
+                      <p className="font-medium text-gray-900 text-sm sm:text-base">{formatPrice(item.product.price * item.quantity)}</p>
                     </div>
                   ))}
                 </div>
-                <div className="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center">
-                  <span className="text-lg font-medium">Total:</span>
-                  <span className="text-xl font-bold text-indigo-600">{formatPrice(total)}</span>
+                <div className="mt-2 sm:mt-4 pt-2 sm:pt-4 border-t border-gray-200 flex justify-between items-center">
+                  <span className="text-base sm:text-lg font-medium">Total:</span>
+                  <span className="text-lg sm:text-xl font-bold text-indigo-600">{formatPrice(total)}</span>
                 </div>
               </div>
 
-              {/* Panel lateral (2 columnas) */}
-              <div className="col-span-2 space-y-6">
+              {/* Panel lateral (2 columnas en desktop) */}
+              <div className="lg:col-span-2 space-y-4 sm:space-y-6">
                 {/* Selección de Cliente */}
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                <div className="bg-gray-50 rounded-lg p-3 sm:p-4">
+                  <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2 sm:mb-4 flex items-center">
                     <User className="h-5 w-5 mr-2" />
                     Cliente
                   </h3>
                   {!isCustomerFormOpen ? (
-                    <div className="space-y-3">
+                    <div className="space-y-2 sm:space-y-3">
                       <button
                         onClick={() => handleCustomerSelect(true)}
-                        className={`w-full px-4 py-2 bg-white border rounded-md shadow-sm text-sm font-medium 
+                        className={`w-full px-3 py-2 sm:px-4 sm:py-2 bg-white border rounded-md shadow-sm text-xs sm:text-sm font-medium 
                           ${customerData.name 
                             ? 'border-indigo-500 text-indigo-700' 
                             : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
@@ -411,7 +412,7 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
                       </button>
                       <button
                         onClick={() => handleCustomerSelect(false)}
-                        className={`w-full px-4 py-2 bg-white border rounded-md shadow-sm text-sm font-medium 
+                        className={`w-full px-3 py-2 sm:px-4 sm:py-2 bg-white border rounded-md shadow-sm text-xs sm:text-sm font-medium 
                           ${isWithoutCustomer 
                             ? 'border-indigo-500 text-indigo-700 bg-indigo-50' 
                             : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
@@ -420,14 +421,14 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
                       </button>
                     </div>
                   ) : (
-                    <div className="space-y-3">
+                    <div className="space-y-2 sm:space-y-3">
                       <input
                         type="text"
                         name="name"
                         placeholder="Nombre del cliente"
                         value={customerData.name}
                         onChange={handleCustomerDataChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-xs sm:text-sm"
                       />
                       <input
                         type="text"
@@ -435,7 +436,7 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
                         placeholder="Documento"
                         value={customerData.document}
                         onChange={handleCustomerDataChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-xs sm:text-sm"
                       />
                       <div className="flex justify-end gap-2">
                         <button
@@ -445,14 +446,14 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
                               setCustomerData({ name: '', document: '' });
                             }
                           }}
-                          className="px-3 py-1 text-gray-600 hover:text-gray-800"
+                          className="px-2 sm:px-3 py-1 text-gray-600 hover:text-gray-800 text-xs sm:text-sm"
                         >
                           Cancelar
                         </button>
                         <button
                           onClick={handleSaveCustomer}
                           disabled={!customerData.name || !customerData.document}
-                          className="px-3 py-1 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:bg-indigo-400 disabled:cursor-not-allowed"
+                          className="px-2 sm:px-3 py-1 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:bg-indigo-400 disabled:cursor-not-allowed text-xs sm:text-sm"
                         >
                           Guardar
                         </button>
@@ -462,8 +463,8 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
                 </div>
 
                 {/* Método de Pago */}
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                <div className="bg-gray-50 rounded-lg p-3 sm:p-4">
+                  <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2 sm:mb-4 flex items-center">
                     <CreditCard className="h-5 w-5 mr-2" />
                     Método de Pago
                   </h3>
@@ -472,7 +473,7 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
                       <button
                         key={method}
                         onClick={() => setSelectedPaymentMethod(method as any)}
-                        className={`w-full px-4 py-3 rounded-md text-left font-medium ${
+                        className={`w-full px-3 py-2 sm:px-4 sm:py-3 rounded-md text-left font-medium text-xs sm:text-sm ${
                           selectedPaymentMethod === method
                             ? 'bg-indigo-50 border-2 border-indigo-500 text-indigo-700'
                             : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
@@ -485,7 +486,7 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
                 </div>
 
                 {error && (
-                  <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
+                  <div className="p-2 sm:p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-xs sm:text-sm">
                     {error}
                   </div>
                 )}
@@ -494,7 +495,7 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
                 <button
                   onClick={handleCreateSale}
                   disabled={!selectedPaymentMethod || isLoading}
-                  className="w-full py-3 bg-indigo-600 text-white rounded-md font-medium hover:bg-indigo-700 disabled:bg-indigo-400 disabled:cursor-not-allowed"
+                  className="w-full py-2 sm:py-3 bg-indigo-600 text-white rounded-md font-medium hover:bg-indigo-700 disabled:bg-indigo-400 disabled:cursor-not-allowed text-xs sm:text-sm"
                 >
                   {isLoading ? 'Procesando...' : 'Confirmar Pago'}
                 </button>
