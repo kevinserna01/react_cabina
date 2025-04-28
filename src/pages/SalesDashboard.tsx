@@ -124,10 +124,10 @@ const SalesDashboard = () => {
 
   return (
     <div className="h-screen flex flex-col bg-gray-100">
-      <header className="bg-white shadow">
-        <div className="py-4 pl-0 pr-4 sm:pl-0 sm:pr-6 lg:pl-0 lg:pr-8 flex items-center justify-between">
+      <header className="bg-white shadow w-full">
+        <div className="flex flex-col sm:flex-row w-full items-center justify-between py-4 pl-4 pr-4 sm:pl-6 sm:pr-8 gap-y-2 sm:gap-y-0">
           {/* Logo, nombre papelería y usuario */}
-          <div className="flex items-center flex-1 min-w-0 gap-1">
+          <div className="flex items-center flex-1 min-w-0 gap-1 w-full sm:w-auto">
             <img src="/assets/logo.png" alt="Logo Papelería" className="h-16 w-16 object-contain" />
             <div className="flex flex-col justify-center min-w-0">
               <span className="text-2xl font-bold text-gray-900 truncate" aria-label="Nombre de la papelería">La Cabina Telecomunicaciones</span>
@@ -135,7 +135,7 @@ const SalesDashboard = () => {
             </div>
           </div>
           {/* Contador de sesión y logout */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 w-full sm:w-auto justify-end">
             <span className="text-sm text-gray-600" aria-label="Tiempo de sesión">{formatSessionTime(sessionSeconds)}</span>
             <button
               onClick={handleLogout}
@@ -150,8 +150,8 @@ const SalesDashboard = () => {
         </div>
       </header>
       
-      <div className="flex-1 flex overflow-hidden">
-        <main className="flex-1 p-4 overflow-y-auto">
+      <div className="flex-1 flex flex-col sm:flex-row overflow-hidden w-full">
+        <main className="flex-1 p-4 overflow-y-auto w-full">
           <div className="max-w-7xl mx-auto">
             {error && (
               <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-md">
@@ -184,22 +184,25 @@ const SalesDashboard = () => {
           </div>
         </main>
 
-        <aside className="border-l border-gray-200">
+        <aside className="w-full sm:w-96 border-t sm:border-t-0 sm:border-l border-gray-200 order-last sm:order-none bg-white">
           <CartPanel onStockUpdate={updateProductStock} />
         </aside>
       </div>
 
-      <div className="fixed bottom-8 right-8">
+      <div className="fixed bottom-4 sm:bottom-8 left-1/2 sm:left-auto right-auto sm:right-8 transform -translate-x-1/2 sm:translate-x-0 z-50">
         <button
           onClick={handleAdminAccess}
           className="flex items-center gap-2 px-4 py-2 bg-gray-800 text-white rounded-lg shadow-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
           aria-label="Acceder al panel de administración"
+          tabIndex={0}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleAdminAccess(); }}
         >
           <svg
             className="w-5 h-5"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
+            aria-hidden="true"
           >
             <path
               strokeLinecap="round"
