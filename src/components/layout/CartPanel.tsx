@@ -80,7 +80,7 @@ const getLastRegisteredSaleCode = async (): Promise<string | null> => {
 // Función para generar el código de venta
 const generateSaleCode = async (): Promise<string> => {
   try {
-    // Obtener el último código registrado del backend
+    // Obtener el último código registrado del backendd
     const lastCode = await getLastRegisteredSaleCode();
     let nextNumber = 1;
 
