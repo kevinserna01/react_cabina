@@ -16,6 +16,8 @@ const formatPrice = (price: number): string => {
 interface CustomerData {
   name: string;
   document: string;
+  email: string;
+  phone: string;
 }
 
 // Función para verificar y reservar un código de venta
@@ -113,7 +115,12 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [customerData, setCustomerData] = useState<CustomerData>({ name: '', document: '' });
+  const [customerData, setCustomerData] = useState<CustomerData>({ 
+    name: '', 
+    document: '', 
+    email: '', 
+    phone: '' 
+  });
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'Efectivo' | 'Nequi' | 'Transferencia' | ''>('');
   const [isCustomerFormOpen, setIsCustomerFormOpen] = useState(false);
   const [isWithoutCustomer, setIsWithoutCustomer] = useState(false);
@@ -163,6 +170,12 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
       return;
     }
 
+    // Validar datos del cliente si se está registrando uno
+    if (customerData.name && (!customerData.email || !customerData.phone)) {
+      setError('Por favor complete todos los datos del cliente');
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 
@@ -176,7 +189,9 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
         metodoPago: selectedPaymentMethod,
         cliente: customerData.name ? {
           nombre: customerData.name,
-          documento: customerData.document
+          documento: customerData.document,
+          email: customerData.email,
+          telefono: customerData.phone
         } : null
       };
 
@@ -199,7 +214,7 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
       clearCart();
       setIsCheckoutModalOpen(false);
       setSelectedPaymentMethod('');
-      setCustomerData({ name: '', document: '' });
+      setCustomerData({ name: '', document: '', email: '', phone: '' });
       setCustomer(null);
       setSaleCode('');
 
@@ -217,7 +232,7 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
   const handleCustomerSelect = (withCustomer: boolean) => {
     if (!withCustomer) {
       setCustomer(null);
-      setCustomerData({ name: '', document: '' });
+      setCustomerData({ name: '', document: '', email: '', phone: '' });
       setIsWithoutCustomer(true);
       setIsCustomerFormOpen(false);
     } else {
@@ -227,10 +242,31 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
   };
 
   const handleSaveCustomer = () => {
-    if (customerData.name && customerData.document) {
-      setCustomer({ name: customerData.name, document: customerData.document });
+    if (customerData.name && customerData.document && customerData.email && customerData.phone) {
+      // Validar formato de email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(customerData.email)) {
+        setError('Por favor ingrese un correo electrónico válido');
+        return;
+      }
+
+      // Validar formato de teléfono (10 dígitos)
+      const phoneRegex = /^\d{10}$/;
+      if (!phoneRegex.test(customerData.phone)) {
+        setError('Por favor ingrese un número de teléfono válido (10 dígitos)');
+        return;
+      }
+
+      setCustomer({ 
+        name: customerData.name, 
+        document: customerData.document,
+        email: customerData.email,
+        phone: customerData.phone
+      });
       setIsCustomerFormOpen(false);
       setIsWithoutCustomer(false);
+    } else {
+      setError('Por favor complete todos los campos del cliente');
     }
   };
 
@@ -342,163 +378,182 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
 
       {/* Modal de Resumen y Confirmación */}
       {isCheckoutModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl p-2 sm:p-6">
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 sm:mb-6 gap-2 sm:gap-0">
-              <div>
-                <h2 className="text-xl sm:text-2xl font-semibold text-gray-900">Resumen de Compra</h2>
-                <div className="mt-1 sm:mt-2 flex items-center text-gray-600">
-                  <Receipt className="h-4 w-4 mr-2" />
-                  <span className="text-xs sm:text-sm font-medium">
-                    {isGeneratingCode ? 'Generando código...' : `Código de venta: ${saleCode}`}
-                  </span>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-start mb-6">
+                <div>
+                  <h2 className="text-2xl font-semibold text-gray-900">Resumen de Compra</h2>
+                  <div className="mt-2 flex items-center text-gray-600">
+                    <Receipt className="h-4 w-4 mr-2" />
+                    <span className="text-sm font-medium">
+                      {isGeneratingCode ? 'Generando código...' : `Código de venta: ${saleCode}`}
+                    </span>
+                  </div>
                 </div>
-              </div>
-              <button
-                onClick={() => setIsCheckoutModalOpen(false)}
-                className="text-gray-400 hover:text-gray-500 self-end"
-                aria-label="Cerrar resumen de compra"
-              >
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-
-            <div className="mt-4 sm:mt-6 grid grid-cols-1 lg:grid-cols-5 gap-4 sm:gap-6">
-              {/* Lista de productos (3 columnas en desktop) */}
-              <div className="lg:col-span-3 bg-gray-50 rounded-lg p-3 sm:p-4">
-                <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2 sm:mb-4">Productos</h3>
-                <div className="space-y-2 sm:space-y-3">
-                  {items.map((item) => (
-                    <div key={item.product.id} className="flex flex-col sm:flex-row sm:justify-between sm:items-center bg-white p-2 sm:p-3 rounded-md shadow-sm">
-                      <div>
-                        <p className="font-medium text-gray-900 text-sm sm:text-base">{item.product.name}</p>
-                        <p className="text-xs sm:text-sm text-gray-500">Cantidad: {item.quantity}</p>
-                      </div>
-                      <p className="font-medium text-gray-900 text-sm sm:text-base">{formatPrice(item.product.price * item.quantity)}</p>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-2 sm:mt-4 pt-2 sm:pt-4 border-t border-gray-200 flex justify-between items-center">
-                  <span className="text-base sm:text-lg font-medium">Total:</span>
-                  <span className="text-lg sm:text-xl font-bold text-indigo-600">{formatPrice(total)}</span>
-                </div>
+                <button
+                  onClick={() => setIsCheckoutModalOpen(false)}
+                  className="text-gray-400 hover:text-gray-500"
+                >
+                  <X className="h-6 w-6" />
+                </button>
               </div>
 
-              {/* Panel lateral (2 columnas en desktop) */}
-              <div className="lg:col-span-2 space-y-4 sm:space-y-6">
-                {/* Selección de Cliente */}
-                <div className="bg-gray-50 rounded-lg p-3 sm:p-4">
-                  <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2 sm:mb-4 flex items-center">
-                    <User className="h-5 w-5 mr-2" />
-                    Cliente
-                  </h3>
-                  {!isCustomerFormOpen ? (
-                    <div className="space-y-2 sm:space-y-3">
-                      <button
-                        onClick={() => handleCustomerSelect(true)}
-                        className={`w-full px-3 py-2 sm:px-4 sm:py-2 bg-white border rounded-md shadow-sm text-xs sm:text-sm font-medium 
-                          ${customerData.name 
-                            ? 'border-indigo-500 text-indigo-700' 
-                            : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
-                      >
-                        {customerData.name ? (
-                          <div className="flex flex-col items-start">
-                            <span className="text-xs text-gray-500">Cliente registrado</span>
-                            <span className="font-medium">{customerData.name}</span>
-                          </div>
-                        ) : (
-                          'Registrar Cliente'
-                        )}
-                      </button>
-                      <button
-                        onClick={() => handleCustomerSelect(false)}
-                        className={`w-full px-3 py-2 sm:px-4 sm:py-2 bg-white border rounded-md shadow-sm text-xs sm:text-sm font-medium 
-                          ${isWithoutCustomer 
-                            ? 'border-indigo-500 text-indigo-700 bg-indigo-50' 
-                            : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
-                      >
-                        Continuar sin Cliente
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="space-y-2 sm:space-y-3">
-                      <input
-                        type="text"
-                        name="name"
-                        placeholder="Nombre del cliente"
-                        value={customerData.name}
-                        onChange={handleCustomerDataChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-xs sm:text-sm"
-                      />
-                      <input
-                        type="text"
-                        name="document"
-                        placeholder="Documento"
-                        value={customerData.document}
-                        onChange={handleCustomerDataChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-xs sm:text-sm"
-                      />
-                      <div className="flex justify-end gap-2">
-                        <button
-                          onClick={() => {
-                            setIsCustomerFormOpen(false);
-                            if (!customerData.name) {
-                              setCustomerData({ name: '', document: '' });
-                            }
-                          }}
-                          className="px-2 sm:px-3 py-1 text-gray-600 hover:text-gray-800 text-xs sm:text-sm"
-                        >
-                          Cancelar
-                        </button>
-                        <button
-                          onClick={handleSaveCustomer}
-                          disabled={!customerData.name || !customerData.document}
-                          className="px-2 sm:px-3 py-1 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:bg-indigo-400 disabled:cursor-not-allowed text-xs sm:text-sm"
-                        >
-                          Guardar
-                        </button>
+              <div className="mt-6 grid grid-cols-1 lg:grid-cols-5 gap-6">
+                {/* Lista de productos (3 columnas) */}
+                <div className="lg:col-span-3 bg-gray-50 rounded-lg p-4">
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Productos</h3>
+                  <div className="space-y-3 max-h-[300px] overflow-y-auto">
+                    {items.map((item) => (
+                      <div key={item.product.id} className="flex justify-between items-center bg-white p-3 rounded-md shadow-sm">
+                        <div>
+                          <p className="font-medium text-gray-900">{item.product.name}</p>
+                          <p className="text-sm text-gray-500">Cantidad: {item.quantity}</p>
+                        </div>
+                        <p className="font-medium text-gray-900">{formatPrice(item.product.price * item.quantity)}</p>
                       </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Método de Pago */}
-                <div className="bg-gray-50 rounded-lg p-3 sm:p-4">
-                  <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2 sm:mb-4 flex items-center">
-                    <CreditCard className="h-5 w-5 mr-2" />
-                    Método de Pago
-                  </h3>
-                  <div className="space-y-2">
-                    {['Efectivo', 'Nequi', 'Transferencia'].map((method) => (
-                      <button
-                        key={method}
-                        onClick={() => setSelectedPaymentMethod(method as any)}
-                        className={`w-full px-3 py-2 sm:px-4 sm:py-3 rounded-md text-left font-medium text-xs sm:text-sm ${
-                          selectedPaymentMethod === method
-                            ? 'bg-indigo-50 border-2 border-indigo-500 text-indigo-700'
-                            : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-                        }`}
-                      >
-                        {method.charAt(0).toUpperCase() + method.slice(1)}
-                      </button>
                     ))}
                   </div>
+                  <div className="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center">
+                    <span className="text-lg font-medium">Total:</span>
+                    <span className="text-xl font-bold text-indigo-600">{formatPrice(total)}</span>
+                  </div>
                 </div>
 
-                {error && (
-                  <div className="p-2 sm:p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-xs sm:text-sm">
-                    {error}
+                {/* Panel lateral (2 columnas) */}
+                <div className="lg:col-span-2 space-y-6">
+                  {/* Selección de Cliente */}
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                      <User className="h-5 w-5 mr-2" />
+                      Cliente
+                    </h3>
+                    {!isCustomerFormOpen ? (
+                      <div className="space-y-3">
+                        <button
+                          onClick={() => handleCustomerSelect(true)}
+                          className={`w-full px-4 py-2 bg-white border rounded-md shadow-sm text-sm font-medium 
+                            ${customerData.name 
+                              ? 'border-indigo-500 text-indigo-700' 
+                              : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+                        >
+                          {customerData.name ? (
+                            <div className="flex flex-col items-start">
+                              <span className="text-xs text-gray-500">Cliente registrado</span>
+                              <span className="font-medium">{customerData.name}</span>
+                            </div>
+                          ) : (
+                            'Registrar Cliente'
+                          )}
+                        </button>
+                        <button
+                          onClick={() => handleCustomerSelect(false)}
+                          className={`w-full px-4 py-2 bg-white border rounded-md shadow-sm text-sm font-medium 
+                            ${isWithoutCustomer 
+                              ? 'border-indigo-500 text-indigo-700 bg-indigo-50' 
+                              : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+                        >
+                          Continuar sin Cliente
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <input
+                          type="text"
+                          name="name"
+                          placeholder="Nombre del cliente"
+                          value={customerData.name}
+                          onChange={handleCustomerDataChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                        />
+                        <input
+                          type="text"
+                          name="document"
+                          placeholder="Documento"
+                          value={customerData.document}
+                          onChange={handleCustomerDataChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                        />
+                        <input
+                          type="email"
+                          name="email"
+                          placeholder="Correo electrónico"
+                          value={customerData.email}
+                          onChange={handleCustomerDataChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                        />
+                        <input
+                          type="tel"
+                          name="phone"
+                          placeholder="Número de teléfono (3101234567)"
+                          value={customerData.phone}
+                          onChange={handleCustomerDataChange}
+                          pattern="[0-9]{10}"
+                          maxLength={10}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                        />
+                        <div className="flex justify-end gap-2">
+                          <button
+                            onClick={() => {
+                              setIsCustomerFormOpen(false);
+                              if (!customerData.name) {
+                                setCustomerData({ name: '', document: '', email: '', phone: '' });
+                              }
+                            }}
+                            className="px-3 py-1 text-gray-600 hover:text-gray-800"
+                          >
+                            Cancelar
+                          </button>
+                          <button
+                            onClick={handleSaveCustomer}
+                            disabled={!customerData.name || !customerData.document || !customerData.email || !customerData.phone}
+                            className="px-3 py-1 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:bg-indigo-400 disabled:cursor-not-allowed"
+                          >
+                            Guardar
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
 
-                {/* Botón de Confirmación */}
-                <button
-                  onClick={handleCreateSale}
-                  disabled={!selectedPaymentMethod || isLoading}
-                  className="w-full py-2 sm:py-3 bg-indigo-600 text-white rounded-md font-medium hover:bg-indigo-700 disabled:bg-indigo-400 disabled:cursor-not-allowed text-xs sm:text-sm"
-                >
-                  {isLoading ? 'Procesando...' : 'Confirmar Pago'}
-                </button>
+                  {/* Método de Pago */}
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                      <CreditCard className="h-5 w-5 mr-2" />
+                      Método de Pago
+                    </h3>
+                    <div className="space-y-2">
+                      {['Efectivo', 'Nequi', 'Transferencia'].map((method) => (
+                        <button
+                          key={method}
+                          onClick={() => setSelectedPaymentMethod(method as any)}
+                          className={`w-full px-4 py-3 rounded-md text-left font-medium ${
+                            selectedPaymentMethod === method
+                              ? 'bg-indigo-50 border-2 border-indigo-500 text-indigo-700'
+                              : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                          }`}
+                        >
+                          {method.charAt(0).toUpperCase() + method.slice(1)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {error && (
+                    <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
+                      {error}
+                    </div>
+                  )}
+
+                  {/* Botón de Confirmación */}
+                  <button
+                    onClick={handleCreateSale}
+                    disabled={!selectedPaymentMethod || isLoading}
+                    className="w-full py-3 bg-indigo-600 text-white rounded-md font-medium hover:bg-indigo-700 disabled:bg-indigo-400 disabled:cursor-not-allowed"
+                  >
+                    {isLoading ? 'Procesando...' : 'Confirmar Pago'}
+                  </button>
+                </div>
               </div>
             </div>
           </div>

@@ -347,13 +347,13 @@ const InventoryContent = () => {
     if (name === 'stock' || name === 'minStock') {
       // Si el valor está vacío o es solo un signo negativo, mantenerlo como string
       if (value === '' || value === '-') {
-        setEditingProduct(prev => {
-          if (!prev) return prev;
-          return {
-            ...prev,
+    setEditingProduct(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
             [name]: value
-          };
-        });
+      };
+    });
       } else {
         // Convertir a número solo si hay un valor válido
         const numericValue = parseInt(value);
