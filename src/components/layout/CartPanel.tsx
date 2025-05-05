@@ -200,10 +200,10 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
         })),
         metodoPago: selectedPaymentMethod,
         cliente: customerData.name ? {
-          nombre: customerData.name,
-          documento: customerData.document,
+          name: customerData.name,
+          document: customerData.document,
           email: customerData.email,
-          telefono: customerData.phone
+          phone: customerData.phone
         } : null
       };
 
@@ -219,7 +219,16 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.message || 'Error al procesar la venta');
+        // Manejar diferentes tipos de errores
+        if (response.status === 409) {
+          throw new Error('Ya existe una venta con ese código o no hay suficiente stock');
+        } else if (response.status === 404) {
+          throw new Error('Uno o más productos no existen en el inventario');
+        } else if (response.status === 400) {
+          throw new Error(result.message || 'Datos de venta inválidos');
+        } else {
+          throw new Error(result.message || 'Error al procesar la venta');
+        }
       }
 
       // Limpiar el carrito y cerrar el modal
@@ -230,8 +239,8 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
       setCustomer(null);
       setSaleCode('');
 
-      // Mostrar mensaje de éxito
-      alert('Venta realizada con éxito');
+      // Mostrar mensaje de éxito con detalles de la venta
+      alert(`Venta realizada con éxito\nCódigo: ${result.data.code}\nTotal: ${formatPrice(result.data.totalVenta)}`);
 
     } catch (error) {
       console.error('Error:', error);
@@ -309,11 +318,15 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
 
   // Función para buscar clientes por documento
   const handleSearchCustomers = async () => {
-    if (!searchDocument.trim()) return;
+    if (!searchDocument.trim()) {
+      setError('Por favor ingrese un número de documento');
+      return;
+    }
     
     setIsLoadingCustomers(true);
+    setError(null);
     try {
-      const response = await fetch(`https://back-papeleria-two.vercel.app/v1/papeleria/searchCustomersapi`, {
+      const response = await fetch('https://back-papeleria-two.vercel.app/v1/papeleria/searchCustomersapi', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -325,14 +338,26 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
       });
 
       if (!response.ok) {
-        throw new Error('Error al buscar clientes');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al buscar clientes');
       }
 
       const data = await response.json();
-      setExistingCustomers(data);
+      setExistingCustomers(data.map((c: any) => ({
+        id: c.id,
+        nombre: c.nombre,
+        documento: c.documento,
+        email: c.email,
+        telefono: c.telefono
+      })));
+
+      if (data.length === 0) {
+        setError('No se encontraron clientes con ese documento');
+      }
     } catch (error) {
       console.error('Error searching customers:', error);
-      setError('Error al buscar clientes');
+      setError(error instanceof Error ? error.message : 'Error al buscar clientes');
+      setExistingCustomers([]);
     } finally {
       setIsLoadingCustomers(false);
     }
