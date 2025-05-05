@@ -20,6 +20,14 @@ interface CustomerData {
   phone: string;
 }
 
+interface ExistingCustomer {
+  id: string;
+  nombre: string;
+  documento: string;
+  email: string;
+  telefono: string;
+}
+
 // Función para verificar y reservar un código de venta
 const checkAndReserveSaleCode = async (code: string): Promise<boolean> => {
   try {
@@ -126,6 +134,10 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
   const [isWithoutCustomer, setIsWithoutCustomer] = useState(false);
   const [saleCode, setSaleCode] = useState<string>('');
   const [isGeneratingCode, setIsGeneratingCode] = useState(false);
+  const [isSearchingCustomer, setIsSearchingCustomer] = useState(false);
+  const [searchDocument, setSearchDocument] = useState('');
+  const [existingCustomers, setExistingCustomers] = useState<ExistingCustomer[]>([]);
+  const [isLoadingCustomers, setIsLoadingCustomers] = useState(false);
 
   // Efecto para liberar el código cuando se cierra el modal sin completar la venta
   useEffect(() => {
@@ -295,6 +307,56 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
     clearCart();
   };
 
+  // Función para buscar clientes por documento
+  const handleSearchCustomers = async () => {
+    if (!searchDocument.trim()) return;
+    
+    setIsLoadingCustomers(true);
+    try {
+      const response = await fetch(`https://back-papeleria-two.vercel.app/v1/papeleria/searchCustomersapi`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          documento: searchDocument.trim()
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al buscar clientes');
+      }
+
+      const data = await response.json();
+      setExistingCustomers(data);
+    } catch (error) {
+      console.error('Error searching customers:', error);
+      setError('Error al buscar clientes');
+    } finally {
+      setIsLoadingCustomers(false);
+    }
+  };
+
+  // Función para seleccionar un cliente existente
+  const handleSelectExistingCustomer = (customer: ExistingCustomer) => {
+    setCustomerData({
+      name: customer.nombre,
+      document: customer.documento,
+      email: customer.email,
+      phone: customer.telefono
+    });
+    setCustomer({
+      name: customer.nombre,
+      document: customer.documento,
+      email: customer.email,
+      phone: customer.telefono
+    });
+    setIsSearchingCustomer(false);
+    setIsCustomerFormOpen(false);
+    setIsWithoutCustomer(false);
+  };
+
   return (
     <div className="w-96 h-full bg-white shadow-lg flex flex-col">
       <div className="p-4 border-b">
@@ -428,7 +490,7 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
                       <User className="h-5 w-5 mr-2" />
                       Cliente
                     </h3>
-                    {!isCustomerFormOpen ? (
+                    {!isCustomerFormOpen && !isSearchingCustomer ? (
                       <div className="space-y-3">
                         <button
                           onClick={() => handleCustomerSelect(true)}
@@ -447,6 +509,16 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
                           )}
                         </button>
                         <button
+                          onClick={() => {
+                            setIsSearchingCustomer(true);
+                            setSearchDocument('');
+                            setExistingCustomers([]);
+                          }}
+                          className="w-full px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50"
+                        >
+                          Buscar Cliente Existente
+                        </button>
+                        <button
                           onClick={() => handleCustomerSelect(false)}
                           className={`w-full px-4 py-2 bg-white border rounded-md shadow-sm text-sm font-medium 
                             ${isWithoutCustomer 
@@ -455,6 +527,53 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
                         >
                           Continuar sin Cliente
                         </button>
+                      </div>
+                    ) : isSearchingCustomer ? (
+                      <div className="space-y-3">
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={searchDocument}
+                            onChange={(e) => setSearchDocument(e.target.value)}
+                            placeholder="Buscar por documento"
+                            className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                          />
+                          <button
+                            onClick={handleSearchCustomers}
+                            disabled={isLoadingCustomers || !searchDocument.trim()}
+                            className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:bg-indigo-400 disabled:cursor-not-allowed"
+                          >
+                            {isLoadingCustomers ? 'Buscando...' : 'Buscar'}
+                          </button>
+                        </div>
+                        
+                        {existingCustomers.length > 0 && (
+                          <div className="mt-3 max-h-48 overflow-y-auto">
+                            {existingCustomers.map((customer) => (
+                              <button
+                                key={customer.id}
+                                onClick={() => handleSelectExistingCustomer(customer)}
+                                className="w-full p-3 mb-2 bg-white border border-gray-200 rounded-md hover:bg-gray-50 text-left"
+                              >
+                                <div className="font-medium text-gray-900">{customer.nombre}</div>
+                                <div className="text-sm text-gray-500">Documento: {customer.documento}</div>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+
+                        <div className="flex justify-end">
+                          <button
+                            onClick={() => {
+                              setIsSearchingCustomer(false);
+                              setSearchDocument('');
+                              setExistingCustomers([]);
+                            }}
+                            className="px-3 py-1 text-gray-600 hover:text-gray-800"
+                          >
+                            Cancelar
+                          </button>
+                        </div>
                       </div>
                     ) : (
                       <div className="space-y-3">
