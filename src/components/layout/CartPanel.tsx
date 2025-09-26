@@ -2,7 +2,8 @@ import { Minus, Plus, ShoppingCart, X, Receipt, Save, AlertCircle } from 'lucide
 import { useState, useEffect } from 'react';
 import { useCartStore } from '../../store/cartStore';
 import { listCustomers } from '../../services/customers';
-import { Product } from '../../types';
+import { Product, CompletedSale } from '../../types';
+import InvoicePDFModal from '../sales/InvoicePDFModal';
 
 // Función para formatear el precio en COP
 const formatPrice = (price: number): string => {
@@ -159,6 +160,10 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
   const [documentExists, setDocumentExists] = useState(false);
   const [customerValidationMessage, setCustomerValidationMessage] = useState<string | null>(null);
   const [checkoutStep, setCheckoutStep] = useState<1 | 2 | 3 | 4>(1);
+  
+  // Estados para el modal de factura PDF
+  const [completedSale, setCompletedSale] = useState<CompletedSale | null>(null);
+  const [showInvoicePDFModal, setShowInvoicePDFModal] = useState(false);
 
   // Efecto para liberar el código cuando se cierra el modal sin completar la venta
   useEffect(() => {
@@ -268,6 +273,21 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
         }
       }
 
+      // Preparar datos de venta completada
+      const completedSaleData: CompletedSale = {
+        id: result.data.id || result.data._id,
+        code: result.data.code,
+        totalVenta: result.data.totalVenta,
+        cliente: customerData.name ? {
+          name: customerData.name,
+          document: customerData.document,
+          email: customerData.email,
+          phone: customerData.phone
+        } : undefined,
+        metodoPago: selectedPaymentMethod,
+        fecha: new Date().toISOString()
+      };
+
       // Limpiar el carrito y cerrar el modal
       clearCart();
       setIsCheckoutModalOpen(false);
@@ -276,8 +296,9 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
       setCustomer(null);
       setSaleCode('');
 
-      // Mostrar mensaje de éxito con detalles de la venta
-      alert(`Venta realizada con éxito\nCódigo: ${result.data.code}\nTotal: ${formatPrice(result.data.totalVenta)}`);
+      // Mostrar modal de factura PDF en lugar del alert
+      setCompletedSale(completedSaleData);
+      setShowInvoicePDFModal(true);
 
     } catch (error) {
       console.error('Error:', error);
@@ -1117,6 +1138,18 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modal de Factura PDF */}
+      {showInvoicePDFModal && completedSale && (
+        <InvoicePDFModal
+          isOpen={showInvoicePDFModal}
+          onClose={() => {
+            setShowInvoicePDFModal(false);
+            setCompletedSale(null);
+          }}
+          sale={completedSale}
+        />
       )}
     </div>
   );

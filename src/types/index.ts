@@ -189,3 +189,24 @@ export interface InvoicePaginationResponse {
     pagination: PaginationInfo;
   };
 }
+
+// Tipos para factura PDF
+export interface CompletedSale {
+  id: string;
+  code: string;
+  totalVenta: number;
+  cliente?: {
+    name: string;
+    document: string;
+    email: string;
+    phone: string;
+  };
+  metodoPago: 'Efectivo' | 'Nequi' | 'Transferencia';
+  fecha: string;
+}
+
+export interface EmailSendRequest {
+  saleId: string;
+  email: string;
+  customerName?: string;
+}
