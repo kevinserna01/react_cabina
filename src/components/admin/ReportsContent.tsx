@@ -486,13 +486,19 @@ const ReportPDF = ({ data, timeRange, startDate, endDate, summary, dailySales, c
   </Document>
 );
 
+// Helpers seguros
+const toNumber = (value: any, def: number = 0): number => {
+  const n = typeof value === 'string' ? parseFloat(value) : Number(value);
+  return Number.isFinite(n) ? n : def;
+};
+
 // Función para formatear moneda
-const formatCurrency = (value: number) => {
+const formatCurrency = (value: any) => {
   return new Intl.NumberFormat('es-CO', {
     style: 'currency',
     currency: 'COP',
     minimumFractionDigits: 0
-  }).format(value);
+  }).format(toNumber(value, 0));
 };
 
 const ReportsContent = () => {
@@ -501,6 +507,7 @@ const ReportsContent = () => {
   const [reportType, setReportType] = useState('ventas');
   const [isLoading, setIsLoading] = useState(true);
   const [data, setData] = useState<ApiResponse | null>(null);
+  const [reportsRaw, setReportsRaw] = useState<any | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
   const [summary, setSummary] = useState<Summary | null>(null);
@@ -572,8 +579,8 @@ const ReportsContent = () => {
   const calculateSummary = (ventas: Sale[]) => {
     if (!ventas.length) return null;
 
-    const totalVentas = ventas.reduce((sum, venta) => sum + venta.Total, 0);
-    const promedioVenta = totalVentas / ventas.length;
+    const totalVentas = ventas.reduce((sum, venta) => sum + toNumber(venta.Total, 0), 0);
+    const promedioVenta = ventas.length ? totalVentas / ventas.length : 0;
     const metodoPagoCounts = ventas.reduce((acc, venta) => {
       acc[venta.Método] = (acc[venta.Método] || 0) + 1;
       return acc;
@@ -675,7 +682,7 @@ const ReportsContent = () => {
     ventas.forEach(venta => {
       const ventaDate = moment(venta.Fecha);
       const monthIndex = ventaDate.month();
-      monthlyData[monthIndex].total += venta.Total;
+      monthlyData[monthIndex].total += toNumber(venta.Total, 0);
     });
 
     // Ordenar los meses cronológicamente y eliminar el campo auxiliar
@@ -698,7 +705,7 @@ const ReportsContent = () => {
     ventas.forEach(venta => {
       const year = moment(venta.Fecha).format('YYYY');
       if (yearTotals.has(year)) {
-        yearTotals.set(year, yearTotals.get(year)! + venta.Total);
+        yearTotals.set(year, yearTotals.get(year)! + toNumber(venta.Total, 0));
       }
     });
 
@@ -758,37 +765,40 @@ const ReportsContent = () => {
       .sort((a, b) => b.total - a.total);
   };
 
-  // Función para obtener los datos del reporte
+  const getPeriodoFromTimeRange = () => {
+    switch (timeRange) {
+      case 'day': return 'dia';
+      case 'week': return 'semana';
+      case 'month': return 'mes';
+      case 'year': return 'año';
+      default: return 'custom';
+    }
+  };
+
+  // Función para obtener los datos del reporte (nuevo contrato)
   const fetchReportData = async () => {
     try {
       setIsLoading(true);
       const { startDate, endDate } = getDateRange();
+      const periodo = getPeriodoFromTimeRange();
 
-      // Log para depuración
-      console.log('Fetching data with params:', {
-        timeRange,
-        startDate,
-        endDate,
-        selectedDate
-      });
+      // construir params según nuevo contrato
+      const startParam = moment(startDate).format('YYYY-MM-DD');
+      const endParam = moment(endDate).format('YYYY-MM-DD');
+      const fechaEspecifica = moment(selectedDate).format('YYYY-MM-DD');
 
-      let url;
-      if (timeRange === 'day') {
-        // Usar el endpoint específico para día
-        url = new URL('https://back-papeleria-two.vercel.app/v1/papeleria/reportsapi/day');
-        // Enviar la fecha con la zona horaria correcta
-        const formattedDate = moment.tz(selectedDate, 'America/Bogota').format('YYYY-MM-DD');
-        url.searchParams.append('date', formattedDate);
-      } else {
-        // Usar el endpoint general para otros rangos
-        url = new URL('https://back-papeleria-two.vercel.app/v1/papeleria/reportsapi');
-        url.searchParams.append('startDate', startDate);
-        url.searchParams.append('endDate', endDate);
+      const url = new URL('https://back-papeleria-two.vercel.app/v1/papeleria/reportsapi');
+      url.searchParams.append('startDate', startParam);
+      url.searchParams.append('endDate', endParam);
+      url.searchParams.append('periodo', periodo);
+      if (periodo === 'dia') {
+        url.searchParams.append('fechaEspecifica', fechaEspecifica);
       }
 
       const response = await fetch(url.toString(), {
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
         }
       });
 
@@ -797,8 +807,38 @@ const ReportsContent = () => {
       }
 
       const responseData = await response.json();
-      console.log('API Response:', responseData);
-      setData(responseData);
+      const normalized = (responseData && responseData.data) ? responseData.data : responseData;
+      console.log('API Response:', normalized);
+      setReportsRaw(normalized);
+
+      // Mapear resumen general (primer elemento)
+      const resumen = Array.isArray(normalized?.resumen) && normalized.resumen.length > 0
+        ? normalized.resumen[0]
+        : null;
+      if (resumen) {
+        setSummary({
+          totalVentas: Number(resumen.TotalVentas || 0),
+          promedioVenta: Number(resumen.PromedioVenta || 0),
+          totalTransacciones: Number(resumen.CantidadVentas || 0),
+          metodoPagoPopular: 'N/A'
+        });
+      } else {
+        setSummary(null);
+      }
+
+      // Mapear ventas por categoría si llegan
+      if (Array.isArray(normalized?.ventasPorCategorias)) {
+        const mapped = normalized.ventasPorCategorias.map((c: any) => ({
+          categoria: c.Categoria || c.categoria || 'Sin categoría',
+          total: Number(c.TotalGenerado || c.total || 0),
+          porcentaje: 0,
+        }));
+        const totalCats = mapped.reduce((s: number, i: any) => s + i.total, 0) || 1;
+        setCategorySales(mapped.map((i: any) => ({ ...i, porcentaje: (i.total / totalCats) * 100 })));
+      }
+
+      // Mantener compatibilidad si también viene formato antiguo
+      setData((prev) => prev); // no sobreescribir estructura antigua si existía
     } catch (error) {
       console.error('Error fetching report data:', error);
     } finally {
@@ -860,6 +900,31 @@ const ReportsContent = () => {
 
   // Efecto para procesar los datos cuando cambian
   useEffect(() => {
+    if (reportsRaw) {
+      // Nuevo contrato (normalizar a reportsRaw.data)
+      const raw = (reportsRaw as any)?.data || reportsRaw;
+      const resumen = Array.isArray(raw?.resumen) && raw.resumen.length > 0
+        ? raw.resumen[0]
+        : null;
+      if (resumen) {
+        setSummary({
+          totalVentas: Number(resumen.TotalVentas || 0),
+          promedioVenta: Number(resumen.PromedioVenta || 0),
+          totalTransacciones: Number(resumen.CantidadVentas || 0),
+          metodoPagoPopular: 'N/A'
+        });
+
+        // Establecer ventas diarias básicas para visualizar algo en día específico
+        if (timeRange === 'day') {
+          setDailySales([{
+            fecha: moment(selectedDate).format('DD/MM'),
+            total: toNumber(resumen.TotalVentas, 0)
+          }]);
+        }
+      }
+      // Series por día/semana/mes (si llega ventasPorMes u otros, aquí podríamos mapear)
+    }
+
     if (data?.data) {
       const filteredSales = data.data.ventas ? filterSalesByDateRange(data.data.ventas) : [];
       setSummary(calculateSummary(filteredSales));
@@ -867,7 +932,7 @@ const ReportsContent = () => {
       if (timeRange === 'day') {
         setDailySales([{
           fecha: moment(selectedDate).format('DD/MM'),
-          total: filteredSales.reduce((sum, venta) => sum + venta.Total, 0)
+          total: filteredSales.reduce((sum, venta) => sum + toNumber(venta.Total, 0), 0)
         }]);
       } else {
         setDailySales(processDailySales(filteredSales));
@@ -877,7 +942,7 @@ const ReportsContent = () => {
       const categoryData = processCategorySales(filteredSales);
       setCategorySales(categoryData);
     }
-  }, [data?.data, timeRange, selectedDate]);
+  }, [reportsRaw, data?.data, timeRange, selectedDate]);
 
   if (isLoading) {
     return (
@@ -894,7 +959,8 @@ const ReportsContent = () => {
     </div>
   ) : null;
 
-  if (!data || !data.data) {
+  const hasAnyData = Boolean(data?.data) || Boolean(reportsRaw);
+  if (!hasAnyData) {
     return (
       <>
         {exportErrorBanner}
@@ -905,7 +971,7 @@ const ReportsContent = () => {
     );
   }
 
-  const filteredSales = data.data.ventas ? filterSales(data.data.ventas) : [];
+  const filteredSales = data?.data?.ventas ? filterSales(data.data.ventas) : [];
   const sortedSales = sortSales(filteredSales);
 
   return (
@@ -956,41 +1022,92 @@ const ReportsContent = () => {
       </div>
 
       {/* Resumen de Ventas */}
-      {summary && reportType === 'ventas' && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-            <h4 className="text-sm font-medium text-gray-500">Total Ventas</h4>
-            <p className="mt-2 text-2xl font-semibold text-gray-900">
-              {new Intl.NumberFormat('es-CO', {
-                style: 'currency',
-                currency: 'COP',
-                minimumFractionDigits: 0
-              }).format(summary.totalVentas)}
-            </p>
+      {(summary || (reportsRaw && Array.isArray(reportsRaw.resumen))) && reportType === 'ventas' && (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+              <h4 className="text-sm font-medium text-gray-500">Total Ventas</h4>
+              <p className="mt-2 text-2xl font-semibold text-gray-900">
+                {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(
+                  summary ? summary.totalVentas : toNumber(reportsRaw.resumen?.[0]?.TotalVentas, 0)
+                )}
+              </p>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+              <h4 className="text-sm font-medium text-gray-500">Promedio por Venta</h4>
+              <p className="mt-2 text-2xl font-semibold text-gray-900">
+                {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(
+                  summary ? summary.promedioVenta : toNumber(reportsRaw.resumen?.[0]?.PromedioVenta, 0)
+                )}
+              </p>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+              <h4 className="text-sm font-medium text-gray-500">Total Transacciones</h4>
+              <p className="mt-2 text-2xl font-semibold text-gray-900">
+                {summary ? summary.totalTransacciones : toNumber(reportsRaw.resumen?.[0]?.CantidadVentas, 0)}
+              </p>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+              <h4 className="text-sm font-medium text-gray-500">Método de Pago Popular</h4>
+              <p className="mt-2 text-2xl font-semibold text-gray-900">
+                {summary ? summary.metodoPagoPopular : 'N/A'}
+              </p>
+            </div>
           </div>
-          <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-            <h4 className="text-sm font-medium text-gray-500">Promedio por Venta</h4>
-            <p className="mt-2 text-2xl font-semibold text-gray-900">
-              {new Intl.NumberFormat('es-CO', {
-                style: 'currency',
-                currency: 'COP',
-                minimumFractionDigits: 0
-              }).format(summary.promedioVenta)}
-          </p>
-        </div>
-          <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-            <h4 className="text-sm font-medium text-gray-500">Total Transacciones</h4>
-            <p className="mt-2 text-2xl font-semibold text-gray-900">
-              {summary.totalTransacciones}
-          </p>
-        </div>
-          <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-            <h4 className="text-sm font-medium text-gray-500">Método de Pago Popular</h4>
-            <p className="mt-2 text-2xl font-semibold text-gray-900">
-              {summary.metodoPagoPopular}
-            </p>
+          {/* Segunda fila de tarjetas con más métricas del resumen */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+              <h4 className="text-sm font-medium text-gray-500">Ventas sin Descuento</h4>
+              <p className="mt-2 text-2xl font-semibold text-gray-900">
+                {formatCurrency((reportsRaw?.resumen?.[0]?.TotalVentasSinDescuento) ?? 0)}
+              </p>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+              <h4 className="text-sm font-medium text-gray-500">Total Descuentos</h4>
+              <p className="mt-2 text-2xl font-semibold text-gray-900">
+                {formatCurrency((reportsRaw?.resumen?.[0]?.TotalDescuentos) ?? 0)}
+              </p>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+              <h4 className="text-sm font-medium text-gray-500">Ventas con Descuento</h4>
+              <p className="mt-2 text-2xl font-semibold text-gray-900">
+                {toNumber(reportsRaw?.resumen?.[0]?.VentasConDescuento, 0)}
+              </p>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+              <h4 className="text-sm font-medium text-gray-500">Clientes Únicos</h4>
+              <p className="mt-2 text-2xl font-semibold text-gray-900">
+                {toNumber(reportsRaw?.resumen?.[0]?.ClientesUnicos, 0)}
+              </p>
+            </div>
           </div>
-        </div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+              <h4 className="text-sm font-medium text-gray-500">Trabajadores Únicos</h4>
+              <p className="mt-2 text-2xl font-semibold text-gray-900">
+                {toNumber(reportsRaw?.resumen?.[0]?.TrabajadoresUnicos, 0)}
+              </p>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+              <h4 className="text-sm font-medium text-gray-500">Productos Vendidos</h4>
+              <p className="mt-2 text-2xl font-semibold text-gray-900">
+                {toNumber(reportsRaw?.resumen?.[0]?.ProductosVendidos, 0)}
+              </p>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+              <h4 className="text-sm font-medium text-gray-500">Categorías Vendidas</h4>
+              <p className="mt-2 text-2xl font-semibold text-gray-900">
+                {toNumber(reportsRaw?.resumen?.[0]?.CategoriasVendidas, 0)}
+              </p>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+              <h4 className="text-sm font-medium text-gray-500">Promedio Descuento</h4>
+              <p className="mt-2 text-2xl font-semibold text-gray-900">
+                {formatCurrency((reportsRaw?.resumen?.[0]?.PromedioDescuento) ?? 0)}
+              </p>
+            </div>
+          </div>
+        </>
       )}
 
       {/* Gráficos */}
@@ -1121,7 +1238,9 @@ const ReportsContent = () => {
               <h3 className="text-lg font-medium text-gray-900 mb-4">Ventas por Mes (Línea)</h3>
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={processMonthlyData(data.data.ventas)}>
+                  <LineChart data={(reportsRaw && Array.isArray(reportsRaw.ventasPorMes))
+                    ? (reportsRaw.ventasPorMes || []).map((m: any) => ({ mes: m.Mes || m.mes || '-', total: toNumber(m.TotalVentas, 0) }))
+                    : processMonthlyData(data?.data?.ventas || [])}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis 
                       dataKey="mes"
@@ -1183,7 +1302,7 @@ const ReportsContent = () => {
               <h3 className="text-lg font-medium text-gray-900 mb-4">Ventas por Año (Barras)</h3>
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={processYearlyData(data.data.ventas)}>
+                  <BarChart data={processYearlyData(data?.data?.ventas || [])}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis 
                       dataKey="año"
@@ -1218,6 +1337,189 @@ const ReportsContent = () => {
                     />
                   </BarChart>
                 </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+
+          {/* Nuevas secciones basadas en reportsRaw */}
+          {Array.isArray(reportsRaw?.ventasPorCategorias) && reportsRaw.ventasPorCategorias.length > 0 && (
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Ventas por Categoría (Nuevo)</h3>
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={(reportsRaw.ventasPorCategorias || []).map((c: any) => ({ name: c.Categoria || 'Sin categoría', value: toNumber(c.TotalGenerado, 0) }))}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      outerRadius={90}
+                      dataKey="value"
+                      nameKey="name"
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {(reportsRaw.ventasPorCategorias || []).map((_: any, index: number) => (
+                        <Cell key={`cell-cat-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+
+          {Array.isArray(reportsRaw?.ventasPorDepartamentos) && reportsRaw.ventasPorDepartamentos.length > 0 && (
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Ventas por Departamento</h3>
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={(reportsRaw.ventasPorDepartamentos || []).map((d: any) => ({ departamento: d.Departamento || 'Sin departamento', total: toNumber(d.TotalVentas, 0) }))}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="departamento" interval={0} height={60} tick={{ fontSize: 12 }} />
+                    <YAxis tickFormatter={(v) => formatCurrency(v)} />
+                    <Tooltip formatter={(v: number) => formatCurrency(v)} />
+                    <Bar dataKey="total" fill="#3B82F6" radius={[4,4,0,0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+
+          {Array.isArray(reportsRaw?.ventasPorTrabajador) && reportsRaw.ventasPorTrabajador.length > 0 && (
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Ventas por Trabajador</h3>
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={(reportsRaw.ventasPorTrabajador || []).map((t: any) => ({ trabajador: t.Trabajador || 'Desconocido', total: toNumber(t.TotalVentas, 0) }))}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="trabajador" interval={0} height={60} tick={{ fontSize: 12 }} />
+                    <YAxis tickFormatter={(v) => formatCurrency(v)} />
+                    <Tooltip formatter={(v: number) => formatCurrency(v)} />
+                    <Bar dataKey="total" fill="#10B981" radius={[4,4,0,0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+
+          {(Array.isArray(reportsRaw?.productosMasVendidosCantidad) || Array.isArray(reportsRaw?.productosMenosVendidosCantidad)) && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Productos más vendidos (Cantidad)</h3>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Código</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categoría</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cantidad</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {(reportsRaw?.productosMasVendidosCantidad || []).map((p: any, i: number) => (
+                        <tr key={`pmc-${i}`} className="hover:bg-gray-50">
+                          <td className="px-4 py-2 text-sm text-gray-900">{p.Producto}</td>
+                          <td className="px-4 py-2 text-sm text-gray-900">{p.Codigo}</td>
+                          <td className="px-4 py-2 text-sm text-gray-900">{p.Categoria}</td>
+                          <td className="px-4 py-2 text-sm text-gray-900">{toNumber(p.CantidadVendida, 0)}</td>
+                          <td className="px-4 py-2 text-sm text-gray-900">{formatCurrency(p.TotalGenerado)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Productos menos vendidos (Cantidad)</h3>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Código</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categoría</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cantidad</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {(reportsRaw?.productosMenosVendidosCantidad || []).map((p: any, i: number) => (
+                        <tr key={`plc-${i}`} className="hover:bg-gray-50">
+                          <td className="px-4 py-2 text-sm text-gray-900">{p.Producto}</td>
+                          <td className="px-4 py-2 text-sm text-gray-900">{p.Codigo}</td>
+                          <td className="px-4 py-2 text-sm text-gray-900">{p.Categoria}</td>
+                          <td className="px-4 py-2 text-sm text-gray-900">{toNumber(p.CantidadVendida, 0)}</td>
+                          <td className="px-4 py-2 text-sm text-gray-900">{formatCurrency(p.TotalGenerado)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {(Array.isArray(reportsRaw?.productosMasVendidosTotal) || Array.isArray(reportsRaw?.productosMenosVendidosTotal)) && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Productos más vendidos (Total)</h3>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Código</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categoría</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cantidad</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {(reportsRaw?.productosMasVendidosTotal || []).map((p: any, i: number) => (
+                        <tr key={`pmt-${i}`} className="hover:bg-gray-50">
+                          <td className="px-4 py-2 text-sm text-gray-900">{p.Producto}</td>
+                          <td className="px-4 py-2 text-sm text-gray-900">{p.Codigo}</td>
+                          <td className="px-4 py-2 text-sm text-gray-900">{p.Categoria}</td>
+                          <td className="px-4 py-2 text-sm text-gray-900">{toNumber(p.CantidadVendida, 0)}</td>
+                          <td className="px-4 py-2 text-sm text-gray-900">{formatCurrency(p.TotalGenerado)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Productos menos vendidos (Total)</h3>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Código</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categoría</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cantidad</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {(reportsRaw?.productosMenosVendidosTotal || []).map((p: any, i: number) => (
+                        <tr key={`plt-${i}`} className="hover:bg-gray-50">
+                          <td className="px-4 py-2 text-sm text-gray-900">{p.Producto}</td>
+                          <td className="px-4 py-2 text-sm text-gray-900">{p.Codigo}</td>
+                          <td className="px-4 py-2 text-sm text-gray-900">{p.Categoria}</td>
+                          <td className="px-4 py-2 text-sm text-gray-900">{toNumber(p.CantidadVendida, 0)}</td>
+                          <td className="px-4 py-2 text-sm text-gray-900">{formatCurrency(p.TotalGenerado)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           )}
@@ -1350,13 +1652,13 @@ const ReportsContent = () => {
                     </td>
                   </tr>
                 ))}
-                {reportType === 'top' && data.data.top && data.data.top.map((producto, index) => (
+                {reportType === 'top' && (data && data.data && Array.isArray(data.data.top)) && data.data.top.map((producto, index) => (
                   <tr key={index} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{producto.Producto}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{producto.Cantidad}</td>
                   </tr>
                 ))}
-                {reportType === 'total' && data.data.total && data.data.total.map((total, index) => (
+                {reportType === 'total' && (data && data.data && Array.isArray(data.data.total)) && data.data.total.map((total, index) => (
                   <tr key={index} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {new Intl.NumberFormat('es-CO', {

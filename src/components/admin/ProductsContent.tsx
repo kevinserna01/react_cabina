@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import { createCategory, deleteCategory, listCategories, updateCategory } from '../../services/categories';
 
 interface Product {
   _id?: string;
   id?: string;
   name: string;
   code: string;
-  price: number;
+  price: number; // compatibilidad
+  costPrice?: number;
+  salePrice?: number;
+  profitMargin?: number;
   category: string;
   description: string;
   createdAt?: Date;
@@ -15,9 +19,11 @@ interface Product {
 interface NewProduct {
   name: string;
   code: string;
-  price: number;
-  category: string;
+  costPrice: number;
+  salePrice: number;
+  category: string; // nombre de categoría o vacío
   description: string;
+  createNewCategory?: boolean;
 }
 
 interface ApiResponse {
@@ -41,18 +47,26 @@ const ProductsContent = () => {
   const [newProduct, setNewProduct] = useState<NewProduct>({
     name: '',
     code: '',
-    price: 0,
+    costPrice: 0,
+    salePrice: 0,
     category: '',
-    description: ''
+    description: '',
+    createNewCategory: false,
   });
 
   const [products, setProducts] = useState<Product[]>([]);
 
-  const categories = ['all', 'Cuadernos', 'Útiles', 'Papelería', 'Arte'];
+  interface CategoryRow { id: string; name: string; description?: string }
+  const [categories, setCategories] = useState<CategoryRow[]>([]);
+  const categoryNames = ['all', ...categories.map(c => c.name)];
+  const [isCategoriesModalOpen, setIsCategoriesModalOpen] = useState(false);
+  const [newCategory, setNewCategory] = useState<{ name: string; description: string }>({ name: '', description: '' });
+  const [editingCategory, setEditingCategory] = useState<CategoryRow | null>(null);
 
   // Cargar productos al montar el componente
   useEffect(() => {
     fetchProducts();
+    fetchCategories();
   }, []);
 
   const fetchProducts = async () => {
@@ -60,10 +74,61 @@ const ProductsContent = () => {
       const response = await fetch('https://back-papeleria-two.vercel.app/v1/papeleria/getProductsapi');
       if (!response.ok) throw new Error('Error al cargar productos');
       const data = await response.json();
-      setProducts(data.data || []);
+      const mapped = (data.data || []).map((p: any) => ({
+        ...p,
+        // Normalizar siempre números para evitar NaN en la UI
+        price: Number(p.salePrice ?? p.precio ?? p.price ?? 0),
+        costPrice: Number(p.costPrice ?? p.precioCosto ?? 0),
+        salePrice: Number(p.salePrice ?? p.precio ?? p.price ?? 0),
+        profitMargin: p.profitMargin ?? p.margenGanancia,
+      }));
+      setProducts(mapped);
     } catch (error) {
       console.error('Error:', error);
       setErrorMessage('Error al cargar los productos');
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const list = await listCategories();
+      const mapped = (list || []).map((c: any) => ({ id: c.id || c._id || c.value || c.name, name: c.name || c.nombre, description: c.description || c.descripcion })).filter(c => c.name);
+      setCategories(mapped);
+    } catch {
+      setCategories([]);
+    }
+  };
+
+  const handleCreateCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await createCategory({ name: newCategory.name.trim(), description: newCategory.description.trim() || undefined });
+      setNewCategory({ name: '', description: '' });
+      await fetchCategories();
+    } catch (err) {
+      setErrorMessage(err instanceof Error ? err.message : 'Error al crear categoría');
+    }
+  };
+
+  const handleUpdateCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingCategory) return;
+    try {
+      await updateCategory(editingCategory.id, { name: editingCategory.name, description: editingCategory.description });
+      setEditingCategory(null);
+      await fetchCategories();
+    } catch (err) {
+      setErrorMessage(err instanceof Error ? err.message : 'Error al actualizar categoría');
+    }
+  };
+
+  const handleDeleteCategory = async (row: CategoryRow) => {
+    if (!confirm(`¿Eliminar la categoría "${row.name}"?`)) return;
+    try {
+      await deleteCategory(row.id);
+      await fetchCategories();
+    } catch (err) {
+      setErrorMessage(err instanceof Error ? err.message : 'No se pudo eliminar la categoría (puede estar en uso)');
     }
   };
 
@@ -109,7 +174,7 @@ const ProductsContent = () => {
         [name]: value,
         code: newCode
       }));
-    } else if (name === 'price') {
+    } else if (name === 'costPrice' || name === 'salePrice') {
       // Eliminar cualquier carácter que no sea número
       const numericValue = value.replace(/[^0-9]/g, '');
       setNewProduct(prev => ({
@@ -130,6 +195,16 @@ const ProductsContent = () => {
     setErrorMessage('');
 
     try {
+      // Validaciones básicas
+      if (newProduct.costPrice < 0 || newProduct.salePrice < 0) {
+        throw new Error('Los precios no pueden ser negativos');
+      }
+      if (newProduct.salePrice < newProduct.costPrice) {
+        throw new Error('El precio de venta no puede ser menor al precio de costo');
+      }
+      if (newProduct.createNewCategory && !newProduct.category.trim()) {
+        throw new Error('Ingrese el nombre de la nueva categoría o desmarque la opción');
+      }
       const response = await fetch('https://back-papeleria-two.vercel.app/v1/papeleria/newproductapi', {
         method: 'POST',
         headers: {
@@ -146,15 +221,21 @@ const ProductsContent = () => {
       }
 
       if (result.data) {
-        setProducts(prev => [...prev, result.data as Product]);
+        const p: any = result.data;
+        const mapped: Product = {
+          ...(p as any),
+          price: Number(p.salePrice ?? p.precio ?? p.price ?? 0),
+          costPrice: p.costPrice ?? p.precioCosto,
+          salePrice: p.salePrice ?? p.precio ?? p.price,
+          profitMargin: p.profitMargin ?? p.margenGanancia,
+        };
+        setProducts(prev => [...prev, mapped]);
+        // refrescar categorías si se creó una nueva
+        if (newProduct.createNewCategory && newProduct.category) {
+          await fetchCategories();
+        }
         setIsAddModalOpen(false);
-        setNewProduct({
-          name: '',
-          code: '',
-          price: 0,
-          category: '',
-          description: ''
-        });
+        setNewProduct({ name: '', code: '', costPrice: 0, salePrice: 0, category: '', description: '', createNewCategory: false });
         setSuccessMessage('Producto agregado correctamente');
         setShowSuccess(true);
         setTimeout(() => setShowSuccess(false), 3000);
@@ -180,7 +261,7 @@ const ProductsContent = () => {
     setErrorMessage('');
 
     try {
-      const response = await fetch('https://back-papeleria-two.vercel.app/v1/papeleria/updateproductapi', {
+      const response = await fetch('https://back-papeleria-two.vercel.app/v1/papeleria/updateProductapi', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -188,10 +269,11 @@ const ProductsContent = () => {
         },
         body: JSON.stringify({
           code: editingProduct.code,
-          name: editingProduct.name,
-          price: editingProduct.price,
+          costPrice: editingProduct.costPrice,
+          salePrice: editingProduct.salePrice ?? editingProduct.price,
           category: editingProduct.category,
-          description: editingProduct.description
+          description: editingProduct.description,
+          createNewCategory: false,
         })
       });
 
@@ -201,9 +283,18 @@ const ProductsContent = () => {
         throw new Error(result.message || 'Error al actualizar el producto');
       }
 
-      setProducts(prev => prev.map(p => 
-        p.code === editingProduct.code ? result.producto : p
-      ));
+      setProducts(prev => prev.map(p => {
+        if (p.code !== editingProduct.code) return p;
+        const r: any = result.producto || result.data || result;
+        const mapped: Product = {
+          ...(r as any),
+          price: Number(r.salePrice ?? r.price ?? p.price ?? 0),
+          costPrice: r.costPrice ?? r.precioCosto ?? p.costPrice,
+          salePrice: r.salePrice ?? r.precio ?? p.salePrice,
+          profitMargin: r.profitMargin ?? r.margenGanancia ?? p.profitMargin,
+        };
+        return mapped;
+      }));
 
       setIsEditModalOpen(false);
       setEditingProduct(null);
@@ -310,12 +401,13 @@ const ProductsContent = () => {
             onChange={(e) => setSelectedCategory(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            {categories.map(category => (
+            {categoryNames.map(category => (
               <option key={category} value={category}>
                 {category === 'all' ? 'Todas las categorías' : category}
               </option>
             ))}
           </select>
+          <button onClick={() => setIsCategoriesModalOpen(true)} className="px-3 py-2 border rounded">Gestionar Categorías</button>
           <button
             onClick={() => setIsAddModalOpen(true)}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
@@ -349,7 +441,7 @@ const ProductsContent = () => {
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                   {product.category}
                 </span>
-                <div className="flex items-center gap-2">
+              <div className="flex items-center gap-4">
                   <button
                     onClick={() => handleEdit(product)}
                     className="text-blue-600 hover:text-blue-800"
@@ -368,6 +460,16 @@ const ProductsContent = () => {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
                   </button>
+                </div>
+                <div className="text-right text-xs text-gray-500">
+                  {typeof product.costPrice === 'number' && typeof product.salePrice === 'number' && (
+                    <span>
+                      Costo: {formatPrice(product.costPrice)} · Venta: {formatPrice(product.salePrice)}
+                    </span>
+                  )}
+                  {typeof product.profitMargin === 'number' && (
+                    <div>Margen: {product.profitMargin.toFixed(1)}%</div>
+                  )}
                 </div>
               </div>
             </div>
@@ -477,9 +579,9 @@ const ProductsContent = () => {
                   required
                   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 >
-                  {categories.filter(cat => cat !== 'all').map(category => (
-                    <option key={category} value={category}>
-                      {category}
+                  {categories.map(category => (
+                    <option key={category.id} value={category.name}>
+                      {category.name}
                     </option>
                   ))}
                 </select>
@@ -523,6 +625,72 @@ const ProductsContent = () => {
         </div>
       )}
 
+      {/* Modal de categorías */}
+      {isCategoriesModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-900">Categorías</h2>
+              <button onClick={() => setIsCategoriesModalOpen(false)} className="text-gray-500 hover:text-gray-700">✕</button>
+            </div>
+            <form onSubmit={editingCategory ? handleUpdateCategory : handleCreateCategory} className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+              <input
+                type="text"
+                placeholder="Nombre"
+                value={editingCategory ? editingCategory.name : newCategory.name}
+                onChange={(e) => editingCategory ? setEditingCategory({...editingCategory, name: e.target.value}) : setNewCategory({...newCategory, name: e.target.value})}
+                className="px-3 py-2 border rounded"
+                required
+              />
+              <input
+                type="text"
+                placeholder="Descripción"
+                value={editingCategory ? (editingCategory.description || '') : newCategory.description}
+                onChange={(e) => editingCategory ? setEditingCategory({...editingCategory, description: e.target.value}) : setNewCategory({...newCategory, description: e.target.value})}
+                className="px-3 py-2 border rounded"
+              />
+              <div className="flex gap-2">
+                {editingCategory ? (
+                  <>
+                    <button type="submit" className="px-3 py-2 bg-blue-600 text-white rounded">Actualizar</button>
+                    <button type="button" onClick={() => setEditingCategory(null)} className="px-3 py-2 border rounded">Cancelar</button>
+                  </>
+                ) : (
+                  <button type="submit" className="px-3 py-2 bg-blue-600 text-white rounded">Crear</button>
+                )}
+              </div>
+            </form>
+            <div className="max-h-64 overflow-y-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-2 text-left text-xs text-gray-500 uppercase tracking-wider">Nombre</th>
+                    <th className="px-4 py-2 text-left text-xs text-gray-500 uppercase tracking-wider">Descripción</th>
+                    <th className="px-4 py-2 text-right text-xs text-gray-500 uppercase tracking-wider">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {categories.length === 0 ? (
+                    <tr><td colSpan={3} className="px-6 py-6 text-center text-gray-500">Sin categorías</td></tr>
+                  ) : categories.map((c) => (
+                    <tr key={c.id}>
+                      <td className="px-4 py-2 text-sm text-gray-900">{c.name}</td>
+                      <td className="px-4 py-2 text-sm text-gray-500">{c.description || '-'}</td>
+                      <td className="px-4 py-2 text-sm text-right">
+                        <div className="flex justify-end gap-2">
+                          <button onClick={() => setEditingCategory(c)} className="px-3 py-1 border rounded">Editar</button>
+                          <button onClick={() => handleDeleteCategory(c)} className="px-3 py-1 border rounded text-red-600">Eliminar</button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal de Agregar Producto */}
       {isAddModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
@@ -558,22 +726,28 @@ const ProductsContent = () => {
                 />
               </div>
 
-              <div>
-                <label htmlFor="price" className="block text-sm font-medium text-gray-700">
-                  Precio
-                </label>
-                <div className="relative mt-1">
-                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">
-                    $
-                  </span>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Precio de Costo</label>
                   <input
                     type="text"
-                    id="price"
-                    name="price"
-                    value={newProduct.price ? formatPrice(newProduct.price).replace('COP', '').trim() : ''}
+                    name="costPrice"
+                    value={newProduct.costPrice ? formatPrice(newProduct.costPrice).replace('COP', '').trim() : ''}
                     onChange={handleInputChange}
                     required
-                    className="block w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Precio de Venta</label>
+                  <input
+                    type="text"
+                    name="salePrice"
+                    value={newProduct.salePrice ? formatPrice(newProduct.salePrice).replace('COP', '').trim() : ''}
+                    onChange={handleInputChange}
+                    required
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                     placeholder="0"
                   />
                 </div>
@@ -583,21 +757,38 @@ const ProductsContent = () => {
                 <label htmlFor="category" className="block text-sm font-medium text-gray-700">
                   Categoría
                 </label>
-                <select
-                  id="category"
-                  name="category"
-                  value={newProduct.category}
-                  onChange={handleInputChange}
-                  required
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="">Seleccionar categoría</option>
-                  {categories.filter(cat => cat !== 'all').map(category => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
-                  ))}
-                </select>
+                <div className="flex gap-2">
+                  <select
+                    id="category"
+                    name="category"
+                    value={newProduct.category}
+                    onChange={handleInputChange}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">Sin categoría</option>
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.name}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                  <label className="inline-flex items-center gap-2 mt-1 text-sm text-gray-700">
+                    <input type="checkbox" checked={!!newProduct.createNewCategory} onChange={(e) => setNewProduct(prev => ({ ...prev, createNewCategory: e.target.checked }))} />
+                  Crear categoría si no existe
+                  </label>
+                </div>
+                {newProduct.createNewCategory && (
+                  <div className="mt-2">
+                    <input
+                      type="text"
+                      placeholder="Nombre nueva categoría"
+                      value={newProduct.category}
+                      onChange={(e) => setNewProduct(prev => ({ ...prev, category: e.target.value }))}
+                      className="w-full px-3 py-2 border rounded"
+                      required
+                    />
+                  </div>
+                )}
               </div>
 
               <div>

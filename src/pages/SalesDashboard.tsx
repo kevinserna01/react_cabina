@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import SearchBar from '../components/sales/SearchBar';
-import ProductCard from '../components/sales/ProductCard';
 import CartPanel from '../components/layout/CartPanel';
 import { useCartStore } from '../store/cartStore';
 import { Product } from '../types';
@@ -46,12 +45,16 @@ const SalesDashboard = () => {
         if (result.status === "Success") {
           // Mapear los datos al formato esperado por el componente
           const formattedProducts = result.data.map((item: any) => ({
-            id: item.code, // Usamos el código como ID
+            id: item.code,
             name: item.nombre,
             code: item.code,
-            price: item.precio,
+            // compatibilidad: usar salePrice si viene, sino precio
+            price: Number(item.salePrice ?? item.precio ?? item.price ?? 0),
+            costPrice: item.precioCosto ?? item.costPrice ?? undefined,
+            salePrice: item.salePrice ?? item.precio ?? undefined,
+            profitMargin: item.margenGanancia ?? undefined,
             stock: item.stock,
-            category: item.categoria
+            category: item.categoria,
           }));
           setProducts(formattedProducts);
         } else {
@@ -99,6 +102,15 @@ const SalesDashboard = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     navigate('/login');
+  };
+
+  const formatPrice = (value: number): string => {
+    return new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(Number(value || 0));
   };
 
   const handleProductSelect = (product: Product) => {
@@ -171,14 +183,48 @@ const SalesDashboard = () => {
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {products.map((product) => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    onAddToCart={handleProductSelect}
-                  />
-                ))}
+              <div className="bg-white rounded-lg shadow overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Código</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categoría</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Precio</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acción</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {products.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="px-6 py-8 text-center text-gray-500">No hay productos</td>
+                        </tr>
+                      ) : (
+                        products.map((product) => (
+                          <tr key={product.id} className="hover:bg-gray-50">
+                            <td className="px-4 py-2 text-sm text-gray-900">{product.code}</td>
+                            <td className="px-4 py-2 text-sm text-gray-900">{product.name}</td>
+                            <td className="px-4 py-2 text-sm text-gray-500">{product.category || '-'}</td>
+                            <td className="px-4 py-2 text-sm text-gray-900">{formatPrice(product.price)}</td>
+                            <td className="px-4 py-2 text-sm text-gray-900">{product.stock}</td>
+                            <td className="px-4 py-2 text-sm text-right">
+                              <button
+                                onClick={() => handleProductSelect(product)}
+                                disabled={product.stock <= 0}
+                                className={`px-3 py-1 rounded-md ${product.stock <= 0 ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
+                                aria-label={`Agregar ${product.name} al carrito`}
+                              >
+                                Agregar
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </div>

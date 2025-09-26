@@ -6,6 +6,10 @@ import ProductsContent from '../components/admin/ProductsContent';
 import SalesContent from '../components/admin/SalesContent';
 import ReportsContent from '../components/admin/ReportsContent';
 import UsersContent from '../components/admin/UsersContent';
+import CustomersContent from '../components/admin/CustomersContent';
+import InvoicesContent from '../components/admin/InvoicesContent';
+import AccountStatementContent from '../components/admin/AccountStatementContent';
+import CarteraReportsContent from '../components/admin/CarteraReportsContent';
 
 interface NavItem {
   id: string;
@@ -55,6 +59,15 @@ const AdminDashboard = () => {
       ),
     },
     {
+      id: 'invoices',
+      label: 'Facturación',
+      icon: (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6M7 8h10M7 4h10a2 2 0 012 2v12a2 2 0 01-2 2H7a2 2 0 01-2-2V6a2 2 0 012-2z" />
+        </svg>
+      ),
+    },
+    {
       id: 'reports',
       label: 'Reportes',
       icon: (
@@ -64,11 +77,38 @@ const AdminDashboard = () => {
       ),
     },
     {
+      id: 'carteraReports',
+      label: 'Rep. Cartera',
+      icon: (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 11V7a4 4 0 118 0v4m-9 4h10M5 9h4m-4 4h4m-4 4h4" />
+        </svg>
+      ),
+    },
+    {
+      id: 'account',
+      label: 'Estado de Cuenta',
+      icon: (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V7M16 3v4M8 3v4M3 11h18" />
+        </svg>
+      ),
+    },
+    {
       id: 'users',
       label: 'Usuarios',
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+        </svg>
+      ),
+    },
+    {
+      id: 'customers',
+      label: 'Clientes',
+      icon: (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a4 4 0 00-4-4h-3M9 20H4v-2a4 4 0 014-4h3m0-4a4 4 0 100-8 4 4 0 000 8z" />
         </svg>
       ),
     },
@@ -99,6 +139,14 @@ const AdminDashboard = () => {
         return <ReportsContent />;
       case 'users':
         return <UsersContent />;
+      case 'customers':
+        return <CustomersContent />;
+      case 'invoices':
+        return <InvoicesContent />;
+      case 'account':
+        return <AccountStatementContent />;
+      case 'carteraReports':
+        return <CarteraReportsContent />;
       default:
         return <DashboardContent />;
     }

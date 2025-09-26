@@ -1,10 +1,16 @@
 import { useState, useEffect } from 'react';
+import { listCategories } from '../../services/categories';
 
 interface Product {
   code: string;
   name: string;
   category: string;
+  // precio de venta compatible
   price: number;
+  // nuevos campos
+  costPrice?: number;
+  salePrice?: number;
+  profitMargin?: number;
   description: string;
 }
 
@@ -50,8 +56,10 @@ const InventoryContent = () => {
   const [productToDelete, setProductToDelete] = useState<InventoryItem | null>(null);
   const [successMessage, setSuccessMessage] = useState('');
   const [stockToAdd, setStockToAdd] = useState<string>('');
+  // Estado de vista de costos ya no se usa; costos están integrados en la tabla principal
+  const showCostView = false;
 
-  const categories = ['Cuadernos', 'Útiles', 'Papelería', 'Arte'];
+  const [categoryNames, setCategoryNames] = useState<string[]>(['all']);
 
   // Cargar inventario inicial
   useEffect(() => {
@@ -94,7 +102,21 @@ const InventoryContent = () => {
     };
 
     fetchInventory();
+    // cargar categorías dinámicas
+    (async () => {
+      try {
+        const cats = await listCategories();
+        const names = (cats || []).map((c: any) => c.name || c.nombre).filter(Boolean);
+        setCategoryNames(['all', ...names]);
+      } catch {
+        setCategoryNames(['all']);
+      }
+    })();
+    // cargar productos para costos en vista principal
+    fetchProducts();
   }, []);
+
+  // La vista de costos está integrada; no se requiere efecto adicional
 
   const fetchProducts = async () => {
     try {
@@ -102,7 +124,18 @@ const InventoryContent = () => {
       const response = await fetch('https://back-papeleria-two.vercel.app/v1/papeleria/getProductsapi');
       if (!response.ok) throw new Error('Error al cargar productos');
       const data = await response.json();
-      setProducts(Array.isArray(data.data) ? data.data : []);
+      const mapped = (Array.isArray(data.data) ? data.data : []).map((p: any) => ({
+        code: p.code,
+        name: p.name || p.nombre,
+        category: p.category || p.categoria || '',
+        // compatibilidad de precios
+        price: Number(p.salePrice ?? p.precio ?? p.price ?? 0),
+        costPrice: Number(p.costPrice ?? p.precioCosto ?? 0),
+        salePrice: Number(p.salePrice ?? p.precio ?? p.price ?? 0),
+        profitMargin: p.profitMargin ?? p.margenGanancia,
+        description: p.description || p.descripcion || '',
+      }));
+      setProducts(mapped);
     } catch (error) {
       console.error('Error:', error);
       setErrorMessage('Error al cargar los productos');
@@ -234,6 +267,20 @@ const InventoryContent = () => {
 
   const filteredProducts = safeFilter(products, productSearchTerm, productCategory);
   const filteredInventory = safeFilter(inventory, searchTerm, selectedCategory);
+
+  // Preparar filas con costos para la vista de costos
+  const inventoryCostRows = filteredInventory.map((item) => {
+    const product = products.find((p) => p.code === item.code);
+    // costo por unidad: preferir costPrice, luego price
+    const unitPrice = product?.costPrice ?? product?.price ?? 0;
+    const totalCost = unitPrice * (item.stock ?? 0);
+    return {
+      ...item,
+      unitPrice,
+      totalCost,
+    };
+  });
+  const grandTotalCost = inventoryCostRows.reduce((sum, row) => sum + (row.totalCost ?? 0), 0);
 
   const handleEditClick = (item: InventoryItem) => {
     setEditingProduct(item);
@@ -465,7 +512,7 @@ const InventoryContent = () => {
             onChange={(e) => setSelectedCategory(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            {['all', ...categories].map(category => (
+            {categoryNames.map(category => (
               <option key={category} value={category}>
                 {category === 'all' ? 'Todas las categorías' : category}
               </option>
@@ -481,75 +528,85 @@ const InventoryContent = () => {
         </div>
       </div>
 
-      {/* Tabla de Inventario */}
+      {/* Tabla principal / Vista de costos */}
+      {showCostView ? (
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Código
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Producto
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Categoría
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Stock
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Stock Mínimo
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Última Actualización
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Acciones
-                </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Código</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Disponibles</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Costo Unidad</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Costo Total</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredInventory.map((item) => (
+                {inventoryCostRows.map((row) => (
+                  <tr key={row.code}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{row.code}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{row.name}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{row.stock}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatPrice(row.unitPrice)}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">{formatPrice(row.totalCost)}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot className="bg-gray-50">
+                <tr>
+                  <td className="px-6 py-3 text-sm font-semibold text-gray-700" colSpan={4}>Costo total del inventario</td>
+                  <td className="px-6 py-3 text-sm font-bold text-indigo-700">{formatPrice(grandTotalCost)}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          {showCostView && products.length === 0 && (
+            <div className="p-4 text-sm text-gray-600">Cargando costos...</div>
+          )}
+        </div>
+      ) : (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Código</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categoría</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock Mínimo</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Costo Unidad</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Costo Total</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Última Actualización</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredInventory.map((item) => {
+                  const product = products.find((p) => p.code === item.code);
+                  const unitPrice = product?.costPrice ?? product?.price ?? 0;
+                  const totalCost = unitPrice * (item.stock ?? 0);
+                  return (
                 <tr key={item.code}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.code}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.name}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.category}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {item.code}
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${item.stock <= item.minStock ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>{item.stock}</span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {item.name}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {item.category}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                      ${item.stock <= item.minStock ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
-                      {item.stock}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {item.minStock}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {new Date(item.lastUpdate!).toLocaleDateString()}
-                  </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.minStock}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatPrice(unitPrice)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">{formatPrice(totalCost)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{new Date(item.lastUpdate!).toLocaleDateString()}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleEditClick(item)}
-                        className="text-blue-600 hover:text-blue-800"
-                        aria-label="Editar inventario"
-                      >
+                          <button onClick={() => handleEditClick(item)} className="text-blue-600 hover:text-blue-800" aria-label="Editar inventario">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                         </svg>
                       </button>
-                      <button
-                        onClick={() => handleDeleteClick(item)}
-                        className="text-red-600 hover:text-red-800"
-                        aria-label="Eliminar del inventario"
-                      >
+                          <button onClick={() => handleDeleteClick(item)} className="text-red-600 hover:text-red-800" aria-label="Eliminar del inventario">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
@@ -557,11 +614,13 @@ const InventoryContent = () => {
                     </div>
                   </td>
                 </tr>
-              ))}
+                  );
+                })}
             </tbody>
           </table>
         </div>
       </div>
+      )}
 
       {/* Modal de Selección de Producto */}
       {isProductSelectionModalOpen && (
@@ -582,7 +641,7 @@ const InventoryContent = () => {
                 onChange={(e) => setProductCategory(e.target.value)}
                 className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                {['all', ...categories].map(category => (
+                {categoryNames.map(category => (
                   <option key={category} value={category}>
                     {category === 'all' ? 'Todas las categorías' : category}
                   </option>
