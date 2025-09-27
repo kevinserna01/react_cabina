@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import SearchBar from '../components/sales/SearchBar';
 import CartPanel from '../components/layout/CartPanel';
 import { useCartStore } from '../store/cartStore';
 import { Product } from '../types';
@@ -75,7 +74,7 @@ const SalesDashboard = () => {
         }));
 
         // Ordenar productos
-        const sortedProducts = formattedProducts.sort((a, b) => {
+        const sortedProducts = formattedProducts.sort((a: Product, b: Product) => {
           let aValue: any, bValue: any;
           
           switch (sortBy) {
@@ -217,11 +216,6 @@ const SalesDashboard = () => {
     }
   };
 
-  const handleAdminAccess = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    navigate('/login');
-  };
 
   return (
     <div className="h-screen flex flex-col bg-gray-100">
