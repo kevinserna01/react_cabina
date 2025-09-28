@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { InvoiceEntity, InvoiceStatus, PaginationInfo } from '../../types';
-import { createInvoice, listInvoices, updateInvoiceStatus } from '../../services/invoices';
+import { createInvoice, listInvoices } from '../../services/invoices';
 import { createPayment, listPaymentsByInvoice } from '../../services/payments';
 import { listCustomers } from '../../services/customers';
 
@@ -31,6 +31,11 @@ const InvoicesContent: React.FC = () => {
   const [paymentsInvoiceId, setPaymentsInvoiceId] = useState<string>('');
   const [payments, setPayments] = useState<{ id: string; montoAbono: number; metodoPago: 'Efectivo' | 'Nequi' | 'Transferencia'; observaciones?: string; fechaRegistro?: string }[]>([]);
   const [newPayment, setNewPayment] = useState<{ montoAbono: number; metodoPago: 'Efectivo' | 'Nequi' | 'Transferencia'; observaciones?: string }>({ montoAbono: 0, metodoPago: 'Efectivo', observaciones: '' });
+  
+  // Estados para el modal de plan de abonos
+  const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
+  const [planData, setPlanData] = useState<any>(null);
+  const [isLoadingPlan, setIsLoadingPlan] = useState(false);
 
   const fetchClientes = async () => {
     try {
@@ -110,19 +115,6 @@ const InvoicesContent: React.FC = () => {
     }
   };
 
-  const handleChangeStatus = async (id: string, estado: InvoiceStatus) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      await updateInvoiceStatus(id, estado);
-      fetchData();
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Error al actualizar estado';
-      setError(msg);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleCopyId = async (id: string) => {
     try {
@@ -142,6 +134,36 @@ const InvoicesContent: React.FC = () => {
       const msg = e instanceof Error ? e.message : 'Error al cargar abonos';
       setError(msg);
       setPayments([]);
+    }
+  };
+
+  const openPlanDetails = async (invoiceId: string) => {
+    setIsPlanModalOpen(true);
+    setIsLoadingPlan(true);
+    setError(null);
+    
+    try {
+      const response = await fetch(`https://back-papeleria-two.vercel.app/v1/papeleria/facturas-plan/${invoiceId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || 'Error al cargar detalles del plan');
+      }
+
+      setPlanData(result.data);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Error al cargar detalles del plan';
+      setError(msg);
+      setPlanData(null);
+    } finally {
+      setIsLoadingPlan(false);
     }
   };
 
@@ -266,9 +288,7 @@ const InvoicesContent: React.FC = () => {
                     <td className="px-4 py-3 text-xs md:text-sm text-gray-500 whitespace-nowrap">{f.fechaEmision ? new Date(f.fechaEmision).toLocaleString('es-CO') : '-'}</td>
                     <td className="px-4 py-3 text-right text-xs md:text-sm">
                       <div className="flex justify-end gap-2">
-                        <button onClick={() => handleChangeStatus(f.id, 'pagada')} className="px-2 py-1 border rounded text-xs">Pagada</button>
-                        <button onClick={() => openPayments(f.id)} className="px-2 py-1 border rounded text-xs">Abonos</button>
-                        <button onClick={() => handleChangeStatus(f.id, 'cancelada')} className="px-2 py-1 border rounded text-xs">Cancelar</button>
+                        <button onClick={() => openPlanDetails(f.id)} className="px-2 py-1 border rounded text-xs">Abonos</button>
                       </div>
                     </td>
                   </tr>
@@ -448,6 +468,199 @@ const InvoicesContent: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Modal de Plan de Abonos */}
+      {isPlanModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold">Plan de Abonos</h2>
+                <button 
+                  onClick={() => {
+                    setIsPlanModalOpen(false);
+                    setPlanData(null);
+                  }} 
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {isLoadingPlan ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                  <p className="mt-2 text-gray-600">Cargando detalles del plan...</p>
+                </div>
+              ) : planData ? (
+                <div className="space-y-6">
+                  {/* Información de la Factura */}
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h3 className="text-lg font-semibold mb-3">Información de la Factura</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p><strong>Número:</strong> {planData.factura?.numeroFactura || 'N/A'}</p>
+                        <p><strong>Estado:</strong> <span className={`px-2 py-1 rounded text-xs ${planData.factura?.estado === 'pagada' ? 'bg-green-100 text-green-800' : planData.factura?.estado === 'pendiente' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}`}>{planData.factura?.estado || 'N/A'}</span></p>
+                        <p><strong>Total:</strong> ${(planData.factura?.total || 0).toLocaleString('es-CO')}</p>
+                        <p><strong>Saldo Pendiente:</strong> ${(planData.factura?.saldoPendiente || 0).toLocaleString('es-CO')}</p>
+                      </div>
+                      <div>
+                        <p><strong>Cliente:</strong> {planData.factura?.cliente?.nombre || 'N/A'}</p>
+                        <p><strong>Email:</strong> {planData.factura?.cliente?.email || 'N/A'}</p>
+                        <p><strong>Teléfono:</strong> {planData.factura?.cliente?.telefono || 'N/A'}</p>
+                        <p><strong>Fecha Emisión:</strong> {planData.factura?.fechaEmision ? new Date(planData.factura.fechaEmision).toLocaleDateString('es-CO') : 'N/A'}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Información de la Venta Relacionada */}
+                  {planData.venta && (
+                    <div className="bg-blue-50 rounded-lg p-4">
+                      <h3 className="text-lg font-semibold mb-3">Venta Relacionada</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <p><strong>Código:</strong> {planData.venta.code || 'N/A'}</p>
+                          <p><strong>Tipo de Venta:</strong> <span className={`px-2 py-1 rounded text-xs ${planData.venta.tipoVenta === 'contado' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>{planData.venta.tipoVenta || 'N/A'}</span></p>
+                        </div>
+                        <div>
+                          <p><strong>Estado Pago:</strong> <span className={`px-2 py-1 rounded text-xs ${planData.venta.estadoPago === 'pagada' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>{planData.venta.estadoPago || 'N/A'}</span></p>
+                          <p><strong>Vendedor:</strong> {planData.venta.trabajador?.nombre || 'N/A'}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Estadísticas del Plan */}
+                  {planData.estadisticasPlan && (
+                    <div className="bg-green-50 rounded-lg p-4">
+                      <h3 className="text-lg font-semibold mb-3">Resumen del Plan</h3>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-green-600">${planData.estadisticasPlan.totalPlaneado?.toLocaleString('es-CO') || '0'}</p>
+                          <p className="text-sm text-gray-600">Total Planeado</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-blue-600">${planData.estadisticasPlan.totalPagado?.toLocaleString('es-CO') || '0'}</p>
+                          <p className="text-sm text-gray-600">Total Pagado</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-orange-600">{planData.estadisticasPlan.abonosPagados || 0}</p>
+                          <p className="text-sm text-gray-600">Abonos Pagados</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-red-600">{planData.estadisticasPlan.abonosPendientes || 0}</p>
+                          <p className="text-sm text-gray-600">Abonos Pendientes</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Plan de Abonos */}
+                  {planData.factura?.planAbonos && planData.factura.planAbonos.length > 0 ? (
+                    <div className="bg-white border rounded-lg p-4">
+                      <h3 className="text-lg font-semibold mb-4">Plan de Abonos</h3>
+                      <div className="space-y-3">
+                        {planData.factura.planAbonos.map((abono: any, index: number) => (
+                          <div key={index} className={`p-3 rounded-lg border ${abono.estado === 'pagado' ? 'bg-green-50 border-green-200' : abono.estado === 'vencido' ? 'bg-red-50 border-red-200' : 'bg-yellow-50 border-yellow-200'}`}>
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <span className="font-semibold">Abono #{abono.numero}</span>
+                                  <span className={`px-2 py-1 rounded text-xs ${abono.estado === 'pagado' ? 'bg-green-100 text-green-800' : abono.estado === 'vencido' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                                    {abono.estado?.toUpperCase() || 'PENDIENTE'}
+                                  </span>
+                                </div>
+                                <p className="text-sm text-gray-600">
+                                  <strong>Monto:</strong> ${abono.monto?.toLocaleString('es-CO') || '0'}
+                                </p>
+                                <p className="text-sm text-gray-600">
+                                  <strong>Fecha Programada:</strong> {abono.fechaProgramada ? new Date(abono.fechaProgramada).toLocaleDateString('es-CO') : 'N/A'}
+                                </p>
+                                {abono.estado === 'pagado' && (
+                                  <>
+                                    <p className="text-sm text-gray-600">
+                                      <strong>Fecha Pago:</strong> {abono.fechaPago ? new Date(abono.fechaPago).toLocaleDateString('es-CO') : 'N/A'}
+                                    </p>
+                                    <p className="text-sm text-gray-600">
+                                      <strong>Monto Pagado:</strong> ${abono.montoPagado?.toLocaleString('es-CO') || '0'}
+                                    </p>
+                                    {abono.montoPagado !== abono.monto && (
+                                      <p className="text-sm text-blue-600">
+                                        <strong>Diferencia:</strong> ${((abono.montoPagado || 0) - (abono.monto || 0)).toLocaleString('es-CO')}
+                                      </p>
+                                    )}
+                                  </>
+                                )}
+                                {abono.observaciones && (
+                                  <p className="text-sm text-gray-500 mt-1">
+                                    <strong>Observaciones:</strong> {abono.observaciones}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-gray-50 rounded-lg p-4 text-center">
+                      <p className="text-gray-600">Esta factura no tiene un plan de abonos configurado.</p>
+                    </div>
+                  )}
+
+                  {/* Historial de Abonos Reales */}
+                  {planData.abonosReales && planData.abonosReales.length > 0 && (
+                    <div className="bg-white border rounded-lg p-4">
+                      <h3 className="text-lg font-semibold mb-4">Historial de Pagos</h3>
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full">
+                          <thead>
+                            <tr className="text-left text-sm text-gray-500">
+                              <th className="px-3 py-2">Abono #</th>
+                              <th className="px-3 py-2">Monto Pagado</th>
+                              <th className="px-3 py-2">Método</th>
+                              <th className="px-3 py-2">Fecha Pago</th>
+                              <th className="px-3 py-2">Diferencia</th>
+                              <th className="px-3 py-2">Tipo</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {planData.abonosReales.map((abono: any, index: number) => (
+                              <tr key={index} className="border-t">
+                                <td className="px-3 py-2 text-sm">{abono.numeroAbono || 'N/A'}</td>
+                                <td className="px-3 py-2 text-sm">${abono.montoPagado?.toLocaleString('es-CO') || '0'}</td>
+                                <td className="px-3 py-2 text-sm">{abono.metodoPago || 'N/A'}</td>
+                                <td className="px-3 py-2 text-sm">{abono.fechaPago ? new Date(abono.fechaPago).toLocaleDateString('es-CO') : 'N/A'}</td>
+                                <td className="px-3 py-2 text-sm">
+                                  {abono.diferencia !== 0 && (
+                                    <span className={abono.diferencia > 0 ? 'text-green-600' : 'text-red-600'}>
+                                      ${abono.diferencia?.toLocaleString('es-CO') || '0'}
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="px-3 py-2 text-sm">
+                                  {abono.esAbonoLibre && (
+                                    <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">Abono Libre</span>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-600">No se pudieron cargar los detalles del plan.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {error && <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">{error}</div>}
     </div>
   );

@@ -13,18 +13,8 @@ const InvoicePDFModal: React.FC<InvoicePDFModalProps> = ({ isOpen, onClose, sale
   const [whatsappModalOpen, setWhatsappModalOpen] = useState(false);
   const [emailAddress, setEmailAddress] = useState(sale.cliente?.email || '');
   const [emailSubject, setEmailSubject] = useState(`Gracias por tu compra, ${sale.cliente?.name || 'Cliente'}`);
-  const [emailMessage, setEmailMessage] = useState(`Estimado ${sale.cliente?.name || 'Cliente'}, adjunto encontrará la factura de su compra (${sale.code}). Gracias por elegirnos.`);
-  const [whatsappNumber, setWhatsappNumber] = useState(sale.cliente?.phone || '');
-  const [isLoadingPDF, setIsLoadingPDF] = useState(false);
-  const [isSendingEmail, setIsSendingEmail] = useState(false);
-  const [emailSent, setEmailSent] = useState(false);
-  const [whatsappSent, setWhatsappSent] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  if (!isOpen) return null;
-
-  const pdfUrl = `https://back-papeleria-two.vercel.app/v1/papeleria/invoice-pdf/${sale.id}`;
-
+  
+  // Función para formatear precios - debe estar antes de las funciones que la usan
   const formatPrice = (price: number): string => {
     return new Intl.NumberFormat('es-CO', {
       style: 'currency',
@@ -34,7 +24,54 @@ const InvoicePDFModal: React.FC<InvoicePDFModalProps> = ({ isOpen, onClose, sale
     }).format(price);
   };
 
-  const [whatsappMessage, setWhatsappMessage] = useState(`¡Hola ${sale.cliente?.name || 'Cliente'}! 🎉\n\nGracias por tu compra en La Cabina Telecomunicaciones.\n\n📋 *Factura:* ${sale.code}\n💰 *Total:* ${formatPrice(sale.totalVenta)}\n💳 *Método de pago:* ${sale.metodoPago}\n\nAdjunto encontrará su factura en PDF.\n\n¡Esperamos verte pronto! 😊`);
+  const generateEmailMessage = () => {
+    let message = `Estimado ${sale.cliente?.name || 'Cliente'}, adjunto encontrará la factura de su compra (${sale.code}).`;
+    
+    if (sale.tipoVenta === 'financiado' && sale.planAbonos && sale.planAbonos.length > 0) {
+      message += `\n\nSu compra ha sido configurada con un plan de abonos:\n`;
+      sale.planAbonos.forEach((abono, index) => {
+        message += `• Abono ${index + 1}: ${formatPrice(abono.monto)} - Fecha: ${new Date(abono.fechaProgramada).toLocaleDateString()}\n`;
+      });
+      message += `\nRecuerde realizar los pagos en las fechas programadas.`;
+    } else if (sale.tipoVenta === 'contado') {
+      message += ` El pago ha sido realizado en su totalidad.`;
+    }
+    
+    message += `\n\nGracias por elegirnos.`;
+    return message;
+  };
+
+  const generateWhatsAppMessage = () => {
+    let message = `¡Hola ${sale.cliente?.name || 'Cliente'}! 🎉\n\nGracias por tu compra en La Cabina Telecomunicaciones.\n\n📋 *Factura:* ${sale.code}\n💰 *Total:* ${formatPrice(sale.totalVenta)}\n💳 *Método de pago:* ${sale.metodoPago}`;
+    
+    if (sale.tipoVenta === 'financiado' && sale.planAbonos && sale.planAbonos.length > 0) {
+      message += `\n\n📅 *Tipo de Venta:* Financiado\n*Plan de Abonos:*`;
+      sale.planAbonos.forEach((abono, index) => {
+        message += `\n• Abono ${index + 1}: ${formatPrice(abono.monto)} - ${new Date(abono.fechaProgramada).toLocaleDateString()}`;
+      });
+    } else if (sale.tipoVenta === 'contado') {
+      message += `\n\n💰 *Tipo de Venta:* Contado (Pago completo)`;
+    }
+    
+    message += `\n\nAdjunto encontrará su factura en PDF.\n\n¡Esperamos verte pronto! 😊`;
+    return message;
+  };
+
+  const [emailMessage, setEmailMessage] = useState(generateEmailMessage());
+  const [whatsappMessage, setWhatsappMessage] = useState(generateWhatsAppMessage());
+  const [whatsappNumber, setWhatsappNumber] = useState(sale.cliente?.phone || '');
+  const [isLoadingPDF, setIsLoadingPDF] = useState(false);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
+  const [whatsappSent, setWhatsappSent] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  if (!isOpen) return null;
+
+  // Usar la nueva ruta mejorada - prioriza factura si está disponible
+  const pdfUrl = sale.facturaId 
+    ? `https://back-papeleria-two.vercel.app/v1/papeleria/factura-pdf/${sale.facturaId}`
+    : `https://back-papeleria-two.vercel.app/v1/papeleria/invoice-pdf/${sale.id}`;
 
   // Función para mostrar PDF en nueva ventana
   const handleViewPDF = () => {
@@ -66,10 +103,15 @@ const InvoicePDFModal: React.FC<InvoicePDFModalProps> = ({ isOpen, onClose, sale
     }
   };
 
-  // Función para enviar PDF por email usando n8n
+  // Función para enviar PDF por email usando N8N
   const handleSendEmail = async () => {
     if (!emailAddress || !emailAddress.includes('@')) {
       setError('Por favor ingrese un correo electrónico válido');
+      return;
+    }
+
+    if (!sale.id) {
+      setError('ID de venta no encontrado. Por favor, intente nuevamente.');
       return;
     }
 
@@ -77,23 +119,28 @@ const InvoicePDFModal: React.FC<InvoicePDFModalProps> = ({ isOpen, onClose, sale
     setError(null);
 
     try {
+      const requestBody = {
+        saleId: sale.id,
+        email: emailAddress,
+        subject: emailSubject,
+        message: emailMessage
+      };
+
+      console.log('Enviando email con datos:', requestBody);
+
       const response = await fetch('https://back-papeleria-two.vercel.app/v1/papeleria/send-invoice-n8n', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify({
-          saleId: sale.id,
-          email: emailAddress,
-          subject: emailSubject,
-          message: emailMessage
-        })
+        body: JSON.stringify(requestBody)
       });
 
       const result = await response.json();
 
       if (!response.ok) {
+        console.error('Error response:', result);
         throw new Error(result.message || 'Error al enviar el email');
       }
 
@@ -145,58 +192,126 @@ const InvoicePDFModal: React.FC<InvoicePDFModalProps> = ({ isOpen, onClose, sale
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
-        <div className="flex flex-col h-full">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center p-1 sm:p-4 z-50 overflow-y-auto">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl min-h-[85vh] max-h-[98vh] my-2 sm:my-8">
+        <div className="flex flex-col">
           {/* Header */}
-          <div className="p-6 border-b bg-gradient-to-r from-green-50 to-blue-50">
+          <div className="p-3 sm:p-6 border-b bg-gradient-to-r from-green-50 to-blue-50 flex-shrink-0">
             <div className="flex justify-between items-start">
-              <div>
+              <div className="flex-1 min-w-0">
                 <div className="flex items-center mb-2">
-                  <CheckCircle className="h-8 w-8 text-green-500 mr-3" />
-                  <h2 className="text-2xl font-bold text-gray-900">¡Venta Exitosa!</h2>
+                  <CheckCircle className="h-6 w-6 sm:h-8 sm:w-8 text-green-500 mr-2 sm:mr-3 flex-shrink-0" />
+                  <h2 className="text-lg sm:text-2xl font-bold text-gray-900 truncate">¡Venta Exitosa!</h2>
                 </div>
-                <div className="space-y-1 text-sm text-gray-600">
-                  <p><span className="font-medium">Código:</span> {sale.code}</p>
-                  <p><span className="font-medium">Total:</span> {formatPrice(sale.totalVenta)}</p>
-                  <p><span className="font-medium">Método de Pago:</span> {sale.metodoPago}</p>
+                <div className="space-y-1 text-xs sm:text-sm text-gray-600">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
+                    <p><span className="font-medium">Código:</span> {sale.code}</p>
+                    <p><span className="font-medium">Total:</span> {formatPrice(sale.totalVenta)}</p>
+                    <p><span className="font-medium">Método de Pago:</span> {sale.metodoPago}</p>
+                    {sale.numeroFactura && (
+                      <p><span className="font-medium">Factura:</span> {sale.numeroFactura}</p>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {sale.tipoVenta && (
+                      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                        sale.tipoVenta === 'contado' 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-blue-100 text-blue-800'
+                      }`}>
+                        {sale.tipoVenta === 'contado' ? '💰 Contado' : '📅 Financiado'}
+                      </span>
+                    )}
+                    {sale.estadoPago && (
+                      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                        sale.estadoPago === 'pagada' 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {sale.estadoPago}
+                      </span>
+                    )}
+                  </div>
                   {sale.cliente && (
-                    <p><span className="font-medium">Cliente:</span> {sale.cliente.name}</p>
+                    <p className="mt-1"><span className="font-medium">Cliente:</span> {sale.cliente.name}</p>
                   )}
                 </div>
               </div>
               <button
                 onClick={onClose}
-                className="text-gray-400 hover:text-gray-500 p-2"
+                className="text-gray-400 hover:text-gray-500 p-1 sm:p-2 flex-shrink-0"
               >
-                <X className="h-6 w-6" />
+                <X className="h-5 w-5 sm:h-6 sm:w-6" />
               </button>
             </div>
           </div>
 
           {/* Content */}
-          <div className="flex-1 p-6 overflow-y-auto">
-            <div className="space-y-6">
+          <div className="p-3 sm:p-6">
+            <div className="space-y-3 sm:space-y-6">
+              {/* Plan de abonos si es financiado */}
+              {sale.tipoVenta === 'financiado' && sale.planAbonos && sale.planAbonos.length > 0 && (
+                <div className="bg-blue-50 rounded-lg p-2 sm:p-4 border border-blue-200">
+                  <h4 className="text-sm sm:text-lg font-semibold text-blue-900 mb-2 sm:mb-3 flex items-center">
+                    📅 Plan de Abonos Configurado
+                  </h4>
+                  <div className="space-y-1 sm:space-y-2">
+                    {sale.planAbonos.map((abono, index) => (
+                      <div key={index} className="flex flex-col sm:flex-row sm:justify-between sm:items-center bg-white rounded p-2 sm:p-3 border border-blue-100 gap-1 sm:gap-2">
+                        <div className="flex-1">
+                          <span className="font-medium text-blue-900 text-xs sm:text-sm">Abono #{index + 1}</span>
+                          <p className="text-xs text-gray-600">
+                            Fecha: {new Date(abono.fechaProgramada).toLocaleDateString()}
+                          </p>
+                          {abono.observaciones && (
+                            <p className="text-xs text-gray-500">{abono.observaciones}</p>
+                          )}
+                        </div>
+                        <div className="text-left sm:text-right">
+                          <span className="font-bold text-blue-900 text-xs sm:text-base">{formatPrice(abono.monto)}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-blue-200 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-2">
+                    <span className="font-medium text-blue-900 text-xs sm:text-base">Total del Plan:</span>
+                    <span className="font-bold text-blue-900 text-sm sm:text-lg">
+                      {formatPrice(sale.planAbonos.reduce((sum, abono) => sum + abono.monto, 0))}
+                    </span>
+                  </div>
+                  {sale.diasVencimiento && (
+                    <div className="mt-1 sm:mt-2 text-xs text-blue-700">
+                      <strong>Días de vencimiento:</strong> {sale.diasVencimiento} días
+                    </div>
+                  )}
+                  {sale.observaciones && (
+                    <div className="mt-1 sm:mt-2 text-xs text-blue-700">
+                      <strong>Observaciones:</strong> {sale.observaciones}
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="text-center">
-                <FileText className="h-16 w-16 text-blue-500 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                <FileText className="h-8 w-8 sm:h-12 sm:w-12 text-blue-500 mx-auto mb-1 sm:mb-3" />
+                <h3 className="text-sm sm:text-lg font-semibold text-gray-900 mb-1">
                   Factura PDF Generada
                 </h3>
-                <p className="text-gray-600 mb-6">
+                <p className="text-xs text-gray-600 mb-2 sm:mb-4">
                   Su factura ha sido generada exitosamente. Seleccione una opción:
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 sm:gap-3">
                 {/* Descargar */}
                 <button
                   onClick={handleDownloadPDF}
-                  className="flex items-center justify-center p-4 bg-green-50 border-2 border-green-200 rounded-lg hover:bg-green-100 hover:border-green-300 transition-colors"
+                  className="flex items-center justify-center p-1.5 sm:p-3 bg-green-50 border-2 border-green-200 rounded-lg hover:bg-green-100 hover:border-green-300 transition-colors"
                 >
-                  <Download className="h-8 w-8 text-green-600 mr-3" />
-                  <div className="text-left">
-                    <div className="font-semibold text-green-900">Descargar</div>
-                    <div className="text-sm text-green-700">Guardar en dispositivo</div>
+                  <Download className="h-4 w-4 sm:h-6 sm:w-6 text-green-600 mr-1.5 sm:mr-2 flex-shrink-0" />
+                  <div className="text-left min-w-0">
+                    <div className="font-semibold text-green-900 text-xs">Descargar</div>
+                    <div className="text-xs text-green-700">Guardar en dispositivo</div>
                   </div>
                 </button>
 
@@ -204,36 +319,36 @@ const InvoicePDFModal: React.FC<InvoicePDFModalProps> = ({ isOpen, onClose, sale
                 <button
                   onClick={handleViewPDF}
                   disabled={isLoadingPDF}
-                  className="flex items-center justify-center p-4 bg-blue-50 border-2 border-blue-200 rounded-lg hover:bg-blue-100 hover:border-blue-300 transition-colors disabled:opacity-50"
+                  className="flex items-center justify-center p-1.5 sm:p-3 bg-blue-50 border-2 border-blue-200 rounded-lg hover:bg-blue-100 hover:border-blue-300 transition-colors disabled:opacity-50"
                 >
-                  <Eye className="h-8 w-8 text-blue-600 mr-3" />
-                  <div className="text-left">
-                    <div className="font-semibold text-blue-900">Visualizar PDF</div>
-                    <div className="text-sm text-blue-700">Abrir en nueva ventana</div>
+                  <Eye className="h-4 w-4 sm:h-6 sm:w-6 text-blue-600 mr-1.5 sm:mr-2 flex-shrink-0" />
+                  <div className="text-left min-w-0">
+                    <div className="font-semibold text-blue-900 text-xs">Visualizar PDF</div>
+                    <div className="text-xs text-blue-700">Abrir en nueva ventana</div>
                   </div>
                 </button>
 
                 {/* Enviar por Email */}
                 <button
                   onClick={() => setEmailModalOpen(true)}
-                  className="flex items-center justify-center p-4 bg-orange-50 border-2 border-orange-200 rounded-lg hover:bg-orange-100 hover:border-orange-300 transition-colors"
+                  className="flex items-center justify-center p-1.5 sm:p-3 bg-orange-50 border-2 border-orange-200 rounded-lg hover:bg-orange-100 hover:border-orange-300 transition-colors"
                 >
-                  <Mail className="h-8 w-8 text-orange-600 mr-3" />
-                  <div className="text-left">
-                    <div className="font-semibold text-orange-900">Enviar Email</div>
-                    <div className="text-sm text-orange-700">Enviar por correo</div>
+                  <Mail className="h-4 w-4 sm:h-6 sm:w-6 text-orange-600 mr-1.5 sm:mr-2 flex-shrink-0" />
+                  <div className="text-left min-w-0">
+                    <div className="font-semibold text-orange-900 text-xs">Enviar Email</div>
+                    <div className="text-xs text-orange-700">Enviar por correo</div>
                   </div>
                 </button>
 
                 {/* Enviar por WhatsApp */}
                 <button
                   onClick={() => setWhatsappModalOpen(true)}
-                  className="flex items-center justify-center p-4 bg-green-50 border-2 border-green-200 rounded-lg hover:bg-green-100 hover:border-green-300 transition-colors"
+                  className="flex items-center justify-center p-1.5 sm:p-3 bg-green-50 border-2 border-green-200 rounded-lg hover:bg-green-100 hover:border-green-300 transition-colors"
                 >
-                  <MessageCircle className="h-8 w-8 text-green-600 mr-3" />
-                  <div className="text-left">
-                    <div className="font-semibold text-green-900">Enviar WhatsApp</div>
-                    <div className="text-sm text-green-700">Enviar por WhatsApp</div>
+                  <MessageCircle className="h-4 w-4 sm:h-6 sm:w-6 text-green-600 mr-1.5 sm:mr-2 flex-shrink-0" />
+                  <div className="text-left min-w-0">
+                    <div className="font-semibold text-green-900 text-xs">Enviar WhatsApp</div>
+                    <div className="text-xs text-green-700">Enviar por WhatsApp</div>
                   </div>
                 </button>
               </div>
@@ -342,10 +457,11 @@ const InvoicePDFModal: React.FC<InvoicePDFModalProps> = ({ isOpen, onClose, sale
                       <p><strong>Asunto:</strong> {emailSubject}</p>
                       <div className="mt-2 p-2 bg-white rounded border-l-2 border-blue-200">
                         <p className="whitespace-pre-wrap">{emailMessage}</p>
-                        <p className="mt-2 text-gray-500 italic">[PDF adjunto: factura-{sale.code}.pdf]</p>
+                        <p className="mt-2 text-gray-500 italic">[PDF adjunto: factura-{sale.numeroFactura || sale.code}.pdf]</p>
                       </div>
                     </div>
                   </div>
+
 
                   {error && (
                     <div className="p-3 bg-red-50 border border-red-200 rounded-md">
@@ -359,7 +475,7 @@ const InvoicePDFModal: React.FC<InvoicePDFModalProps> = ({ isOpen, onClose, sale
                         // Restaurar valores por defecto
                         setEmailAddress(sale.cliente?.email || '');
                         setEmailSubject(`Gracias por tu compra, ${sale.cliente?.name || 'Cliente'}`);
-                        setEmailMessage(`Estimado ${sale.cliente?.name || 'Cliente'}, adjunto encontrará la factura de su compra (${sale.code}). Gracias por elegirnos.`);
+                        setEmailMessage(generateEmailMessage());
                       }}
                       className="px-4 py-2 text-blue-600 border border-blue-300 rounded-md hover:bg-blue-50"
                     >

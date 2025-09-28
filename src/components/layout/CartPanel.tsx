@@ -170,7 +170,18 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
   const [isValidatingDocument, setIsValidatingDocument] = useState(false);
   const [documentExists, setDocumentExists] = useState(false);
   const [customerValidationMessage, setCustomerValidationMessage] = useState<string | null>(null);
-  const [checkoutStep, setCheckoutStep] = useState<1 | 2 | 3 | 4>(1);
+  const [checkoutStep, setCheckoutStep] = useState<1 | 2 | 3 | 4 | 5>(1);
+  
+  // Estados para el nuevo paso de tipo de venta y plan de abonos
+  const [tipoVenta, setTipoVenta] = useState<'contado' | 'financiado'>('contado');
+  const [diasVencimiento, setDiasVencimiento] = useState<number>(30);
+  const [observaciones, setObservaciones] = useState<string>('');
+  const [planAbonos, setPlanAbonos] = useState<Array<{
+    monto: number;
+    fechaProgramada: string;
+    observaciones: string;
+  }>>([]);
+  const [showAutoOptions, setShowAutoOptions] = useState(false);
   
   // Estados para el modal de factura PDF
   const [completedSale, setCompletedSale] = useState<CompletedSale | null>(null);
@@ -219,6 +230,13 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
       return;
     }
 
+    // Validar plan de abonos si es financiado
+    const planValidation = validateInstallmentPlan();
+    if (planValidation) {
+      setError(planValidation);
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 
@@ -247,10 +265,25 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
           name: customerData.nombre,
           document: customerData.numeroIdentificacion,
           email: customerData.email,
-          phone: customerData.telefono
+          phone: customerData.telefono,
+          tipoIdentificacion: customerData.tipoIdentificacion,
+          ciudad: customerData.ciudad,
+          departamento: customerData.departamento
         } : null,
         descuentoAplicado: discountPercent || undefined,
         totalVenta: Math.round(total),
+        // Nuevos campos para el sistema de facturación
+        tipoVenta: tipoVenta,
+        diasVencimiento: diasVencimiento,
+        observaciones: observaciones || undefined,
+        // Solo incluir planAbonos si es financiado y tiene abonos
+        ...(tipoVenta === 'financiado' && planAbonos.length > 0 && {
+          planAbonos: planAbonos.map(abono => ({
+            monto: abono.monto,
+            fechaProgramada: new Date(abono.fechaProgramada).toISOString(),
+            observaciones: abono.observaciones
+          }))
+        })
       };
       if (trabajadorCorreo) {
         saleData.trabajador = { correo: trabajadorCorreo };
@@ -266,6 +299,9 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
       });
 
       const result = await response.json();
+      
+      // Debug: Log de la respuesta del backend
+      console.log('Respuesta del backend:', result);
 
       if (!response.ok) {
         // Manejar diferentes tipos de errores
@@ -286,9 +322,9 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
 
       // Preparar datos de venta completada
       const completedSaleData: CompletedSale = {
-        id: result.data.id || result.data._id,
-        code: result.data.code,
-        totalVenta: result.data.totalVenta,
+        id: result.data?.venta?.id || result.data?.venta?._id || result.data?.id || result.data?._id || result.id || result._id,
+        code: result.data?.venta?.code || result.data?.code || result.code || saleCode,
+        totalVenta: result.data?.factura?.total || result.data?.venta?.totalVenta || result.data?.totalVenta || result.totalVenta || total,
         cliente: customerData.nombre ? {
           name: customerData.nombre,
           document: customerData.numeroIdentificacion,
@@ -296,8 +332,20 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
           phone: customerData.telefono
         } : undefined,
         metodoPago: selectedPaymentMethod,
-        fecha: new Date().toISOString()
+        fecha: new Date().toISOString(),
+        // Nuevos campos del sistema de facturación
+        tipoVenta: result.data?.tipoVenta || tipoVenta,
+        diasVencimiento: diasVencimiento,
+        observaciones: observaciones || undefined,
+        planAbonos: tipoVenta === 'financiado' && planAbonos.length > 0 ? planAbonos : undefined,
+        // Datos de la factura desde la respuesta del backend
+        facturaId: result.data?.factura?.id || result.data?.facturaId || result.factura?.id || result.facturaId,
+        numeroFactura: result.data?.factura?.numeroFactura || result.factura?.numeroFactura,
+        estadoPago: result.data?.estadoPago || result.estadoPago || (tipoVenta === 'contado' ? 'pagada' : 'pendiente')
       };
+      
+      // Debug: Log de los datos finales
+      console.log('Datos de venta completada:', completedSaleData);
 
       // Limpiar el carrito y cerrar el modal
       clearCart();
@@ -317,6 +365,13 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
       });
       setCustomer(null);
       setSaleCode('');
+      // Limpiar estados del nuevo flujo
+      setTipoVenta('contado');
+      setDiasVencimiento(30);
+      setObservaciones('');
+      setPlanAbonos([]);
+      setShowAutoOptions(false);
+      setCheckoutStep(1);
 
       // Mostrar modal de factura PDF en lugar del alert
       setCompletedSale(completedSaleData);
@@ -541,6 +596,53 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
     }
   };
 
+  // Función para generar plan de abonos automático
+  const generateAutomaticInstallmentPlan = (numberOfInstallments: number) => {
+    const monthlyAmount = Math.round(total / numberOfInstallments);
+    const newPlan = [];
+    
+    for (let i = 0; i < numberOfInstallments; i++) {
+      const isLast = i === numberOfInstallments - 1;
+      const amount = isLast ? total - (monthlyAmount * (numberOfInstallments - 1)) : monthlyAmount;
+      const date = new Date();
+      date.setMonth(date.getMonth() + i + 1);
+      
+      newPlan.push({
+        monto: amount,
+        fechaProgramada: date.toISOString().split('T')[0],
+        observaciones: `Abono ${i + 1} de ${numberOfInstallments}`
+      });
+    }
+    
+    setPlanAbonos(newPlan);
+  };
+
+  // Función para validar el plan de abonos
+  const validateInstallmentPlan = (): string | null => {
+    if (tipoVenta === 'financiado') {
+      if (planAbonos.length === 0) {
+        return 'Debe configurar al menos un abono para ventas financiadas';
+      }
+      
+      const totalPlan = planAbonos.reduce((sum, abono) => sum + abono.monto, 0);
+      if (totalPlan !== total) {
+        return `La suma de los abonos (${formatPrice(totalPlan)}) debe coincidir con el total de la venta (${formatPrice(total)})`;
+      }
+      
+      // Validar fechas
+      const today = new Date().toISOString().split('T')[0];
+      for (let i = 0; i < planAbonos.length; i++) {
+        if (planAbonos[i].fechaProgramada <= today) {
+          return `La fecha del abono ${i + 1} debe ser posterior a hoy`;
+        }
+        if (planAbonos[i].monto <= 0) {
+          return `El monto del abono ${i + 1} debe ser mayor a cero`;
+        }
+      }
+    }
+    return null;
+  };
+
   // Función para registrar un nuevo cliente
   const handleRegisterCustomer = async () => {
     // Validar formulario
@@ -707,7 +809,16 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
                   </div>
                 </div>
                 <button
-                  onClick={() => setIsCheckoutModalOpen(false)}
+                  onClick={() => {
+                    setIsCheckoutModalOpen(false);
+                    // Limpiar estados del nuevo flujo
+                    setTipoVenta('contado');
+                    setDiasVencimiento(30);
+                    setObservaciones('');
+                    setPlanAbonos([]);
+                    setShowAutoOptions(false);
+                    setCheckoutStep(1);
+                  }}
                   className="text-gray-400 hover:text-gray-500 p-1"
                 >
                   <X className="h-5 w-5" />
@@ -720,9 +831,11 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
                 <span className="text-gray-400">→</span>
                 <span className={`px-2 py-1 rounded ${checkoutStep === 2 ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700'}`}>2. Cliente</span>
                 <span className="text-gray-400">→</span>
-                <span className={`px-2 py-1 rounded ${checkoutStep === 3 ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700'}`}>3. Pago</span>
+                <span className={`px-2 py-1 rounded ${checkoutStep === 3 ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700'}`}>3. Tipo Venta</span>
                 <span className="text-gray-400">→</span>
-                <span className={`px-2 py-1 rounded ${checkoutStep === 4 ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700'}`}>4. Resumen</span>
+                <span className={`px-2 py-1 rounded ${checkoutStep === 4 ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700'}`}>4. Pago</span>
+                <span className="text-gray-400">→</span>
+                <span className={`px-2 py-1 rounded ${checkoutStep === 5 ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700'}`}>5. Resumen</span>
               </div>
 
               {/* Step content */}
@@ -1000,6 +1113,272 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
 
               {checkoutStep === 3 && (
                 <div className="space-y-3">
+                  <h3 className="text-base font-medium text-gray-900">Tipo de Venta</h3>
+                  
+                  {/* Selector de tipo de venta */}
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        onClick={() => {
+                          setTipoVenta('contado');
+                          setPlanAbonos([]);
+                          setShowAutoOptions(false);
+                        }}
+                        className={`p-4 rounded-lg border-2 text-left transition-all ${
+                          tipoVenta === 'contado' 
+                            ? 'border-indigo-500 bg-indigo-50 text-indigo-700' 
+                            : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                        }`}
+                      >
+                        <div className="font-semibold text-sm">💰 Contado</div>
+                        <div className="text-xs text-gray-600 mt-1">Pago inmediato completo</div>
+                      </button>
+                      
+                      <button
+                        onClick={() => {
+                          setTipoVenta('financiado');
+                          setShowAutoOptions(false);
+                        }}
+                        className={`p-4 rounded-lg border-2 text-left transition-all ${
+                          tipoVenta === 'financiado' 
+                            ? 'border-indigo-500 bg-indigo-50 text-indigo-700' 
+                            : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                        }`}
+                      >
+                        <div className="font-semibold text-sm">📅 Financiado</div>
+                        <div className="text-xs text-gray-600 mt-1">Plan de abonos personalizado</div>
+                      </button>
+                    </div>
+
+                    {/* Configuración adicional */}
+                    <div className="bg-gray-50 rounded-lg p-3 space-y-3">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Días de vencimiento
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          max="365"
+                          value={diasVencimiento}
+                          onChange={(e) => setDiasVencimiento(Number(e.target.value))}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          Días para el vencimiento de la factura (default: 30)
+                        </p>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Observaciones
+                        </label>
+                        <textarea
+                          value={observaciones}
+                          onChange={(e) => setObservaciones(e.target.value)}
+                          placeholder="Observaciones adicionales sobre la venta..."
+                          rows={2}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Plan de abonos (solo si es financiado) */}
+                    {tipoVenta === 'financiado' && (
+                      <div className="bg-blue-50 rounded-lg p-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-sm font-semibold text-blue-900">Plan de Abonos</h4>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => setShowAutoOptions(!showAutoOptions)}
+                              className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+                                showAutoOptions 
+                                  ? 'bg-indigo-600 text-white' 
+                                  : 'bg-gray-500 text-white hover:bg-gray-600'
+                              }`}
+                            >
+                              ⚡ Auto {showAutoOptions ? '▼' : '▶'}
+                            </button>
+                            <button
+                              onClick={() => {
+                                const newAbono = {
+                                  monto: Math.round(total / (planAbonos.length + 1)),
+                                  fechaProgramada: new Date(Date.now() + (planAbonos.length + 1) * 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                                  observaciones: `Abono ${planAbonos.length + 1}`
+                                };
+                                setPlanAbonos([...planAbonos, newAbono]);
+                              }}
+                              className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-xs font-medium"
+                            >
+                              + Agregar
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Opciones automáticas */}
+                        {showAutoOptions && (
+                          <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
+                            <p className="text-xs text-gray-600 mb-2">Selecciona el número de cuotas para dividir automáticamente:</p>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                              {[2, 3, 4, 6, 8, 12].map((cuotas) => (
+                                <button
+                                  key={cuotas}
+                                  onClick={() => {
+                                    generateAutomaticInstallmentPlan(cuotas);
+                                    setShowAutoOptions(false);
+                                  }}
+                                  className="px-3 py-2 text-xs font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-md hover:bg-gray-100 hover:border-gray-300 transition-colors"
+                                >
+                                  {cuotas} cuotas
+                                  <div className="text-xs text-gray-500 mt-1">
+                                    {formatPrice(Math.round(total / cuotas))} c/u
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                            <div className="mt-2 pt-2 border-t border-gray-200">
+                              <button
+                                onClick={() => setShowAutoOptions(false)}
+                                className="text-xs text-gray-500 hover:text-gray-700"
+                              >
+                                Cerrar opciones
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {planAbonos.length === 0 ? (
+                          <div className="text-center py-4 text-gray-500">
+                            <p className="text-sm">No hay abonos configurados</p>
+                            <p className="text-xs">Haga clic en "Agregar Abono" para comenzar</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-2 max-h-48 overflow-y-auto">
+                            {planAbonos.map((abono, index) => (
+                              <div key={index} className="bg-white rounded-lg p-3 border border-blue-200">
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="text-sm font-medium text-blue-900">Abono #{index + 1}</span>
+                                  <button
+                                    onClick={() => {
+                                      const newPlan = planAbonos.filter((_, i) => i !== index);
+                                      setPlanAbonos(newPlan);
+                                    }}
+                                    className="text-red-600 hover:text-red-800 text-xs"
+                                  >
+                                    Eliminar
+                                  </button>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">Monto</label>
+                                    <input
+                                      type="number"
+                                      min="1000"
+                                      max={total}
+                                      value={abono.monto}
+                                      onChange={(e) => {
+                                        const newPlan = [...planAbonos];
+                                        newPlan[index].monto = Number(e.target.value);
+                                        setPlanAbonos(newPlan);
+                                      }}
+                                      className="w-full px-2 py-1 border border-gray-300 rounded text-xs"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">Fecha</label>
+                                    <input
+                                      type="date"
+                                      value={abono.fechaProgramada}
+                                      onChange={(e) => {
+                                        const newPlan = [...planAbonos];
+                                        newPlan[index].fechaProgramada = e.target.value;
+                                        setPlanAbonos(newPlan);
+                                      }}
+                                      className="w-full px-2 py-1 border border-gray-300 rounded text-xs"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">Observación</label>
+                                    <input
+                                      type="text"
+                                      value={abono.observaciones}
+                                      onChange={(e) => {
+                                        const newPlan = [...planAbonos];
+                                        newPlan[index].observaciones = e.target.value;
+                                        setPlanAbonos(newPlan);
+                                      }}
+                                      placeholder="Observación del abono"
+                                      className="w-full px-2 py-1 border border-gray-300 rounded text-xs"
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Resumen del plan */}
+                        {planAbonos.length > 0 && (
+                          <div className="bg-white rounded-lg p-3 border border-blue-200">
+                            <h5 className="text-xs font-semibold text-blue-900 mb-2">Resumen del Plan</h5>
+                            <div className="grid grid-cols-2 gap-4 text-xs">
+                              <div>
+                                <span className="text-gray-600">Total Venta:</span>
+                                <span className="font-semibold ml-2">{formatPrice(total)}</span>
+                              </div>
+                              <div>
+                                <span className="text-gray-600">Total Abonos:</span>
+                                <span className={`font-semibold ml-2 ${
+                                  planAbonos.reduce((sum, a) => sum + a.monto, 0) === total 
+                                    ? 'text-green-600' 
+                                    : 'text-red-600'
+                                }`}>
+                                  {formatPrice(planAbonos.reduce((sum, a) => sum + a.monto, 0))}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-gray-600">Número de Abonos:</span>
+                                <span className="font-semibold ml-2">{planAbonos.length}</span>
+                              </div>
+                              <div>
+                                <span className="text-gray-600">Diferencia:</span>
+                                <span className={`font-semibold ml-2 ${
+                                  planAbonos.reduce((sum, a) => sum + a.monto, 0) === total 
+                                    ? 'text-green-600' 
+                                    : 'text-red-600'
+                                }`}>
+                                  {formatPrice(total - planAbonos.reduce((sum, a) => sum + a.monto, 0))}
+                                </span>
+                              </div>
+                            </div>
+                            {planAbonos.reduce((sum, a) => sum + a.monto, 0) !== total && (
+                              <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded">
+                                <p className="text-xs text-red-700">
+                                  ⚠️ La suma de los abonos debe coincidir exactamente con el total de la venta
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex justify-between">
+                    <button onClick={() => setCheckoutStep(2)} className="px-3 py-1.5 border rounded text-sm">Atrás</button>
+                    <button 
+                      onClick={() => setCheckoutStep(4)} 
+                      disabled={tipoVenta === 'financiado' && (planAbonos.length === 0 || planAbonos.reduce((sum, a) => sum + a.monto, 0) !== total)}
+                      className="px-3 py-1.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:bg-indigo-300 text-sm"
+                    >
+                      Siguiente
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {checkoutStep === 4 && (
+                <div className="space-y-3">
                   <h3 className="text-base font-medium text-gray-900">Método de Pago</h3>
                   <div className="space-y-2">
                     {['Efectivo', 'Nequi', 'Transferencia'].map((method) => (
@@ -1013,22 +1392,25 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
                     ))}
                   </div>
                   <div className="flex justify-between">
-                    <button onClick={() => setCheckoutStep(2)} className="px-3 py-1.5 border rounded text-sm">Atrás</button>
-                    <button onClick={() => setCheckoutStep(4)} disabled={!selectedPaymentMethod} className="px-3 py-1.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:bg-indigo-300 text-sm">Siguiente</button>
+                    <button onClick={() => setCheckoutStep(3)} className="px-3 py-1.5 border rounded text-sm">Atrás</button>
+                    <button onClick={() => setCheckoutStep(5)} disabled={!selectedPaymentMethod} className="px-3 py-1.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:bg-indigo-300 text-sm">Siguiente</button>
                   </div>
                 </div>
               )}
 
-              {checkoutStep === 4 && (
+              {checkoutStep === 5 && (
                 <div className="space-y-3">
-                  <h3 className="text-base font-medium text-gray-900">Resumen</h3>
+                  <h3 className="text-base font-medium text-gray-900">Resumen Final</h3>
                   <div className="bg-gray-50 rounded-lg p-3">
                     <div className="text-xs text-gray-700 grid grid-cols-1 md:grid-cols-2 gap-1">
                       <div><span className="font-medium">Cliente:</span> {customerData.nombre}</div>
                       <div><span className="font-medium">Documento:</span> {customerData.numeroIdentificacion}</div>
                       <div><span className="font-medium">Email:</span> {customerData.email}</div>
                       <div><span className="font-medium">Teléfono:</span> {customerData.telefono}</div>
+                      <div><span className="font-medium">Tipo de Venta:</span> <span className={`px-2 py-1 rounded text-xs font-semibold ${tipoVenta === 'contado' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>{tipoVenta === 'contado' ? '💰 Contado' : '📅 Financiado'}</span></div>
                       <div><span className="font-medium">Método de Pago:</span> {selectedPaymentMethod}</div>
+                      <div><span className="font-medium">Días Vencimiento:</span> {diasVencimiento} días</div>
+                      {observaciones && <div className="md:col-span-2"><span className="font-medium">Observaciones:</span> {observaciones}</div>}
                       <div className="col-span-1 md:col-span-2">
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                           <div className="flex items-center gap-3">
@@ -1066,7 +1448,31 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
                         )}
                       </div>
                     </div>
+                    {/* Plan de abonos en el resumen */}
+                    {tipoVenta === 'financiado' && planAbonos.length > 0 && (
+                      <div className="mt-3 bg-blue-50 rounded-lg p-3">
+                        <h4 className="text-sm font-semibold text-blue-900 mb-2">Plan de Abonos Configurado</h4>
+                        <div className="space-y-1 max-h-24 overflow-y-auto">
+                          {planAbonos.map((abono, index) => (
+                            <div key={index} className="flex justify-between items-center text-xs">
+                              <span className="text-blue-800">
+                                Abono #{index + 1} - {new Date(abono.fechaProgramada).toLocaleDateString()}
+                              </span>
+                              <span className="font-semibold text-blue-900">{formatPrice(abono.monto)}</span>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="mt-2 pt-2 border-t border-blue-200 flex justify-between text-xs">
+                          <span className="text-blue-800">Total Plan:</span>
+                          <span className="font-semibold text-blue-900">
+                            {formatPrice(planAbonos.reduce((sum, a) => sum + a.monto, 0))}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="mt-3 max-h-32 overflow-y-auto">
+                      <h4 className="text-sm font-semibold text-gray-900 mb-2">Productos</h4>
                       {items.map((item) => (
                         <div key={item.product.id} className="flex justify-between text-xs py-1">
                           <span className="truncate">{item.product.name} × {item.quantity}</span>
@@ -1079,13 +1485,13 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
                     <div className="p-2 bg-red-100 border border-red-400 text-red-700 rounded-md text-xs">{error}</div>
                   )}
                   <div className="flex justify-between">
-                    <button onClick={() => setCheckoutStep(3)} className="px-3 py-1.5 border rounded text-sm">Atrás</button>
+                    <button onClick={() => setCheckoutStep(4)} className="px-3 py-1.5 border rounded text-sm">Atrás</button>
                     <button
                       onClick={handleCreateSale}
                       disabled={!selectedPaymentMethod || isLoading}
                       className="px-3 py-1.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:bg-indigo-300 text-sm"
                     >
-                      {isLoading ? 'Procesando...' : 'Confirmar Pago'}
+                      {isLoading ? 'Procesando...' : 'Confirmar Venta'}
                     </button>
                   </div>
                 </div>

@@ -203,6 +203,18 @@ export interface CompletedSale {
   };
   metodoPago: 'Efectivo' | 'Nequi' | 'Transferencia';
   fecha: string;
+  // Nuevos campos para el sistema de facturación
+  tipoVenta?: 'contado' | 'financiado';
+  diasVencimiento?: number;
+  observaciones?: string;
+  planAbonos?: Array<{
+    monto: number;
+    fechaProgramada: string;
+    observaciones: string;
+  }>;
+  facturaId?: string;
+  numeroFactura?: string;
+  estadoPago?: string;
 }
 
 export interface EmailSendRequest {
