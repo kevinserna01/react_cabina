@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { InvoiceEntity, InvoiceStatus, PaginationInfo } from '../../types';
 import { createInvoice, listInvoices } from '../../services/invoices';
-import { createPayment, listPaymentsByInvoice } from '../../services/payments';
 import { listCustomers } from '../../services/customers';
 
 const InvoicesContent: React.FC = () => {
@@ -27,10 +26,6 @@ const InvoicesContent: React.FC = () => {
     diasVencimiento: 30,
   });
   const [clientesOptions, setClientesOptions] = useState<{ id: string; nombre: string }[]>([]);
-  const [isPaymentsOpen, setIsPaymentsOpen] = useState(false);
-  const [paymentsInvoiceId, setPaymentsInvoiceId] = useState<string>('');
-  const [payments, setPayments] = useState<{ id: string; montoAbono: number; metodoPago: 'Efectivo' | 'Nequi' | 'Transferencia'; observaciones?: string; fechaRegistro?: string }[]>([]);
-  const [newPayment, setNewPayment] = useState<{ montoAbono: number; metodoPago: 'Efectivo' | 'Nequi' | 'Transferencia'; observaciones?: string }>({ montoAbono: 0, metodoPago: 'Efectivo', observaciones: '' });
   
   // Estados para el modal de plan de abonos
   const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
@@ -124,18 +119,6 @@ const InvoicesContent: React.FC = () => {
     }
   };
 
-  const openPayments = async (invoiceId: string) => {
-    setIsPaymentsOpen(true);
-    setPaymentsInvoiceId(invoiceId);
-    try {
-      const res = await listPaymentsByInvoice(invoiceId);
-      setPayments(res);
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Error al cargar abonos';
-      setError(msg);
-      setPayments([]);
-    }
-  };
 
   const openPlanDetails = async (invoiceId: string) => {
     setIsPlanModalOpen(true);
@@ -167,29 +150,6 @@ const InvoicesContent: React.FC = () => {
     }
   };
 
-  const handleCreatePayment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
-    try {
-      await createPayment({
-        facturaId: paymentsInvoiceId,
-        montoAbono: newPayment.montoAbono,
-        metodoPago: newPayment.metodoPago,
-        observaciones: newPayment.observaciones,
-      });
-      const res = await listPaymentsByInvoice(paymentsInvoiceId);
-      setPayments(res);
-      // Refrescar facturas para actualizar estado/saldo
-      fetchData(pagination.page, pagination.limit);
-      setNewPayment({ montoAbono: 0, metodoPago: 'Efectivo', observaciones: '' });
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Error al registrar abono';
-      setError(msg);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -397,73 +357,6 @@ const InvoicesContent: React.FC = () => {
                   <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded">Crear</button>
                 </div>
               </form>
-            </div>
-          </div>
-        </div>
-      )}
-      {isPaymentsOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold">Abonos</h2>
-                <button onClick={() => setIsPaymentsOpen(false)} className="text-gray-500 hover:text-gray-700">✕</button>
-              </div>
-
-              <div className="mb-4">
-                <h3 className="text-sm font-medium text-gray-700 mb-2">Registrar abono</h3>
-                <form onSubmit={handleCreatePayment} className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
-                  <div>
-                    <label className="block text-xs text-gray-600 mb-1">Monto (COP)</label>
-                    <input type="number" min={1} value={newPayment.montoAbono} onChange={(e) => setNewPayment({ ...newPayment, montoAbono: Number(e.target.value) })} className="w-full px-3 py-2 border rounded" required />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-600 mb-1">Método de pago</label>
-                    <select value={newPayment.metodoPago} onChange={(e) => setNewPayment({ ...newPayment, metodoPago: e.target.value as any })} className="w-full px-3 py-2 border rounded" required>
-                      <option value="Efectivo">Efectivo</option>
-                      <option value="Nequi">Nequi</option>
-                      <option value="Transferencia">Transferencia</option>
-                    </select>
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-xs text-gray-600 mb-1">Observaciones</label>
-                    <input value={newPayment.observaciones || ''} onChange={(e) => setNewPayment({ ...newPayment, observaciones: e.target.value })} className="w-full px-3 py-2 border rounded" />
-                  </div>
-                  <div className="md:col-span-4 flex justify-end">
-                    <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded">Registrar</button>
-                  </div>
-                </form>
-              </div>
-
-              <div>
-                <h3 className="text-sm font-medium text-gray-700 mb-2">Historial de abonos</h3>
-                <div className="bg-gray-50 rounded p-3">
-                  {payments.length === 0 ? (
-                    <div className="text-sm text-gray-500">Sin abonos</div>
-                  ) : (
-                    <table className="min-w-full">
-                      <thead>
-                        <tr className="text-left text-xs text-gray-500">
-                          <th className="px-2 py-1">Fecha</th>
-                          <th className="px-2 py-1">Método</th>
-                          <th className="px-2 py-1">Monto</th>
-                          <th className="px-2 py-1">Observaciones</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {payments.map((p) => (
-                          <tr key={p.id} className="text-sm">
-                            <td className="px-2 py-1">{(p as any).fechaAbono ? new Date((p as any).fechaAbono).toLocaleString('es-CO') : (p.fechaRegistro ? new Date(p.fechaRegistro).toLocaleString('es-CO') : '-')}</td>
-                            <td className="px-2 py-1">{p.metodoPago}</td>
-                            <td className="px-2 py-1">{p.montoAbono.toLocaleString('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 })}</td>
-                            <td className="px-2 py-1">{p.observaciones || '-'}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
-                </div>
-              </div>
             </div>
           </div>
         </div>
