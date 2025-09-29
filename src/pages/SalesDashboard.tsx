@@ -36,9 +36,9 @@ const SalesDashboard = () => {
 
   // Función para cargar productos con paginación y búsqueda
   const fetchProducts = async (page: number = 1, search: string = '') => {
-    setIsLoading(true);
-    setError(null);
-    try {
+      setIsLoading(true);
+      setError(null);
+      try {
       // Construir URL con parámetros de paginación y búsqueda
       const url = new URL('https://back-papeleria-two.vercel.app/v1/papeleria/getProductsWithStockapi');
       url.searchParams.set('page', page.toString());
@@ -48,28 +48,28 @@ const SalesDashboard = () => {
       }
 
       const response = await fetch(url.toString(), {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Error al cargar los productos');
         }
-      });
 
-      if (!response.ok) {
-        throw new Error('Error al cargar los productos');
-      }
+        const result = await response.json();
 
-      const result = await response.json();
-
-      if (result.status === "Success") {
-        // Mapear los datos al formato esperado por el componente
-        const formattedProducts = result.data.map((item: any) => ({
+        if (result.status === "Success") {
+          // Mapear los datos al formato esperado por el componente
+          const formattedProducts = result.data.map((item: any) => ({
           id: item.code,
-          name: item.nombre,
-          code: item.code,
+            name: item.nombre,
+            code: item.code,
           price: Number(item.salePrice ?? item.precio ?? item.price ?? 0),
           costPrice: item.precioCosto ?? item.costPrice ?? undefined,
           salePrice: item.salePrice ?? item.precio ?? undefined,
           profitMargin: item.margenGanancia ?? undefined,
-          stock: item.stock,
+            stock: item.stock,
           category: item.categoria,
         }));
 
@@ -110,16 +110,16 @@ const SalesDashboard = () => {
         setCurrentPage(page);
         setTotalPages(result.pagination?.pages || 1);
         setTotalProducts(result.pagination?.total || result.data.length);
-      } else {
-        throw new Error(result.message || 'Error al cargar los productos');
+        } else {
+          throw new Error(result.message || 'Error al cargar los productos');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        setError(error instanceof Error ? error.message : 'Error al cargar los productos');
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error('Error:', error);
-      setError(error instanceof Error ? error.message : 'Error al cargar los productos');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    };
 
   // Función para manejar búsqueda con debounce
   const handleSearch = (term: string) => {
@@ -393,7 +393,7 @@ const SalesDashboard = () => {
                           </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                          {products.map((product) => (
+                {products.map((product) => (
                             <tr key={product.id} className="hover:bg-gray-50 transition-colors">
                               <td className="px-4 py-3 text-sm text-gray-900 font-mono">{product.code}</td>
                               <td className="px-4 py-3 text-sm text-gray-900 max-w-xs truncate" title={product.name}>

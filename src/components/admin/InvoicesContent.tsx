@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { InvoiceEntity, InvoiceStatus, PaginationInfo } from '../../types';
-import { createInvoice, listInvoices } from '../../services/invoices';
+import { createInvoice, listInvoices, editInvoiceInstallments } from '../../services/invoices';
 import { listCustomers } from '../../services/customers';
 
 const InvoicesContent: React.FC = () => {
@@ -31,6 +31,8 @@ const InvoicesContent: React.FC = () => {
   const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
   const [planData, setPlanData] = useState<any>(null);
   const [isLoadingPlan, setIsLoadingPlan] = useState(false);
+  const [isEditingPlan, setIsEditingPlan] = useState(false);
+  const [editedPlan, setEditedPlan] = useState<Array<{ numero: number; monto: number; fechaProgramada?: string | null; estado?: string; observaciones?: string; esFlexible?: boolean }>>([]);
 
   const fetchClientes = async () => {
     try {
@@ -141,6 +143,15 @@ const InvoicesContent: React.FC = () => {
       }
 
       setPlanData(result.data);
+      const plan = (result.data?.factura?.planAbonos || []).map((a: any) => ({
+        numero: a.numero,
+        monto: Number(a.monto || 0),
+        fechaProgramada: a.fechaProgramada ? String(a.fechaProgramada).slice(0, 10) : '',
+        estado: a.estado,
+        observaciones: a.observaciones,
+        esFlexible: Boolean(a.esFlexible)
+      }));
+      setEditedPlan(plan);
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Error al cargar detalles del plan';
       setError(msg);
@@ -448,46 +459,130 @@ const InvoicesContent: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Plan de Abonos */}
+                  {/* Plan de Abonos (editable) */}
                   {planData.factura?.planAbonos && planData.factura.planAbonos.length > 0 ? (
                     <div className="bg-white border rounded-lg p-4">
-                      <h3 className="text-lg font-semibold mb-4">Plan de Abonos</h3>
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-lg font-semibold">Plan de Abonos</h3>
+                        {!isEditingPlan ? (
+                          <button onClick={() => setIsEditingPlan(true)} className="px-2 py-1 text-xs border rounded">Editar</button>
+                        ) : (
+                          <div className="flex gap-2">
+                            <button
+                              onClick={async () => {
+                                try {
+                                  setIsLoadingPlan(true);
+                                  const payload = {
+                                    facturaId: planData.factura?.id || planData.factura?._id,
+                                    abonos: editedPlan.map((a) => ({
+                                      numero: a.numero,
+                                      monto: Math.max(0, Number(a.monto) || 0),
+                                      fechaProgramada: a.fechaProgramada ? new Date(a.fechaProgramada).toISOString() : null,
+                                      estado: a.estado || 'pendiente',
+                                      observaciones: a.observaciones,
+                                      esFlexible: !a.fechaProgramada || Number(a.monto) === 0
+                                    }))
+                                  };
+                                  await editInvoiceInstallments(payload);
+                                  await openPlanDetails(planData.factura?.id || planData.factura?._id);
+                                  setIsEditingPlan(false);
+                                } catch (e) {
+                                  setError(e instanceof Error ? e.message : 'Error al editar plan');
+                                } finally {
+                                  setIsLoadingPlan(false);
+                                }
+                              }}
+                              className="px-2 py-1 text-xs bg-blue-600 text-white rounded"
+                            >
+                              Guardar
+                            </button>
+                            <button
+                              onClick={() => {
+                                setIsEditingPlan(false);
+                                setEditedPlan((planData.factura?.planAbonos || []).map((a: any) => ({
+                                  numero: a.numero,
+                                  monto: Number(a.monto || 0),
+                                  fechaProgramada: a.fechaProgramada ? String(a.fechaProgramada).slice(0, 10) : '',
+                                  estado: a.estado,
+                                  observaciones: a.observaciones,
+                                  esFlexible: Boolean(a.esFlexible)
+                                }))
+                                );
+                              }}
+                              className="px-2 py-1 text-xs border rounded"
+                            >
+                              Cancelar
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
                       <div className="space-y-3">
-                        {planData.factura.planAbonos.map((abono: any, index: number) => (
+                        {isEditingPlan && (
+                          <div className="mb-2">
+                            <button
+                              onClick={() => {
+                                const nextNumero = (editedPlan.reduce((m, a) => Math.max(m, a.numero || 0), 0) || 0) + 1;
+                                setEditedPlan((prev) => ([
+                                  ...prev,
+                                  { numero: nextNumero, monto: 0, fechaProgramada: '', estado: 'pendiente', observaciones: '', esFlexible: true }
+                                ]));
+                              }}
+                              className="px-2 py-1 text-xs bg-green-600 text-white rounded"
+                            >
+                              + Agregar Abono
+                            </button>
+                          </div>
+                        )}
+                        {(isEditingPlan ? editedPlan : planData.factura.planAbonos).map((abono: any, index: number) => (
                           <div key={index} className={`p-3 rounded-lg border ${abono.estado === 'pagado' ? 'bg-green-50 border-green-200' : abono.estado === 'vencido' ? 'bg-red-50 border-red-200' : 'bg-yellow-50 border-yellow-200'}`}>
-                            <div className="flex justify-between items-start">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <span className="font-semibold">Abono #{abono.numero}</span>
-                                  <span className={`px-2 py-1 rounded text-xs ${abono.estado === 'pagado' ? 'bg-green-100 text-green-800' : abono.estado === 'vencido' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                                    {abono.estado?.toUpperCase() || 'PENDIENTE'}
-                                  </span>
-                                </div>
-                                <p className="text-sm text-gray-600">
-                                  <strong>Monto:</strong> ${abono.monto?.toLocaleString('es-CO') || '0'}
-                                </p>
-                                <p className="text-sm text-gray-600">
-                                  <strong>Fecha Programada:</strong> {abono.fechaProgramada ? new Date(abono.fechaProgramada).toLocaleDateString('es-CO') : 'N/A'}
-                                </p>
-                                {abono.estado === 'pagado' && (
-                                  <>
-                                    <p className="text-sm text-gray-600">
-                                      <strong>Fecha Pago:</strong> {abono.fechaPago ? new Date(abono.fechaPago).toLocaleDateString('es-CO') : 'N/A'}
-                                    </p>
-                                    <p className="text-sm text-gray-600">
-                                      <strong>Monto Pagado:</strong> ${abono.montoPagado?.toLocaleString('es-CO') || '0'}
-                                    </p>
-                                    {abono.montoPagado !== abono.monto && (
-                                      <p className="text-sm text-blue-600">
-                                        <strong>Diferencia:</strong> ${((abono.montoPagado || 0) - (abono.monto || 0)).toLocaleString('es-CO')}
-                                      </p>
-                                    )}
-                                  </>
+                            <div className="grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
+                              <div>
+                                <label className="block text-xs text-gray-600">Abono #</label>
+                                <div className="px-3 py-2 border rounded bg-gray-50">{abono.numero}</div>
+                              </div>
+                              <div>
+                                <label className="block text-xs text-gray-600">Monto</label>
+                                {isEditingPlan ? (
+                                  <input type="number" min={0} value={abono.monto}
+                                    onChange={(e) => setEditedPlan((prev) => prev.map((p, i) => i === index ? { ...p, monto: Number(e.target.value) } : p))}
+                                    className="px-3 py-2 border rounded w-full"
+                                  />
+                                ) : (
+                                  <div className="px-3 py-2 border rounded bg-gray-50">${(abono.monto || 0).toLocaleString('es-CO')}</div>
                                 )}
-                                {abono.observaciones && (
-                                  <p className="text-sm text-gray-500 mt-1">
-                                    <strong>Observaciones:</strong> {abono.observaciones}
-                                  </p>
+                              </div>
+                              <div>
+                                <label className="block text-xs text-gray-600">Fecha Programada</label>
+                                {isEditingPlan ? (
+                                  <input type="date" value={abono.fechaProgramada || ''}
+                                    onChange={(e) => setEditedPlan((prev) => prev.map((p, i) => i === index ? { ...p, fechaProgramada: e.target.value } : p))}
+                                    className="px-3 py-2 border rounded w-full"
+                                  />
+                                ) : (
+                                  <div className="px-3 py-2 border rounded bg-gray-50">{abono.fechaProgramada ? new Date(abono.fechaProgramada).toLocaleDateString('es-CO') : 'Flexible (auto)'}</div>
+                                )}
+                              </div>
+                              <div>
+                                <label className="block text-xs text-gray-600">Estado</label>
+                                {isEditingPlan ? (
+                                  <select value={abono.estado || 'pendiente'} onChange={(e) => setEditedPlan((prev) => prev.map((p, i) => i === index ? { ...p, estado: e.target.value } : p))} className="px-3 py-2 border rounded w-full">
+                                    <option value="pendiente">Pendiente</option>
+                                    <option value="pagado">Pagado</option>
+                                  </select>
+                                ) : (
+                                  <span className={`px-2 py-1 rounded text-xs ${abono.estado === 'pagado' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>{abono.estado?.toUpperCase() || 'PENDIENTE'}</span>
+                                )}
+                              </div>
+                              <div>
+                                <label className="block text-xs text-gray-600">Observaciones</label>
+                                {isEditingPlan ? (
+                                  <input type="text" value={abono.observaciones || ''}
+                                    onChange={(e) => setEditedPlan((prev) => prev.map((p, i) => i === index ? { ...p, observaciones: e.target.value } : p))}
+                                    className="px-3 py-2 border rounded w-full"
+                                  />
+                                ) : (
+                                  <div className="px-3 py-2 border rounded bg-gray-50 truncate" title={abono.observaciones || ''}>{abono.observaciones || '-'}</div>
                                 )}
                               </div>
                             </div>

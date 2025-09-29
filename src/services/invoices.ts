@@ -121,4 +121,43 @@ export const updateInvoiceStatus = async (
   return data as InvoiceEntity;
 };
 
+// Editar plan de abonos de una factura
+export interface EditInstallmentsBody {
+  facturaId: string;
+  abonos: Array<{
+    numero: number;
+    monto: number; // puede ser 0 (flexible)
+    fechaProgramada?: string | null; // ISO o null para flexible
+    estado?: 'pendiente' | 'pagado' | string;
+    observaciones?: string;
+    esFlexible?: boolean;
+  }>;
+}
+
+export const editInvoiceInstallments = async (
+  body: EditInstallmentsBody
+): Promise<{
+  facturaId: string;
+  abonos: Array<{
+    numero: number;
+    monto: number;
+    fechaProgramada: string;
+    estado: string;
+    observaciones?: string;
+    esFlexible?: boolean;
+  }>;
+  totalAbonos?: number;
+  totalFactura?: number;
+  diferencia?: number;
+}> => {
+  const res = await fetch(`${BASE_URL}/editar-plan-abonos`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(body),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data?.message || 'Error al editar plan de abonos');
+  return data?.data || data;
+};
+
 

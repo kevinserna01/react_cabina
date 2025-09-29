@@ -178,7 +178,7 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
   const [observaciones, setObservaciones] = useState<string>('');
   const [planAbonos, setPlanAbonos] = useState<Array<{
     monto: number;
-    fechaProgramada: string;
+    fechaProgramada: string; // puede ser '' para indicar flexible
     observaciones: string;
   }>>([]);
   const [showAutoOptions, setShowAutoOptions] = useState(false);
@@ -260,7 +260,7 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
           precioUnitario: Math.max(0, Math.round(item.product.price || 0)),
           total: Math.max(0, Math.round((item.product.price || 0) * item.quantity)),
         })),
-        metodoPago: selectedPaymentMethod,
+        metodoPago: tipoVenta === 'financiado' ? 'Credito' : selectedPaymentMethod,
         cliente: customerData.nombre ? {
           name: customerData.nombre,
           document: customerData.numeroIdentificacion,
@@ -279,9 +279,10 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
         // Solo incluir planAbonos si es financiado y tiene abonos
         ...(tipoVenta === 'financiado' && planAbonos.length > 0 && {
           planAbonos: planAbonos.map(abono => ({
-            monto: abono.monto,
-            fechaProgramada: new Date(abono.fechaProgramada).toISOString(),
-            observaciones: abono.observaciones
+            monto: Math.max(0, Math.round(Number(abono.monto) || 0)),
+            // Flexible: si viene vacío, enviar null para auto-asignación backend
+            fechaProgramada: abono.fechaProgramada ? new Date(abono.fechaProgramada).toISOString() : null,
+            observaciones: abono.observaciones || undefined
           }))
         })
       };
@@ -599,17 +600,17 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
   // Función para generar plan de abonos automático
   const generateAutomaticInstallmentPlan = (numberOfInstallments: number) => {
     const monthlyAmount = Math.round(total / numberOfInstallments);
-    const newPlan = [];
+    const newPlan = [] as Array<{ monto: number; fechaProgramada: string; observaciones: string }>;
     
     for (let i = 0; i < numberOfInstallments; i++) {
       const isLast = i === numberOfInstallments - 1;
       const amount = isLast ? total - (monthlyAmount * (numberOfInstallments - 1)) : monthlyAmount;
-      const date = new Date();
-      date.setMonth(date.getMonth() + i + 1);
+      // Flexible: sin fecha específica → '' para que backend asigne cada mes
+      const fechaProgramada = '';
       
       newPlan.push({
         monto: amount,
-        fechaProgramada: date.toISOString().split('T')[0],
+        fechaProgramada,
         observaciones: `Abono ${i + 1} de ${numberOfInstallments}`
       });
     }
@@ -624,19 +625,20 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
         return 'Debe configurar al menos un abono para ventas financiadas';
       }
       
-      const totalPlan = planAbonos.reduce((sum, abono) => sum + abono.monto, 0);
-      if (totalPlan !== total) {
-        return `La suma de los abonos (${formatPrice(totalPlan)}) debe coincidir con el total de la venta (${formatPrice(total)})`;
+      // Flexible: permitir montos en 0 y fechas vacías (backend las calcula)
+      const totalPlan = planAbonos.reduce((sum, abono) => sum + (Number(abono.monto) || 0), 0);
+      if (totalPlan > total) {
+        return `La suma de los abonos (${formatPrice(totalPlan)}) no puede exceder el total de la venta (${formatPrice(total)})`;
       }
-      
-      // Validar fechas
+      // Fechas: permitir '' para flexible, solo validar cuando se ingresa fecha
       const today = new Date().toISOString().split('T')[0];
       for (let i = 0; i < planAbonos.length; i++) {
-        if (planAbonos[i].fechaProgramada <= today) {
-          return `La fecha del abono ${i + 1} debe ser posterior a hoy`;
+        const ab = planAbonos[i];
+        if (ab.fechaProgramada && ab.fechaProgramada <= today) {
+          return `La fecha del abono ${i + 1} debe ser posterior a hoy o vacía para flexible`;
         }
-        if (planAbonos[i].monto <= 0) {
-          return `El monto del abono ${i + 1} debe ser mayor a cero`;
+        if (ab.monto < 0) {
+          return `El monto del abono ${i + 1} no puede ser negativo`;
         }
       }
     }
@@ -731,46 +733,46 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
         ) : (
           <div className="p-2">
             <ul className="space-y-1.5">
-              {items.map((item) => (
+            {items.map((item) => (
                 <li key={item.product.id} className="bg-white border border-gray-200 rounded-lg p-2 hover:shadow-sm transition-shadow">
                   <div className="flex items-center justify-between">
                     <div className="flex-1 min-w-0 mr-2">
                       <h3 className="text-xs font-medium text-gray-900 truncate" title={item.product.name}>
-                        {item.product.name}
-                      </h3>
+                    {item.product.name}
+                  </h3>
                       <div className="flex items-center justify-between mt-1">
                         <p className="text-xs text-gray-500">
                           {formatPrice(item.product.price)}
-                        </p>
+                  </p>
                         <div className="flex items-center space-x-1">
-                          <button
+                  <button
                             onClick={() => handleQuantityChange(item.product, item.quantity - 1)}
                             className="w-5 h-5 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
-                          >
+                  >
                             <Minus className="h-3 w-3 text-gray-600" />
-                          </button>
+                  </button>
                           <span className="text-xs font-medium w-6 text-center">
-                            {item.quantity}
-                          </span>
-                          <button
+                    {item.quantity}
+                  </span>
+                  <button
                             onClick={() => handleQuantityChange(item.product, item.quantity + 1)}
                             className="w-5 h-5 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
-                          >
+                  >
                             <Plus className="h-3 w-3 text-gray-600" />
-                          </button>
+                  </button>
                         </div>
                       </div>
                     </div>
-                    <button
+                  <button
                       onClick={() => handleRemoveItem(item.product)}
                       className="p-1 rounded-full hover:bg-red-100 transition-colors ml-1"
-                    >
+                  >
                       <X className="h-3 w-3 text-red-600" />
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
           </div>
         )}
       </div>
@@ -806,7 +808,7 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
                     <span>
                       {isGeneratingCode ? 'Generando código...' : `Código: ${saleCode}`}
                     </span>
-                  </div>
+    </div>
                 </div>
                 <button
                   onClick={() => {
@@ -1273,7 +1275,7 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
                                     <label className="block text-xs font-medium text-gray-700 mb-1">Monto</label>
                                     <input
                                       type="number"
-                                      min="1000"
+                                      min="0"
                                       max={total}
                                       value={abono.monto}
                                       onChange={(e) => {
@@ -1296,6 +1298,7 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
                                       }}
                                       className="w-full px-2 py-1 border border-gray-300 rounded text-xs"
                                     />
+                                    <p className="text-[10px] text-gray-500 mt-1">Deje vacío para asignación automática mensual</p>
                                   </div>
                                   <div>
                                     <label className="block text-xs font-medium text-gray-700 mb-1">Observación</label>
@@ -1311,6 +1314,19 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
                                       className="w-full px-2 py-1 border border-gray-300 rounded text-xs"
                                     />
                                   </div>
+                                </div>
+                                <div className="mt-2 flex items-center justify-end gap-2">
+                                  <button
+                                    onClick={() => {
+                                      const newPlan = [...planAbonos];
+                                      newPlan[index].monto = 0;
+                                      newPlan[index].fechaProgramada = '';
+                                      setPlanAbonos(newPlan);
+                                    }}
+                                    className="px-2 py-1 text-xs border border-gray-300 rounded hover:bg-gray-50"
+                                  >
+                                    Vaciar
+                                  </button>
                                 </div>
                               </div>
                             ))}
@@ -1351,10 +1367,10 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
                                 </span>
                               </div>
                             </div>
-                            {planAbonos.reduce((sum, a) => sum + a.monto, 0) !== total && (
+                            {planAbonos.reduce((sum, a) => sum + a.monto, 0) > total && (
                               <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded">
                                 <p className="text-xs text-red-700">
-                                  ⚠️ La suma de los abonos debe coincidir exactamente con el total de la venta
+                                  ⚠️ La suma de los abonos no puede exceder el total de la venta
                                 </p>
                               </div>
                             )}
@@ -1368,7 +1384,7 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
                     <button onClick={() => setCheckoutStep(2)} className="px-3 py-1.5 border rounded text-sm">Atrás</button>
                     <button 
                       onClick={() => setCheckoutStep(4)} 
-                      disabled={tipoVenta === 'financiado' && (planAbonos.length === 0 || planAbonos.reduce((sum, a) => sum + a.monto, 0) !== total)}
+                      disabled={tipoVenta === 'financiado' && (planAbonos.length === 0 || planAbonos.reduce((sum, a) => sum + a.monto, 0) > total)}
                       className="px-3 py-1.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:bg-indigo-300 text-sm"
                     >
                       Siguiente
@@ -1456,7 +1472,7 @@ const CartPanel: React.FC<CartPanelProps> = ({ onStockUpdate }) => {
                           {planAbonos.map((abono, index) => (
                             <div key={index} className="flex justify-between items-center text-xs">
                               <span className="text-blue-800">
-                                Abono #{index + 1} - {new Date(abono.fechaProgramada).toLocaleDateString()}
+                                Abono #{index + 1} - {abono.fechaProgramada ? new Date(abono.fechaProgramada).toLocaleDateString() : 'Flexible (auto)'}
                               </span>
                               <span className="font-semibold text-blue-900">{formatPrice(abono.monto)}</span>
                             </div>

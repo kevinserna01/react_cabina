@@ -29,7 +29,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ products, onProductSelect }) => {
   };
 
   const handleProductClick = (product: Product) => {
-    onProductSelect(product);
+      onProductSelect(product);
     setSearchTerm('');
     setFilteredProducts([]);
     setIsDropdownOpen(false);
@@ -65,18 +65,18 @@ const SearchBar: React.FC<SearchBarProps> = ({ products, onProductSelect }) => {
         <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
           {filteredProducts.map((product) => (
             <div
-              key={product.id}
-              onClick={() => handleProductClick(product)}
+                  key={product.id}
+                  onClick={() => handleProductClick(product)}
               className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex justify-between items-center"
             >
               <div>
                 <p className="font-medium">{product.name}</p>
                 <p className="text-sm text-gray-500">Código: {product.code}</p>
-              </div>
+                  </div>
               <div className="text-right">
                 <p className="font-medium">{product.price.toLocaleString('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 })}</p>
                 <p className="text-sm text-gray-500">Stock: {product.stock}</p>
-              </div>
+                  </div>
             </div>
           ))}
         </div>
