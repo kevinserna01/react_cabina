@@ -17,6 +17,8 @@ interface LoginResponse {
   userType?: 'trabajador' | 'admin';
   emailSent?: boolean;
   emailMessage?: string;
+  // Token de autenticación
+  token?: string;
 }
 
 const LoginGeneral: React.FC = () => {
@@ -61,19 +63,16 @@ const LoginGeneral: React.FC = () => {
 
       if (data.status === "Success" && data.user) {
         // Login exitoso
-        console.log('OTP Verification - User data:', data.user);
-        
         // Mapear el role del backend al formato esperado por el frontend
         const mappedRole = (data.user.role as string) === 'trabajador' ? 'worker' : data.user.role;
         
         localStorage.setItem('user', JSON.stringify(data.user));
         localStorage.setItem('userRole', mappedRole);
         localStorage.setItem('userStatus', data.user.status);
-        console.log('OTP Verification - Saved to localStorage:', {
-          user: data.user,
-          role: mappedRole,
-          status: data.user.status
-        });
+        // Guardar token si viene en la respuesta
+        if (data.token) {
+          localStorage.setItem('token', data.token);
+        }
         setWelcomeName(data.user.name);
         setShowWelcomeModal(true);
         setTimeout(() => {
@@ -213,6 +212,10 @@ const LoginGeneral: React.FC = () => {
           localStorage.setItem('user', JSON.stringify(data.user));
           localStorage.setItem('userRole', mappedRole);
           localStorage.setItem('userStatus', data.user.status);
+          // Guardar token si viene en la respuesta
+          if (data.token) {
+            localStorage.setItem('token', data.token);
+          }
           setWelcomeName(data.user.name);
           setShowWelcomeModal(true);
           setTimeout(() => {

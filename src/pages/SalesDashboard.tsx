@@ -47,13 +47,17 @@ const SalesDashboard = () => {
         url.searchParams.set('search', search.trim());
       }
 
-      const response = await fetch(url.toString(), {
+        const token = localStorage.getItem('token');
+        
+        const response = await fetch(url.toString(), {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${token}`
           }
         });
 
         if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Error al cargar productos:', errorText);
           throw new Error('Error al cargar los productos');
         }
 
@@ -162,27 +166,15 @@ const SalesDashboard = () => {
   // Obtener nombre del usuario al montar
   React.useEffect(() => {
     const userStr = localStorage.getItem('user');
-    const userRole = localStorage.getItem('userRole');
-    const token = localStorage.getItem('token');
-    
-    console.log('SalesDashboard - Debug Info:', {
-      userStr,
-      userRole,
-      token: token ? 'Present' : 'Missing',
-      hasUser: !!userStr
-    });
     
     if (userStr) {
       try {
         const user = JSON.parse(userStr);
         setUserName(user.name || '');
-        console.log('SalesDashboard - User parsed:', user);
       } catch (error) {
-        console.error('SalesDashboard - Error parsing user:', error);
+        console.error('Error parsing user:', error);
         setUserName('');
       }
-    } else {
-      console.log('SalesDashboard - No user found in localStorage');
     }
   }, []);
 
@@ -231,15 +223,9 @@ const SalesDashboard = () => {
   };
 
 
+
   return (
     <div className="h-screen flex flex-col bg-gray-100">
-      {/* Debug Info - Temporal */}
-      <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-2 text-xs">
-        <strong>Debug Info:</strong> User: {localStorage.getItem('user') ? 'Present' : 'Missing'} | 
-        Role: {localStorage.getItem('userRole')} | 
-        Token: {localStorage.getItem('token') ? 'Present' : 'Missing'}
-      </div>
-      
       <header className="bg-white shadow w-full">
         <div className="flex flex-col sm:flex-row w-full items-center justify-between py-3 sm:py-4 pl-3 pr-3 sm:pl-6 sm:pr-8 gap-y-2 sm:gap-y-0">
           {/* Logo, nombre papelería y usuario */}
@@ -346,6 +332,18 @@ const SalesDashboard = () => {
             {isLoading ? (
               <div className="flex justify-center items-center h-64">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                <span className="ml-3 text-gray-600">Cargando productos...</span>
+              </div>
+            ) : error ? (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
+                <h3 className="font-semibold">Error al cargar productos</h3>
+                <p className="text-sm mt-1">{error}</p>
+                <button 
+                  onClick={() => fetchProducts(1, '')}
+                  className="mt-2 px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
+                >
+                  Reintentar
+                </button>
               </div>
             ) : (
               <div className="bg-white rounded-lg shadow overflow-hidden">
