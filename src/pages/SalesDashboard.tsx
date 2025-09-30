@@ -162,13 +162,27 @@ const SalesDashboard = () => {
   // Obtener nombre del usuario al montar
   React.useEffect(() => {
     const userStr = localStorage.getItem('user');
+    const userRole = localStorage.getItem('userRole');
+    const token = localStorage.getItem('token');
+    
+    console.log('SalesDashboard - Debug Info:', {
+      userStr,
+      userRole,
+      token: token ? 'Present' : 'Missing',
+      hasUser: !!userStr
+    });
+    
     if (userStr) {
       try {
         const user = JSON.parse(userStr);
         setUserName(user.name || '');
-      } catch {
+        console.log('SalesDashboard - User parsed:', user);
+      } catch (error) {
+        console.error('SalesDashboard - Error parsing user:', error);
         setUserName('');
       }
+    } else {
+      console.log('SalesDashboard - No user found in localStorage');
     }
   }, []);
 
@@ -219,6 +233,13 @@ const SalesDashboard = () => {
 
   return (
     <div className="h-screen flex flex-col bg-gray-100">
+      {/* Debug Info - Temporal */}
+      <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-2 text-xs">
+        <strong>Debug Info:</strong> User: {localStorage.getItem('user') ? 'Present' : 'Missing'} | 
+        Role: {localStorage.getItem('userRole')} | 
+        Token: {localStorage.getItem('token') ? 'Present' : 'Missing'}
+      </div>
+      
       <header className="bg-white shadow w-full">
         <div className="flex flex-col sm:flex-row w-full items-center justify-between py-3 sm:py-4 pl-3 pr-3 sm:pl-6 sm:pr-8 gap-y-2 sm:gap-y-0">
           {/* Logo, nombre papelería y usuario */}
