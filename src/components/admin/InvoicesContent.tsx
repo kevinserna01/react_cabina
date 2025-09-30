@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { InvoiceEntity, InvoiceStatus, PaginationInfo } from '../../types';
-import { createInvoice, listInvoices, editInvoiceInstallments } from '../../services/invoices';
+import { createInvoice, listInvoices, editInvoiceInstallments, suggestPaymentAmounts } from '../../services/invoices';
 import { listCustomers } from '../../services/customers';
+import { Trash } from 'lucide-react';
 
 const InvoicesContent: React.FC = () => {
   const [items, setItems] = useState<InvoiceEntity[]>([]);
@@ -32,7 +33,33 @@ const InvoicesContent: React.FC = () => {
   const [planData, setPlanData] = useState<any>(null);
   const [isLoadingPlan, setIsLoadingPlan] = useState(false);
   const [isEditingPlan, setIsEditingPlan] = useState(false);
-  const [editedPlan, setEditedPlan] = useState<Array<{ numero: number; monto: number; fechaProgramada?: string | null; estado?: string; observaciones?: string; esFlexible?: boolean }>>([]);
+  const [editedPlan, setEditedPlan] = useState<Array<{ numero: number; monto: number; fechaProgramada?: string | null; estado?: string; observaciones?: string; esFlexible?: boolean; puedeModificar?: boolean; esRecalculo?: boolean; montoAnterior?: number }>>([]);
+  const [desiredInstallments, setDesiredInstallments] = useState<number>(0);
+  const [suggestSummary, setSuggestSummary] = useState<null | { totalFactura?: number; montoAsignado?: number; montoDisponible?: number; abonosExistentes?: number; abonosRestantes?: number; abonosPendientes?: number }>(null);
+  const [isPlanWarnOpen, setIsPlanWarnOpen] = useState(false);
+  const [planWarnMsg, setPlanWarnMsg] = useState<string>('');
+
+  const showPlanWarning = (msg: string) => {
+    setPlanWarnMsg(msg);
+    setIsPlanWarnOpen(true);
+  };
+
+  const handleMontoChange = (index: number, nextValue: number) => {
+    const totalFactura = Number(planData?.factura?.total) || Number(planData?.factura?.totalFactura) || 0;
+    const normalizedNext = Math.max(0, Number(nextValue) || 0);
+    // Suma de abonos "pagado" + demás abonos (excepto el actual)
+    const sumExcludingCurrent = editedPlan.reduce((sum, a, i) => {
+      if (i === index) return sum;
+      return sum + Math.max(0, Number(a.monto) || 0);
+    }, 0);
+    const candidateTotal = sumExcludingCurrent + normalizedNext;
+    if (candidateTotal > totalFactura) {
+      const diff = candidateTotal - totalFactura;
+      showPlanWarning(`El monto ingresado excede el total de la factura por ${diff.toLocaleString('es-CO')}. Ajuste los valores para no superar el total.`);
+      return;
+    }
+    setEditedPlan((prev) => prev.map((p, i) => (i === index ? { ...p, monto: normalizedNext } : p)));
+  };
 
   const fetchClientes = async () => {
     try {
@@ -142,16 +169,57 @@ const InvoicesContent: React.FC = () => {
         throw new Error(result.message || 'Error al cargar detalles del plan');
       }
 
-      setPlanData(result.data);
+      // Normalizar y reforzar estadísticas del plan (fallback si backend aún no calcula correctamente)
+      try {
+        const factura = result?.data?.factura || {};
+        const abonosPlan = Array.isArray(factura?.planAbonos) ? factura.planAbonos : [];
+        const abonosReales = Array.isArray(result?.data?.abonosReales) ? result.data.abonosReales : [];
+        const totalPagadoReales = abonosReales.reduce((sum: number, a: any) => sum + (Number(a?.montoPagado) || 0), 0);
+        const totalPagadoPlan = abonosPlan
+          .filter((a: any) => (a?.estado || '').toLowerCase() === 'pagado')
+          .reduce((sum: number, a: any) => sum + (Number((a as any)?.montoPagado ?? a?.monto) || 0), 0);
+        const totalPagado = Math.max(totalPagadoReales, totalPagadoPlan);
+        const totalPlaneado = abonosPlan.reduce((sum: number, a: any) => sum + (Number(a?.monto) || 0), 0);
+        const hoy = new Date();
+        const abonosPagados = abonosPlan.filter((a: any) => (a?.estado || '').toLowerCase() === 'pagado').length || 0;
+        const abonosPendientes = abonosPlan.filter((a: any) => (a?.estado || '').toLowerCase() === 'pendiente').length || 0;
+        const abonosVencidos = abonosPlan.filter((a: any) => (a?.estado || '').toLowerCase() === 'pendiente' && a?.fechaProgramada && new Date(a.fechaProgramada) < hoy).length || 0;
+        const diferenciaPagos = abonosReales.reduce((sum: number, a: any) => sum + (Number(a?.diferencia) || 0), 0);
+        const abonosLibres = abonosReales.filter((a: any) => Boolean(a?.esAbonoLibre)).length || 0;
+        const saldoPendiente = Math.max(0, (Number(factura?.total) || 0) - totalPagado);
+
+        const estadisticasPlan = {
+          totalAbonos: abonosPlan.length || 0,
+          abonosPagados,
+          abonosPendientes,
+          abonosVencidos,
+          totalPlaneado,
+          totalPagado,
+          diferenciaPagos,
+          abonosLibres,
+          saldoPendiente,
+        };
+
+        setPlanData({
+          ...result.data,
+          estadisticasPlan: { ...(result.data?.estadisticasPlan || {}), ...estadisticasPlan },
+        });
+      } catch {
+        setPlanData(result.data);
+      }
       const plan = (result.data?.factura?.planAbonos || []).map((a: any) => ({
         numero: a.numero,
         monto: Number(a.monto || 0),
         fechaProgramada: a.fechaProgramada ? String(a.fechaProgramada).slice(0, 10) : '',
         estado: a.estado,
         observaciones: a.observaciones,
-        esFlexible: Boolean(a.esFlexible)
-      }));
+        esFlexible: Boolean(a.esFlexible),
+        puedeModificar: String(a.estado || '').toLowerCase() !== 'pagado'
+      } as { numero: number; monto: number; fechaProgramada?: string | null; estado?: string; observaciones?: string; esFlexible?: boolean; puedeModificar?: boolean; }));
       setEditedPlan(plan);
+      const nonRemovableCount = plan.filter((x: any) => x.puedeModificar === false).length;
+      setDesiredInstallments(Math.max(plan.length || 1, nonRemovableCount || 1));
+      setSuggestSummary(null);
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Error al cargar detalles del plan';
       setError(msg);
@@ -373,6 +441,25 @@ const InvoicesContent: React.FC = () => {
         </div>
       )}
 
+      {isPlanWarnOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-[100]">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+            <div className="p-4">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Aviso</h3>
+              <p className="text-sm text-gray-700">{planWarnMsg}</p>
+              <div className="mt-4 flex justify-end gap-2">
+                <button
+                  onClick={() => setIsPlanWarnOpen(false)}
+                  className="px-3 py-1.5 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-sm"
+                >
+                  Entendido
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal de Plan de Abonos */}
       {isPlanModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -519,13 +606,115 @@ const InvoicesContent: React.FC = () => {
 
                       <div className="space-y-3">
                         {isEditingPlan && (
+                          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-2">
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1">
+                                <label className="text-xs text-gray-600"># Abonos</label>
+                                <input
+                                  type="number"
+                                  min={1}
+                                  value={desiredInstallments || editedPlan.length || 1}
+                                  onChange={(e) => {
+                                    const v = Math.max(1, Number(e.target.value) || 1);
+                                    setDesiredInstallments(v);
+                                    // Si se reduce el número deseado, recortar el plan actual inmediatamente
+                                    if (v < (editedPlan?.length || 0)) {
+                                      setEditedPlan((prev) => prev
+                                        .slice()
+                                        .sort((a, b) => a.numero - b.numero)
+                                        .slice(0, v)
+                                      );
+                                    }
+                                  }}
+                                  className="w-16 px-2 py-1 border rounded text-xs"
+                                />
+                              </div>
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    setIsLoadingPlan(true);
+                                    const numeroDeseado = Math.max(desiredInstallments || 1, 1);
+                                    const existingSortedLimited = (editedPlan as Array<{ numero: number; monto: number; estado?: string; puedeModificar?: boolean }> || [])
+                                      .slice()
+                                      .sort((a, b) => a.numero - b.numero)
+                                      .slice(0, numeroDeseado);
+                                    const payload = await suggestPaymentAmounts({
+                                      facturaId: planData.factura?.id || planData.factura?._id,
+                                      numeroAbonos: numeroDeseado,
+                                      abonosExistentes: existingSortedLimited
+                                        .filter((a) => (String(a.estado || '').toLowerCase() === 'pagado') || (Number(a.monto) > 0))
+                                        .map((a) => ({ numero: a.numero, monto: Math.max(0, Number(a.monto) || 0), estado: a.estado } as any)),
+                                      totalFactura: Number(planData?.factura?.total) || Number(planData?.factura?.totalFactura) || 0
+                                    });
+                                    setSuggestSummary({
+                                      totalFactura: (payload as any)?.totalFactura,
+                                      montoAsignado: (payload as any)?.montoAsignado,
+                                      montoDisponible: (payload as any)?.montoDisponible,
+                                      abonosExistentes: (payload as any)?.abonosExistentes,
+                                      abonosRestantes: (payload as any)?.abonosRestantes,
+                                    });
+                                    const sugerencias = (payload?.sugerencias || []).map((s) => ({
+                                      numero: s.numero,
+                                      monto: Math.max(0, Number(s.monto) || 0),
+                                      fechaProgramada: s.fechaProgramada ? String(s.fechaProgramada).slice(0, 10) : '',
+                                      estado: s.estado || 'pendiente',
+                                      observaciones: s.observaciones || `Abono ${s.numero}`,
+                                      esFlexible: Boolean(s.esFlexible ?? true),
+                                      puedeModificar: s.puedeModificar !== false,
+                                      esRecalculo: Boolean((s as any)?.esRecalculo),
+                                      montoAnterior: Number((s as any)?.montoAnterior || 0)
+                                    }));
+                                    // Mezclar por numero: sobrescribir sugerencias si ya existen, o añadir nuevas
+                                    const byNumero = new Map<number, any>();
+                                    (editedPlan || []).forEach((a) => byNumero.set(a.numero, a));
+                                    sugerencias.forEach((s) => byNumero.set(s.numero, s));
+                                    const merged = Array.from(byNumero.values()).sort((a, b) => a.numero - b.numero).slice(0, numeroDeseado);
+                                    setEditedPlan(merged);
+                                  } catch (e) {
+                                    setError(e instanceof Error ? e.message : 'Error al sugerir montos');
+                                  } finally {
+                                    setIsLoadingPlan(false);
+                                  }
+                                }}
+                                className="px-2 py-1 text-xs bg-indigo-600 text-white rounded"
+                              >
+                                Auto sugerir montos
+                              </button>
+                              <button
+                                onClick={() => {
+                                  const nextNumero = (editedPlan.reduce((m, a) => Math.max(m, a.numero || 0), 0) || 0) + 1;
+                                  setEditedPlan((prev) => ([
+                                    ...prev,
+                                    { numero: nextNumero, monto: 0, fechaProgramada: '', estado: 'pendiente', observaciones: '', esFlexible: true, puedeModificar: true }
+                                  ]));
+                                }}
+                                className="px-2 py-1 text-xs bg-green-600 text-white rounded"
+                              >
+                                + Agregar Abono
+                              </button>
+                            </div>
+                            <div className="text-xs text-gray-600">
+                              {suggestSummary ? (
+                                <span>
+                                  Disp.: ${(Number(suggestSummary.montoDisponible || 0)).toLocaleString('es-CO')} /
+                                  Asig.: ${(Number(suggestSummary.montoAsignado || 0)).toLocaleString('es-CO')}
+                                </span>
+                              ) : (
+                                (planData?.estadisticasPlan?.montoDisponible !== undefined) && (
+                                  <span>Disponible: ${(planData.estadisticasPlan.montoDisponible || 0).toLocaleString('es-CO')}</span>
+                                )
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        {isEditingPlan && (
                           <div className="mb-2">
                             <button
                               onClick={() => {
                                 const nextNumero = (editedPlan.reduce((m, a) => Math.max(m, a.numero || 0), 0) || 0) + 1;
-                                setEditedPlan((prev) => ([
+                                  setEditedPlan((prev) => ([
                                   ...prev,
-                                  { numero: nextNumero, monto: 0, fechaProgramada: '', estado: 'pendiente', observaciones: '', esFlexible: true }
+                                    { numero: nextNumero, monto: 0, fechaProgramada: '', estado: 'pendiente', observaciones: '', esFlexible: true, puedeModificar: true }
                                 ]));
                               }}
                               className="px-2 py-1 text-xs bg-green-600 text-white rounded"
@@ -534,9 +723,9 @@ const InvoicesContent: React.FC = () => {
                             </button>
                           </div>
                         )}
-                        {(isEditingPlan ? editedPlan : planData.factura.planAbonos).map((abono: any, index: number) => (
+                        {(isEditingPlan ? editedPlan : (planData.factura.planAbonos as Array<any>).map((a) => ({ ...a, puedeModificar: String(a?.estado || '').toLowerCase() !== 'pagado' }))).map((abono: any, index: number) => (
                           <div key={index} className={`p-3 rounded-lg border ${abono.estado === 'pagado' ? 'bg-green-50 border-green-200' : abono.estado === 'vencido' ? 'bg-red-50 border-red-200' : 'bg-yellow-50 border-yellow-200'}`}>
-                            <div className="grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
+                            <div className="grid grid-cols-1 md:grid-cols-6 gap-3 items-end">
                               <div>
                                 <label className="block text-xs text-gray-600">Abono #</label>
                                 <div className="px-3 py-2 border rounded bg-gray-50">{abono.numero}</div>
@@ -544,9 +733,13 @@ const InvoicesContent: React.FC = () => {
                               <div>
                                 <label className="block text-xs text-gray-600">Monto</label>
                                 {isEditingPlan ? (
-                                  <input type="number" min={0} value={abono.monto}
-                                    onChange={(e) => setEditedPlan((prev) => prev.map((p, i) => i === index ? { ...p, monto: Number(e.target.value) } : p))}
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    value={abono.monto}
+                                    onChange={(e) => handleMontoChange(index, Number(e.target.value))}
                                     className="px-3 py-2 border rounded w-full"
+                                    disabled={abono.puedeModificar === false}
                                   />
                                 ) : (
                                   <div className="px-3 py-2 border rounded bg-gray-50">${(abono.monto || 0).toLocaleString('es-CO')}</div>
@@ -555,9 +748,12 @@ const InvoicesContent: React.FC = () => {
                               <div>
                                 <label className="block text-xs text-gray-600">Fecha Programada</label>
                                 {isEditingPlan ? (
-                                  <input type="date" value={abono.fechaProgramada || ''}
+                                  <input
+                                    type="date"
+                                    value={abono.fechaProgramada || ''}
                                     onChange={(e) => setEditedPlan((prev) => prev.map((p, i) => i === index ? { ...p, fechaProgramada: e.target.value } : p))}
                                     className="px-3 py-2 border rounded w-full"
+                                    disabled={abono.puedeModificar === false}
                                   />
                                 ) : (
                                   <div className="px-3 py-2 border rounded bg-gray-50">{abono.fechaProgramada ? new Date(abono.fechaProgramada).toLocaleDateString('es-CO') : 'Flexible (auto)'}</div>
@@ -566,7 +762,12 @@ const InvoicesContent: React.FC = () => {
                               <div>
                                 <label className="block text-xs text-gray-600">Estado</label>
                                 {isEditingPlan ? (
-                                  <select value={abono.estado || 'pendiente'} onChange={(e) => setEditedPlan((prev) => prev.map((p, i) => i === index ? { ...p, estado: e.target.value } : p))} className="px-3 py-2 border rounded w-full">
+                                  <select
+                                    value={abono.estado || 'pendiente'}
+                                    onChange={(e) => setEditedPlan((prev) => prev.map((p, i) => i === index ? { ...p, estado: e.target.value } : p))}
+                                    className="px-3 py-2 border rounded w-full"
+                                    disabled={abono.puedeModificar === false}
+                                  >
                                     <option value="pendiente">Pendiente</option>
                                     <option value="pagado">Pagado</option>
                                   </select>
@@ -577,14 +778,33 @@ const InvoicesContent: React.FC = () => {
                               <div>
                                 <label className="block text-xs text-gray-600">Observaciones</label>
                                 {isEditingPlan ? (
-                                  <input type="text" value={abono.observaciones || ''}
+                                  <input
+                                    type="text"
+                                    value={abono.observaciones || ''}
                                     onChange={(e) => setEditedPlan((prev) => prev.map((p, i) => i === index ? { ...p, observaciones: e.target.value } : p))}
                                     className="px-3 py-2 border rounded w-full"
+                                    disabled={abono.puedeModificar === false}
                                   />
                                 ) : (
                                   <div className="px-3 py-2 border rounded bg-gray-50 truncate" title={abono.observaciones || ''}>{abono.observaciones || '-'}</div>
                                 )}
                               </div>
+                              {isEditingPlan ? (
+                                <div className="flex items-end justify-end pb-0.5">
+                                  <button
+                                    onClick={() => setEditedPlan((prev) => prev.filter((_, i) => i !== index))}
+                                    className="inline-flex items-center gap-1 px-3 py-2 border border-red-300 text-red-600 rounded hover:bg-red-50 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                                    disabled={abono.puedeModificar === false}
+                                    title="Eliminar abono"
+                                    aria-label={`Eliminar abono ${abono.numero}`}
+                                  >
+                                    <Trash className="w-3.5 h-3.5" />
+                                    Eliminar
+                                  </button>
+                                </div>
+                              ) : (
+                                <div />
+                              )}
                             </div>
                           </div>
                         ))}

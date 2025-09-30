@@ -161,3 +161,53 @@ export const editInvoiceInstallments = async (
 };
 
 
+// Sugerir montos automáticamente para un plan de abonos
+export interface SuggestPaymentAmountsBody {
+  facturaId: string;
+  numeroAbonos: number; // total deseado de abonos
+  abonosExistentes: Array<{
+    numero: number;
+    monto: number;
+    estado?: string;
+  }>;
+  totalFactura?: number; // total de la factura (para cálculo en backend)
+}
+
+export interface SuggestPaymentAmountsResponse {
+  facturaId: string;
+  totalFactura: number;
+  montoAsignado: number;
+  montoDisponible: number;
+  abonosExistentes: number;
+  abonosRestantes: number;
+  sugerencias: Array<{
+    numero: number;
+    monto: number;
+    fechaProgramada?: string | null;
+    estado?: string;
+    observaciones?: string;
+    esFlexible?: boolean;
+    puedeModificar?: boolean;
+    esRecalculo?: boolean;
+    montoAnterior?: number;
+  }>;
+  totalSugerido: number;
+  diferencia: number;
+}
+
+export const suggestPaymentAmounts = async (
+  body: SuggestPaymentAmountsBody
+): Promise<SuggestPaymentAmountsResponse> => {
+  const res = await fetch(`${BASE_URL}/suggest-payment-amounts`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(body),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error((data as any)?.message || 'Error al obtener sugerencias de abonos');
+  // La API puede devolver { status, message, data }
+  const payload = (data && (data as any).data) ? (data as any).data : data;
+  return payload as SuggestPaymentAmountsResponse;
+};
+
+

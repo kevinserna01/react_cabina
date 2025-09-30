@@ -1031,28 +1031,28 @@ const ReportsContent = () => {
                 {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(
                   summary ? summary.totalVentas : toNumber(reportsRaw.resumen?.[0]?.TotalVentas, 0)
                 )}
-              </p>
-            </div>
+          </p>
+        </div>
             <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
               <h4 className="text-sm font-medium text-gray-500">Promedio por Venta</h4>
               <p className="mt-2 text-2xl font-semibold text-gray-900">
                 {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(
                   summary ? summary.promedioVenta : toNumber(reportsRaw.resumen?.[0]?.PromedioVenta, 0)
                 )}
-              </p>
-            </div>
+          </p>
+        </div>
             <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
               <h4 className="text-sm font-medium text-gray-500">Total Transacciones</h4>
               <p className="mt-2 text-2xl font-semibold text-gray-900">
                 {summary ? summary.totalTransacciones : toNumber(reportsRaw.resumen?.[0]?.CantidadVentas, 0)}
               </p>
-            </div>
+        </div>
             <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
               <h4 className="text-sm font-medium text-gray-500">Método de Pago Popular</h4>
               <p className="mt-2 text-2xl font-semibold text-gray-900">
                 {summary ? summary.metodoPagoPopular : 'N/A'}
               </p>
-            </div>
+      </div>
           </div>
           {/* Segunda fila de tarjetas con más métricas del resumen */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
@@ -1114,7 +1114,7 @@ const ReportsContent = () => {
       {reportType === 'ventas' && (
         <div className="space-y-6">
           {timeRange === 'day' && (
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
               <h3 className="text-lg font-medium text-gray-900 mb-4">Ventas del Día</h3>
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
@@ -1169,8 +1169,8 @@ const ReportsContent = () => {
                     />
                   </BarChart>
                 </ResponsiveContainer>
-        </div>
-      </div>
+                </div>
+          </div>
           )}
 
           {timeRange === 'week' && (
@@ -1366,8 +1366,8 @@ const ReportsContent = () => {
                     <Legend />
                   </PieChart>
                 </ResponsiveContainer>
-              </div>
-            </div>
+        </div>
+      </div>
           )}
 
           {Array.isArray(reportsRaw?.ventasPorDepartamentos) && reportsRaw.ventasPorDepartamentos.length > 0 && (
@@ -1598,13 +1598,13 @@ const ReportsContent = () => {
                         onClick={() => handleSort('Código')}
                       >
                         Código {sortConfig?.key === 'Código' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
-                      </th>
+                  </th>
                       <th 
                         className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
                         onClick={() => handleSort('Cliente')}
                       >
                         Cliente {sortConfig?.key === 'Cliente' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
-                      </th>
+                  </th>
                       <th 
                         className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
                         onClick={() => handleSort('Total')}

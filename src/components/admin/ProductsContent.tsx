@@ -739,7 +739,7 @@ const ProductsContent = () => {
                     placeholder="0"
                   />
                 </div>
-                <div>
+              <div>
                   <label className="block text-sm font-medium text-gray-700">Precio de Venta</label>
                   <input
                     type="text"
@@ -758,20 +758,20 @@ const ProductsContent = () => {
                   Categoría
                 </label>
                 <div className="flex gap-2">
-                  <select
-                    id="category"
-                    name="category"
-                    value={newProduct.category}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  >
+                <select
+                  id="category"
+                  name="category"
+                  value={newProduct.category}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                >
                     <option value="">Sin categoría</option>
                     {categories.map((c) => (
                       <option key={c.id} value={c.name}>
                         {c.name}
-                      </option>
-                    ))}
-                  </select>
+                    </option>
+                  ))}
+                </select>
                   <label className="inline-flex items-center gap-2 mt-1 text-sm text-gray-700">
                     <input type="checkbox" checked={!!newProduct.createNewCategory} onChange={(e) => setNewProduct(prev => ({ ...prev, createNewCategory: e.target.checked }))} />
                   Crear categoría si no existe
