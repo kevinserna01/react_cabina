@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Prism from '../ui/Prism';
+import GlassSurface from '../ui/GlassSurface';
 
 interface LoginResponse {
   status: string;
@@ -29,6 +31,7 @@ const LoginGeneral: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [welcomeName, setWelcomeName] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
   
   // Estados para OTP
   const [requiresVerification, setRequiresVerification] = useState(false);
@@ -247,168 +250,304 @@ const LoginGeneral: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        {!requiresVerification ? (
-          // Formulario de Login
-          <>
-            <div>
-              <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-                Iniciar Sesión
-              </h2>
-            </div>
-            <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div>
-              <label htmlFor="email" className="sr-only">
-                Email
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Email"
-              />
-            </div>
-            <div>
-              <label htmlFor="password" className="sr-only">
-                Contraseña
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Contraseña"
-              />
-            </div>
-          </div>
+    <div className="min-h-screen flex flex-col items-stretch relative overflow-hidden bg-[#0a0a1f]">
+      {/* Prism Background - Centered */}
+      <div className="absolute inset-0 w-full h-full flex items-center justify-center">
+        <Prism noise={0.1} />
+      </div>
 
-          <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? (
-                <span className="absolute left-0 inset-y-0 flex items-center pl-3">
-                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                </span>
-              ) : null}
-              {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
-            </button>
+      {/* Navbar with GlassSurface */}
+      <div className="w-full flex justify-center pt-6 px-6 lg:px-12 absolute top-0 left-0 right-0 z-50">
+        <GlassSurface
+          width="100%"
+          height={70}
+        >
+          <nav className="w-full h-full flex items-center justify-between px-6 lg:px-12">
+            {/* Logo */}
+            <div className="flex items-center">
+              <h1 className="text-2xl font-bold text-white">
+                PymeTrack
+              </h1>
+            </div>
+
+            {/* Navigation Links */}
+            <div className="hidden md:flex items-center gap-8">
+              <button
+                className="text-white/80 hover:text-white text-sm font-medium transition-colors duration-200"
+                onClick={() => {/* TODO: Navigate to Quienes somos */}}
+              >
+                Quienes somos
+              </button>
+              <button
+                className="text-white/80 hover:text-white text-sm font-medium transition-colors duration-200"
+                onClick={() => {/* TODO: Navigate to Haz parte */}}
+              >
+                Haz parte
+              </button>
+            </div>
+          </nav>
+        </GlassSurface>
+      </div>
+
+      {/* Two Column Layout */}
+      <div className="flex flex-col lg:flex-row w-full pt-32">
+        
+        {/* Left Side - Login Form */}
+        <div className="w-full lg:w-1/2 flex items-center justify-center p-8 lg:p-12 relative z-10">
+          <div className="w-full max-w-md">
+            {!requiresVerification ? (
+              // Formulario de Login
+              <div className="backdrop-blur-xl bg-black/40 border border-blue-500/20 rounded-2xl shadow-2xl p-8 space-y-8">
+                {/* Avatar Icon */}
+                <div className="flex justify-center">
+                  <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-full flex items-center justify-center shadow-lg shadow-cyan-500/50">
+                    <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  </div>
+                </div>
+
+                <div className="text-center">
+                  <h2 className="text-3xl font-bold text-white mb-2">
+                    Iniciar Sesión
+                  </h2>
+                  <p className="text-sm text-white/60">
+                    Ingresa tus credenciales para continuar
+                  </p>
+                </div>
+
+                <form className="space-y-5" onSubmit={handleSubmit}>
+                  {error && (
+                    <div className="bg-red-500/20 backdrop-blur-sm border border-red-400/50 text-red-100 px-4 py-3 rounded-lg text-sm flex items-center gap-2">
+                      <svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                      </svg>
+                      <span>{error}</span>
+                    </div>
+                  )}
+
+                  <div className="space-y-4">
+                    {/* Email Input */}
+                    <div>
+                      <label htmlFor="email" className="block text-sm font-medium text-white/90 mb-2">
+                        Correo Electrónico
+                      </label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <svg className="h-5 w-5 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                          </svg>
+                        </div>
+                        <input
+                          id="email"
+                          name="email"
+                          type="email"
+                          autoComplete="email"
+                          required
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          className="w-full pl-10 pr-4 py-3 bg-blue-950/30 backdrop-blur-sm border border-blue-500/30 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all duration-200"
+                          placeholder="correo@ejemplo.com"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Password Input */}
+                    <div>
+                      <label htmlFor="password" className="block text-sm font-medium text-white/90 mb-2">
+                        Contraseña
+                      </label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <svg className="h-5 w-5 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                          </svg>
+                        </div>
+                        <input
+                          id="password"
+                          name="password"
+                          type={showPassword ? "text" : "password"}
+                          autoComplete="current-password"
+                          required
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          className="w-full pl-10 pr-12 py-3 bg-blue-950/30 backdrop-blur-sm border border-blue-500/30 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all duration-200"
+                          placeholder="••••••••"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute inset-y-0 right-0 pr-3 flex items-center text-white/40 hover:text-white/80 transition-colors"
+                        >
+                          {showPassword ? (
+                            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                            </svg>
+                          ) : (
+                            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Submit Button */}
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full py-3.5 px-4 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-black disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-[1.02] flex items-center justify-center gap-2"
+                  >
+                    {loading ? (
+                      <>
+                        <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span>Iniciando sesión...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Iniciar Sesión</span>
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                        </svg>
+                      </>
+                    )}
+                  </button>
+                </form>
+              </div>
+            ) : (
+              // Formulario de Verificación OTP
+              <div className="backdrop-blur-xl bg-black/40 border border-blue-500/20 rounded-2xl shadow-2xl p-8 space-y-8">
+                <div>
+                  <h2 className="text-4xl font-bold text-white mb-2">
+                    Verificación de Código
+                  </h2>
+                  <p className="text-sm text-white/60">
+                    Hemos enviado un código de verificación a tu email
+                  </p>
+                </div>
+
+                <form className="space-y-6" onSubmit={handleVerifyOTP}>
+                  {otpError && (
+                    <div className="bg-red-500/20 backdrop-blur-sm border border-red-400/50 text-red-100 px-4 py-3 rounded-lg text-sm">
+                      {otpError}
+                    </div>
+                  )}
+                  
+                  <div className="bg-blue-500/20 backdrop-blur-sm border border-blue-400/50 text-blue-100 px-4 py-3 rounded-lg">
+                    <p className="text-sm">
+                      <strong>Instrucciones:</strong> Revisa tu correo electrónico y ingresa el código de 6 dígitos que te enviamos.
+                    </p>
+                    {timeLeft > 0 && (
+                      <p className="text-sm mt-1">
+                        El código expira en: <strong>{formatTime(timeLeft)}</strong>
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label htmlFor="otpCode" className="block text-sm font-medium text-white/90 mb-2 text-center">
+                      Código de Verificación
+                    </label>
+                    <input
+                      id="otpCode"
+                      name="otpCode"
+                      type="text"
+                      maxLength={6}
+                      required
+                      value={otpCode}
+                      onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                      className="w-full px-4 py-4 bg-white/5 backdrop-blur-sm border border-white/20 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 text-center text-3xl tracking-[0.5em] font-bold"
+                      placeholder="000000"
+                    />
+                  </div>
+
+                  <div className="space-y-3">
+                    <button
+                      type="submit"
+                      disabled={otpLoading || otpCode.length !== 6}
+                      className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-black disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-[1.02]"
+                    >
+                      {otpLoading ? (
+                        <span className="flex items-center justify-center">
+                          <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Verificando...
+                        </span>
+                      ) : (
+                        'Verificar Código'
+                      )}
+                    </button>
+
+                    <div className="flex gap-3">
+                      <button
+                        type="button"
+                        onClick={handleResendOTP}
+                        disabled={!canResend || otpLoading}
+                        className="flex-1 py-2.5 px-4 bg-blue-950/30 backdrop-blur-sm border border-blue-500/30 text-sm font-medium rounded-lg text-white hover:bg-blue-900/40 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-black disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                      >
+                        {otpLoading ? 'Enviando...' : 'Reenviar Código'}
+                      </button>
+                      
+                      <button
+                        type="button"
+                        onClick={handleBackToLogin}
+                        disabled={otpLoading}
+                        className="flex-1 py-2.5 px-4 bg-blue-950/30 backdrop-blur-sm border border-blue-500/30 text-sm font-medium rounded-lg text-white hover:bg-blue-900/40 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-black disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                      >
+                        Volver al Login
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            )}
           </div>
-        </form>
-          </>
-        ) : (
-          // Formulario de Verificación OTP
-          <>
-            <div>
-              <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-                Verificación de Código
-              </h2>
-              <p className="mt-2 text-center text-sm text-gray-600">
-                Hemos enviado un código de verificación a tu email
+        </div>
+
+        {/* Right Side - Welcome Message */}
+        <div className="hidden lg:flex w-full lg:w-1/2 items-center justify-center relative p-12">
+          {/* Welcome Text */}
+          <div className="relative z-10 text-center space-y-6 max-w-lg">
+            <h1 className="text-7xl font-bold text-white drop-shadow-2xl">
+              Bienvenido.
+            </h1>
+            <div className="space-y-3">
+              <p className="text-white/90 text-lg font-medium">
+                Bienvenido a PymeTrack
+              </p>
+              <p className="text-white/50 text-sm">
+                Tu automatización al alcance de tu mano
               </p>
             </div>
-            <form className="mt-8 space-y-6" onSubmit={handleVerifyOTP}>
-              {otpError && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-                  {otpError}
-                </div>
-              )}
-              
-              <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded">
-                <p className="text-sm">
-                  <strong>Instrucciones:</strong> Revisa tu correo electrónico y ingresa el código de 6 dígitos que te enviamos.
-                </p>
-                {timeLeft > 0 && (
-                  <p className="text-sm mt-1">
-                    El código expira en: <strong>{formatTime(timeLeft)}</strong>
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label htmlFor="otpCode" className="sr-only">
-                  Código de Verificación
-                </label>
-                <input
-                  id="otpCode"
-                  name="otpCode"
-                  type="text"
-                  maxLength={6}
-                  required
-                  value={otpCode}
-                  onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
-                  className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm text-center text-2xl tracking-widest"
-                  placeholder="000000"
-                />
-              </div>
-
-              <div className="space-y-3">
-                <button
-                  type="submit"
-                  disabled={otpLoading || otpCode.length !== 6}
-                  className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {otpLoading ? (
-                    <span className="absolute left-0 inset-y-0 flex items-center pl-3">
-                      <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                    </span>
-                  ) : null}
-                  {otpLoading ? 'Verificando...' : 'Verificar Código'}
-                </button>
-
-                <div className="flex space-x-3">
-                  <button
-                    type="button"
-                    onClick={handleResendOTP}
-                    disabled={!canResend || otpLoading}
-                    className="flex-1 py-2 px-4 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {otpLoading ? 'Enviando...' : 'Reenviar Código'}
-                  </button>
-                  
-                  <button
-                    type="button"
-                    onClick={handleBackToLogin}
-                    disabled={otpLoading}
-                    className="flex-1 py-2 px-4 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Volver al Login
-                  </button>
-                </div>
-              </div>
-            </form>
-          </>
-        )}
+          </div>
+        </div>
       </div>
+
+      {/* Welcome Modal */}
       {showWelcomeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" aria-modal="true" role="dialog" tabIndex={0}>
-          <div className="bg-white rounded-lg shadow-lg p-8 max-w-sm w-full text-center focus:outline-none" role="alertdialog" aria-label="Bienvenida">
-            <h3 className="text-2xl font-bold text-gray-800 mb-2">¡Bienvenido{welcomeName ? `, ${welcomeName}` : ''}!</h3>
-            <p className="text-gray-600">Redirigiendo a tu panel...</p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" aria-modal="true" role="dialog" tabIndex={0}>
+          <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl shadow-2xl p-8 max-w-sm w-full mx-4 text-center focus:outline-none transform scale-100 animate-in fade-in zoom-in duration-300" role="alertdialog" aria-label="Bienvenida">
+            <div className="mb-4">
+              <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full mx-auto flex items-center justify-center">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+              </div>
+            </div>
+            <h3 className="text-3xl font-bold text-white mb-2 drop-shadow-lg">
+              ¡Bienvenido{welcomeName ? `, ${welcomeName}` : ''}!
+            </h3>
+            <p className="text-white/80">Redirigiendo a tu panel...</p>
+            <div className="mt-4">
+              <div className="w-8 h-8 border-4 border-white/20 border-t-white rounded-full animate-spin mx-auto"></div>
+            </div>
           </div>
         </div>
       )}
