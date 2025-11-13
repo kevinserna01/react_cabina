@@ -473,24 +473,38 @@ const InventoryContent = () => {
     <div className="space-y-6">
       {/* Mensaje de éxito */}
       {showSuccess && (
-        <div className="fixed top-4 right-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-md shadow-lg z-50 animate-fade-in-down">
-          <div className="flex items-center">
-            <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-            </svg>
-            <p>{successMessage}</p>
+        <div className="fixed top-24 right-6 z-[100] max-w-md animate-in slide-in-from-right-5 fade-in duration-300">
+          <div className="dark:bg-gradient-to-r dark:from-green-900/40 dark:to-emerald-900/40 
+                          light:bg-gradient-to-r light:from-green-50 light:to-emerald-50
+                          backdrop-blur-xl border-2 dark:border-green-500/50 light:border-green-400
+                          rounded-xl shadow-2xl p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex-shrink-0 bg-green-500 dark:bg-green-600 p-2 rounded-full">
+                <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <p className="font-medium dark:text-white light:text-gray-900">{successMessage}</p>
+            </div>
           </div>
         </div>
       )}
 
       {/* Mensaje de error */}
       {errorMessage && (
-        <div className="fixed top-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-md shadow-lg z-50 animate-fade-in-down">
-          <div className="flex items-center">
-            <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-            </svg>
-            <p>{errorMessage}</p>
+        <div className="fixed top-24 right-6 z-[100] max-w-md animate-in slide-in-from-right-5 fade-in duration-300">
+          <div className="dark:bg-gradient-to-r dark:from-red-900/40 dark:to-rose-900/40 
+                          light:bg-gradient-to-r light:from-red-50 light:to-rose-50
+                          backdrop-blur-xl border-2 dark:border-red-500/50 light:border-red-400
+                          rounded-xl shadow-2xl p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex-shrink-0 bg-red-500 dark:bg-red-600 p-2 rounded-full">
+                <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <p className="font-medium dark:text-white light:text-gray-900">{errorMessage}</p>
+            </div>
           </div>
         </div>
       )}
@@ -530,76 +544,76 @@ const InventoryContent = () => {
 
       {/* Tabla principal / Vista de costos */}
       {showCostView ? (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm rounded-lg shadow-sm border dark:border-white/20 light:border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y dark:divide-white/10 light:divide-gray-200">
+            <thead className="dark:bg-white/5 light:bg-gray-50">
               <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Código</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Disponibles</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Costo Unidad</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Costo Total</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">Código</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">Producto</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">Disponibles</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">Costo Unidad</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">Costo Total</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="dark:bg-transparent light:bg-white divide-y dark:divide-white/10 light:divide-gray-200">
                 {inventoryCostRows.map((row) => (
                   <tr key={row.code}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{row.code}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{row.name}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{row.stock}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatPrice(row.unitPrice)}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">{formatPrice(row.totalCost)}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm dark:text-white light:text-gray-900">{row.code}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm dark:text-white light:text-gray-900">{row.name}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm dark:text-white light:text-gray-900">{row.stock}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm dark:text-white light:text-gray-900">{formatPrice(row.unitPrice)}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm dark:text-white light:text-gray-900 font-medium">{formatPrice(row.totalCost)}</td>
                   </tr>
                 ))}
               </tbody>
-              <tfoot className="bg-gray-50">
+              <tfoot className="dark:bg-white/5 light:bg-gray-50">
                 <tr>
-                  <td className="px-6 py-3 text-sm font-semibold text-gray-700" colSpan={4}>Costo total del inventario</td>
+                  <td className="px-6 py-3 text-sm font-semibold dark:text-white/90 light:text-gray-700" colSpan={4}>Costo total del inventario</td>
                   <td className="px-6 py-3 text-sm font-bold text-indigo-700">{formatPrice(grandTotalCost)}</td>
                 </tr>
               </tfoot>
             </table>
           </div>
           {showCostView && products.length === 0 && (
-            <div className="p-4 text-sm text-gray-600">Cargando costos...</div>
+            <div className="p-4 text-sm dark:text-white/80 light:text-gray-600">Cargando costos...</div>
           )}
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm rounded-lg shadow-sm border dark:border-white/20 light:border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y dark:divide-white/10 light:divide-gray-200">
+              <thead className="dark:bg-white/5 light:bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Código</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categoría</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock Mínimo</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Costo Unidad</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Costo Total</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Última Actualización</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">Código</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">Producto</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">Categoría</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">Stock</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">Stock Mínimo</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">Costo Unidad</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">Costo Total</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">Última Actualización</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="dark:bg-transparent light:bg-white divide-y dark:divide-white/10 light:divide-gray-200">
                 {filteredInventory.map((item) => {
                   const product = products.find((p) => p.code === item.code);
                   const unitPrice = product?.costPrice ?? product?.price ?? 0;
                   const totalCost = unitPrice * (item.stock ?? 0);
                   return (
                 <tr key={item.code}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.code}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.name}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.category}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm dark:text-white light:text-gray-900">{item.code}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm dark:text-white light:text-gray-900">{item.name}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm dark:text-white light:text-gray-900">{item.category}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm dark:text-white light:text-gray-900">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${item.stock <= item.minStock ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>{item.stock}</span>
                   </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.minStock}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatPrice(unitPrice)}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">{formatPrice(totalCost)}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{new Date(item.lastUpdate!).toLocaleDateString()}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm dark:text-white light:text-gray-900">{item.minStock}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm dark:text-white light:text-gray-900">{formatPrice(unitPrice)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm dark:text-white light:text-gray-900 font-medium">{formatPrice(totalCost)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm dark:text-white light:text-gray-900">{new Date(item.lastUpdate!).toLocaleDateString()}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm dark:text-white light:text-gray-900">
                     <div className="flex items-center gap-2">
                           <button onClick={() => handleEditClick(item)} className="text-blue-600 hover:text-blue-800" aria-label="Editar inventario">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -624,9 +638,9 @@ const InventoryContent = () => {
 
       {/* Modal de Selección de Producto */}
       {isProductSelectionModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Seleccionar Producto</h2>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[90]">
+          <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm rounded-lg shadow-xl max-w-4xl w-full p-6 border dark:border-white/20 light:border-gray-200">
+            <h2 className="text-xl font-semibold dark:text-white light:text-gray-900 mb-4">Seleccionar Producto</h2>
             
             <div className="mb-4 flex gap-4">
               <input
@@ -650,42 +664,42 @@ const InventoryContent = () => {
             </div>
 
             <div className="mt-4 max-h-96 overflow-y-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y dark:divide-white/10 light:divide-gray-200">
+                <thead className="dark:bg-white/5 light:bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">
                       Código
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">
                       Nombre
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">
                       Categoría
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">
                       Precio
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">
                       Acción
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="dark:bg-transparent light:bg-white divide-y dark:divide-white/10 light:divide-gray-200">
                   {filteredProducts.map((product) => (
                     <tr key={product.code}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm dark:text-white light:text-gray-900">
                         {product.code}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm dark:text-white light:text-gray-900">
                         {product.name}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm dark:text-white light:text-gray-900">
                         {product.category}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm dark:text-white light:text-gray-900">
                         {formatPrice(product.price)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm dark:text-white light:text-gray-900">
                         <button
                           onClick={() => handleProductSelect(product)}
                           className="text-blue-600 hover:text-blue-800 font-medium"
@@ -702,7 +716,7 @@ const InventoryContent = () => {
             <div className="mt-4 flex justify-end">
               <button
                 onClick={() => setIsProductSelectionModalOpen(false)}
-                className="px-4 py-2 text-gray-700 hover:text-gray-900"
+                className="px-4 py-2 dark:text-white/90 light:text-gray-700 hover:dark:text-white light:text-gray-900"
               >
                 Cancelar
               </button>
@@ -713,12 +727,12 @@ const InventoryContent = () => {
 
       {/* Modal de Agregar Producto */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Agregar Producto al Inventario</h2>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[90]">
+          <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm rounded-lg shadow-xl max-w-md w-full p-6 border dark:border-white/20 light:border-gray-200">
+            <h2 className="text-xl font-semibold dark:text-white light:text-gray-900 mb-4">Agregar Producto al Inventario</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label htmlFor="code" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="code" className="block text-sm font-medium dark:text-white/90 light:text-gray-700">
                   Código del Producto
                 </label>
                 <input
@@ -727,12 +741,12 @@ const InventoryContent = () => {
                   name="code"
                   value={newProduct.code}
                   readOnly
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-white/5 light:bg-gray-50"
                 />
               </div>
 
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="name" className="block text-sm font-medium dark:text-white/90 light:text-gray-700">
                   Nombre del Producto
                 </label>
                 <input
@@ -741,12 +755,12 @@ const InventoryContent = () => {
                   name="name"
                   value={newProduct.name}
                   readOnly
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-white/5 light:bg-gray-50"
                 />
               </div>
 
               <div>
-                <label htmlFor="category" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="category" className="block text-sm font-medium dark:text-white/90 light:text-gray-700">
                   Categoría
                 </label>
                 <input
@@ -755,12 +769,12 @@ const InventoryContent = () => {
                   name="category"
                   value={newProduct.category}
                   readOnly
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-white/5 light:bg-gray-50"
                 />
               </div>
 
               <div>
-                <label htmlFor="stock" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="stock" className="block text-sm font-medium dark:text-white/90 light:text-gray-700">
                   Stock
                 </label>
                 <input
@@ -777,7 +791,7 @@ const InventoryContent = () => {
               </div>
 
               <div>
-                <label htmlFor="minStock" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="minStock" className="block text-sm font-medium dark:text-white/90 light:text-gray-700">
                   Stock Mínimo
                 </label>
                 <input
@@ -797,7 +811,7 @@ const InventoryContent = () => {
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="px-4 py-2 text-gray-700 hover:text-gray-900"
+                  className="px-4 py-2 dark:text-white/90 light:text-gray-700 hover:dark:text-white light:text-gray-900"
                   disabled={isLoading}
                 >
                   Cancelar
@@ -816,12 +830,12 @@ const InventoryContent = () => {
       )}
 
       {isEditModalOpen && editingProduct && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Editar Producto en Inventario</h2>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[90]">
+          <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm rounded-lg shadow-xl max-w-md w-full p-6 border dark:border-white/20 light:border-gray-200">
+            <h2 className="text-xl font-semibold dark:text-white light:text-gray-900 mb-4">Editar Producto en Inventario</h2>
             <form onSubmit={handleEditSubmit} className="space-y-4">
               <div>
-                <label htmlFor="edit-code" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="edit-code" className="block text-sm font-medium dark:text-white/90 light:text-gray-700">
                   Código del Producto
                 </label>
                 <input
@@ -829,12 +843,12 @@ const InventoryContent = () => {
                   id="edit-code"
                   value={editingProduct.code}
                   readOnly
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-white/5 light:bg-gray-50"
                 />
               </div>
 
               <div>
-                <label htmlFor="edit-name" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="edit-name" className="block text-sm font-medium dark:text-white/90 light:text-gray-700">
                   Nombre del Producto
                 </label>
                 <input
@@ -842,12 +856,12 @@ const InventoryContent = () => {
                   id="edit-name"
                   value={editingProduct.name}
                   readOnly
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-white/5 light:bg-gray-50"
                 />
               </div>
 
               <div>
-                <label htmlFor="edit-category" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="edit-category" className="block text-sm font-medium dark:text-white/90 light:text-gray-700">
                   Categoría
                 </label>
                 <input
@@ -855,12 +869,12 @@ const InventoryContent = () => {
                   id="edit-category"
                   value={editingProduct.category}
                   readOnly
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-white/5 light:bg-gray-50"
                 />
               </div>
 
               <div>
-                <label htmlFor="edit-stock" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="edit-stock" className="block text-sm font-medium dark:text-white/90 light:text-gray-700">
                   Stock Actual
                 </label>
                 <input
@@ -877,7 +891,7 @@ const InventoryContent = () => {
 
               <div className="flex items-end gap-2">
                 <div className="flex-1">
-                  <label htmlFor="add-stock" className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="add-stock" className="block text-sm font-medium dark:text-white/90 light:text-gray-700">
                     Agregar al Stock
                   </label>
                   <input
@@ -901,7 +915,7 @@ const InventoryContent = () => {
               </div>
 
               <div>
-                <label htmlFor="edit-minStock" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="edit-minStock" className="block text-sm font-medium dark:text-white/90 light:text-gray-700">
                   Stock Mínimo
                 </label>
                 <input
@@ -924,7 +938,7 @@ const InventoryContent = () => {
                     setEditingProduct(null);
                     setStockToAdd('');
                   }}
-                  className="px-4 py-2 text-gray-700 hover:text-gray-900"
+                  className="px-4 py-2 dark:text-white/90 light:text-gray-700 hover:dark:text-white light:text-gray-900"
                   disabled={isLoading}
                 >
                   Cancelar
@@ -943,10 +957,10 @@ const InventoryContent = () => {
       )}
 
       {isDeleteModalOpen && productToDelete && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Confirmar Eliminación</h2>
-            <p className="text-gray-700 mb-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[90]">
+          <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm rounded-lg shadow-xl max-w-md w-full p-6 border dark:border-white/20 light:border-gray-200">
+            <h2 className="text-xl font-semibold dark:text-white light:text-gray-900 mb-4">Confirmar Eliminación</h2>
+            <p className="dark:text-white/90 light:text-gray-700 mb-4">
               ¿Está seguro que desea eliminar el producto "{productToDelete.name}" del inventario?
               Esta acción no se puede deshacer.
             </p>
@@ -957,7 +971,7 @@ const InventoryContent = () => {
                   setIsDeleteModalOpen(false);
                   setProductToDelete(null);
                 }}
-                className="px-4 py-2 text-gray-700 hover:text-gray-900"
+                className="px-4 py-2 dark:text-white/90 light:text-gray-700 hover:dark:text-white light:text-gray-900"
                 disabled={isLoading}
               >
                 Cancelar

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Prism from '../ui/Prism';
+import LightRays from '../ui/LightRays';
+import Aurora from '../ui/Aurora';
 import GlassSurface from '../ui/GlassSurface';
 
 interface LoginResponse {
@@ -251,9 +252,12 @@ const LoginGeneral: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-stretch relative overflow-hidden bg-[#0a0a1f]">
-      {/* Prism Background - Centered */}
-      <div className="absolute inset-0 w-full h-full flex items-center justify-center">
-        <Prism noise={0.1} />
+      {/* Background - Aurora for Mobile, LightRays for Desktop */}
+      <div className="absolute inset-0 w-full h-full lg:hidden">
+        <Aurora />
+      </div>
+      <div className="absolute inset-0 w-full h-full hidden lg:block">
+        <LightRays />
       </div>
 
       {/* Navbar with GlassSurface */}
@@ -263,14 +267,15 @@ const LoginGeneral: React.FC = () => {
           height={70}
         >
           <nav className="w-full h-full flex items-center justify-between px-6 lg:px-12">
-            {/* Logo */}
+            {/* Logo Text */}
             <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-white">
-                PymeTrack
+              <h1 className="text-2xl text-white flex items-center">
+                <span className="font-bold">Pyme</span>
+                <span className="font-light">Track</span>
               </h1>
             </div>
 
-            {/* Navigation Links */}
+            {/* Navigation Links - Desktop only */}
             <div className="hidden md:flex items-center gap-8">
               <button
                 className="text-white/80 hover:text-white text-sm font-medium transition-colors duration-200"
@@ -297,11 +302,11 @@ const LoginGeneral: React.FC = () => {
           <div className="w-full max-w-md">
             {!requiresVerification ? (
               // Formulario de Login
-              <div className="backdrop-blur-xl bg-black/40 border border-blue-500/20 rounded-2xl shadow-2xl p-8 space-y-8">
+              <div className="backdrop-blur-xl bg-white/5 border border-white/20 rounded-2xl shadow-2xl p-8 space-y-8">
                 {/* Avatar Icon */}
                 <div className="flex justify-center">
-                  <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-full flex items-center justify-center shadow-lg shadow-cyan-500/50">
-                    <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-20 h-20 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full flex items-center justify-center shadow-lg">
+                    <svg className="w-10 h-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
                   </div>
@@ -346,7 +351,7 @@ const LoginGeneral: React.FC = () => {
                           required
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
-                          className="w-full pl-10 pr-4 py-3 bg-blue-950/30 backdrop-blur-sm border border-blue-500/30 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all duration-200"
+                          className="w-full pl-10 pr-4 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/40 transition-all duration-200"
                           placeholder="correo@ejemplo.com"
                         />
                       </div>
@@ -371,7 +376,7 @@ const LoginGeneral: React.FC = () => {
                           required
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
-                          className="w-full pl-10 pr-12 py-3 bg-blue-950/30 backdrop-blur-sm border border-blue-500/30 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all duration-200"
+                          className="w-full pl-10 pr-12 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/40 transition-all duration-200"
                           placeholder="••••••••"
                         />
                         <button
@@ -398,11 +403,11 @@ const LoginGeneral: React.FC = () => {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full py-3.5 px-4 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-black disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-[1.02] flex items-center justify-center gap-2"
+                    className="w-full py-3.5 px-4 bg-white/15 backdrop-blur-sm border border-white/20 hover:bg-white hover:border-white text-gray-300 hover:text-gray-700 font-semibold rounded-lg shadow-lg focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-offset-2 focus:ring-offset-black disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center justify-center gap-2"
                   >
                     {loading ? (
                       <>
-                        <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <svg className="animate-spin h-5 w-5 text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
@@ -421,7 +426,7 @@ const LoginGeneral: React.FC = () => {
               </div>
             ) : (
               // Formulario de Verificación OTP
-              <div className="backdrop-blur-xl bg-black/40 border border-blue-500/20 rounded-2xl shadow-2xl p-8 space-y-8">
+              <div className="backdrop-blur-xl bg-white/5 border border-white/20 rounded-2xl shadow-2xl p-8 space-y-8">
                 <div>
                   <h2 className="text-4xl font-bold text-white mb-2">
                     Verificación de Código
@@ -512,13 +517,22 @@ const LoginGeneral: React.FC = () => {
         </div>
 
         {/* Right Side - Welcome Message */}
-        <div className="hidden lg:flex w-full lg:w-1/2 items-center justify-center relative p-12">
+        <div className="hidden lg:flex w-full lg:w-1/2 items-start justify-center relative p-12 pt-12">
           {/* Welcome Text */}
-          <div className="relative z-10 text-center space-y-6 max-w-lg">
-            <h1 className="text-7xl font-bold text-white drop-shadow-2xl">
+          <div className="relative z-10 text-center max-w-lg">
+            {/* Logo */}
+            <div className="flex justify-center">
+              <img 
+                src="/assets/logopyme.png" 
+                alt="PymeTrack Logo" 
+                className="h-86 w-86 object-contain drop-shadow-2xl"
+              />
+            </div>
+            
+            <h1 className="text-7xl font-bold text-white drop-shadow-2xl -mt-16">
               Bienvenido.
             </h1>
-            <div className="space-y-3">
+            <div className="space-y-2">
               <p className="text-white/90 text-lg font-medium">
                 Bienvenido a PymeTrack
               </p>

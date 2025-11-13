@@ -165,7 +165,7 @@ const CustomersContent: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-800">Clientes</h1>
+        <h1 className="text-2xl font-bold dark:text-white light:text-gray-800">Clientes</h1>
         <button
           onClick={handleOpenCreate}
           className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -177,7 +177,7 @@ const CustomersContent: React.FC = () => {
         </button>
       </div>
 
-      <div className="bg-white rounded-lg shadow p-4">
+      <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm rounded-lg shadow p-4 border dark:border-white/20 light:border-gray-200">
         <div className="flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
           <div className="flex-1">
             <input
@@ -224,38 +224,38 @@ const CustomersContent: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm rounded-lg shadow overflow-hidden border dark:border-white/20 light:border-gray-200">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y dark:divide-white/10 light:divide-gray-200">
+            <thead className="dark:bg-white/5 light:bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Documento</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Teléfono</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ciudad</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                <th className="px-6 py-3 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">Nombre</th>
+                <th className="px-6 py-3 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">Documento</th>
+                <th className="px-6 py-3 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">Tipo</th>
+                <th className="px-6 py-3 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">Email</th>
+                <th className="px-6 py-3 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">Teléfono</th>
+                <th className="px-6 py-3 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">Ciudad</th>
+                <th className="px-6 py-3 text-right text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">Acciones</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="dark:bg-transparent light:bg-white divide-y dark:divide-white/10 light:divide-gray-200">
               {isLoading ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-8 text-center text-gray-500">Cargando...</td>
+                  <td colSpan={7} className="px-6 py-8 text-center dark:text-white/70 light:text-gray-500">Cargando...</td>
                 </tr>
               ) : items.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-8 text-center text-gray-500">No hay clientes</td>
+                  <td colSpan={7} className="px-6 py-8 text-center dark:text-white/70 light:text-gray-500">No hay clientes</td>
                 </tr>
               ) : (
                 items.map((c) => (
-                  <tr key={c.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{c.nombre}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{c.tipoIdentificacion}-{c.numeroIdentificacion}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">{c.tipoCliente}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{c.email}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{c.telefono}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{c.ciudad || '-'}</td>
+                  <tr key={c.id} className="dark:hover:bg-white/5 light:hover:dark:bg-white/5 light:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm dark:text-white light:text-gray-900">{c.nombre}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm dark:text-white/70 light:text-gray-500">{c.tipoIdentificacion}-{c.numeroIdentificacion}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm dark:text-white/70 light:text-gray-500 capitalize">{c.tipoCliente}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm dark:text-white/70 light:text-gray-500">{c.email}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm dark:text-white/70 light:text-gray-500">{c.telefono}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm dark:text-white/70 light:text-gray-500">{c.ciudad || '-'}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end gap-3">
                         <button
@@ -281,8 +281,8 @@ const CustomersContent: React.FC = () => {
           </table>
         </div>
 
-        <div className="px-6 py-3 bg-gray-50 flex items-center justify-between">
-          <span className="text-sm text-gray-600">
+        <div className="px-6 py-3 dark:bg-white/5 light:bg-gray-50 flex items-center justify-between">
+          <span className="text-sm dark:text-white/80 light:text-gray-600">
             Página {pagination.page} de {Math.max(1, pagination.pages)} — {pagination.total} registros
           </span>
           <div className="flex items-center gap-2">
@@ -309,17 +309,17 @@ const CustomersContent: React.FC = () => {
       )}
 
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" role="dialog" aria-modal="true">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[90]" role="dialog" aria-modal="true">
+          <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border dark:border-white/20 light:border-gray-200">
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold">{mode === 'create' ? 'Nuevo Cliente' : 'Editar Cliente'}</h2>
-                <button onClick={() => setIsModalOpen(false)} className="text-gray-500 hover:text-gray-700" aria-label="Cerrar">✕</button>
+                <h2 className="text-xl font-semibold dark:text-white light:text-gray-900">{mode === 'create' ? 'Nuevo Cliente' : 'Editar Cliente'}</h2>
+                <button onClick={() => setIsModalOpen(false)} className="dark:text-white/70 light:text-gray-500 hover:dark:text-white/90 light:text-gray-700" aria-label="Cerrar">✕</button>
               </div>
 
               <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tipo Identificación</label>
+                  <label className="block text-sm font-medium dark:text-white/90 light:text-gray-700 mb-1">Tipo Identificación</label>
                   <select
                     value={form.tipoIdentificacion}
                     onChange={(e) => setForm({ ...form, tipoIdentificacion: e.target.value as TipoIdentificacion })}
@@ -335,7 +335,7 @@ const CustomersContent: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Número Identificación</label>
+                  <label className="block text-sm font-medium dark:text-white/90 light:text-gray-700 mb-1">Número Identificación</label>
                   <input
                     type="text"
                     value={form.numeroIdentificacion}
@@ -345,7 +345,7 @@ const CustomersContent: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+                  <label className="block text-sm font-medium dark:text-white/90 light:text-gray-700 mb-1">Nombre</label>
                   <input
                     type="text"
                     value={form.nombre}
@@ -355,7 +355,7 @@ const CustomersContent: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <label className="block text-sm font-medium dark:text-white/90 light:text-gray-700 mb-1">Email</label>
                   <input
                     type="email"
                     value={form.email}
@@ -365,7 +365,7 @@ const CustomersContent: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
+                  <label className="block text-sm font-medium dark:text-white/90 light:text-gray-700 mb-1">Teléfono</label>
                   <input
                     type="tel"
                     value={form.telefono}
@@ -377,7 +377,7 @@ const CustomersContent: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Departamento</label>
+                  <label className="block text-sm font-medium dark:text-white/90 light:text-gray-700 mb-1">Departamento</label>
                   <input
                     type="text"
                     value={form.departamento || ''}
@@ -386,7 +386,7 @@ const CustomersContent: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Ciudad</label>
+                  <label className="block text-sm font-medium dark:text-white/90 light:text-gray-700 mb-1">Ciudad</label>
                   <input
                     type="text"
                     value={form.ciudad || ''}
@@ -395,7 +395,7 @@ const CustomersContent: React.FC = () => {
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Dirección</label>
+                  <label className="block text-sm font-medium dark:text-white/90 light:text-gray-700 mb-1">Dirección</label>
                   <input
                     type="text"
                     value={form.ubicacionLocal || ''}
@@ -404,7 +404,7 @@ const CustomersContent: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Cliente</label>
+                  <label className="block text-sm font-medium dark:text-white/90 light:text-gray-700 mb-1">Tipo de Cliente</label>
                   <select
                     value={form.tipoCliente}
                     onChange={(e) => setForm({ ...form, tipoCliente: e.target.value as TipoCliente })}
@@ -417,7 +417,7 @@ const CustomersContent: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Descuento (%)</label>
+                  <label className="block text-sm font-medium dark:text-white/90 light:text-gray-700 mb-1">Descuento (%)</label>
                   <input
                     type="number"
                     min={0}

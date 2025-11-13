@@ -1025,84 +1025,84 @@ const ReportsContent = () => {
       {(summary || (reportsRaw && Array.isArray(reportsRaw.resumen))) && reportType === 'ventas' && (
         <>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-              <h4 className="text-sm font-medium text-gray-500">Total Ventas</h4>
-              <p className="mt-2 text-2xl font-semibold text-gray-900">
+            <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm p-4 rounded-lg shadow-sm border dark:border-white/20 light:border-gray-200">
+              <h4 className="text-sm font-medium dark:text-white/70 light:text-gray-500">Total Ventas</h4>
+              <p className="mt-2 text-2xl font-semibold dark:text-white light:text-gray-900">
                 {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(
                   summary ? summary.totalVentas : toNumber(reportsRaw.resumen?.[0]?.TotalVentas, 0)
                 )}
           </p>
         </div>
-            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-              <h4 className="text-sm font-medium text-gray-500">Promedio por Venta</h4>
-              <p className="mt-2 text-2xl font-semibold text-gray-900">
+            <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm p-4 rounded-lg shadow-sm border dark:border-white/20 light:border-gray-200">
+              <h4 className="text-sm font-medium dark:text-white/70 light:text-gray-500">Promedio por Venta</h4>
+              <p className="mt-2 text-2xl font-semibold dark:text-white light:text-gray-900">
                 {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(
                   summary ? summary.promedioVenta : toNumber(reportsRaw.resumen?.[0]?.PromedioVenta, 0)
                 )}
           </p>
         </div>
-            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-              <h4 className="text-sm font-medium text-gray-500">Total Transacciones</h4>
-              <p className="mt-2 text-2xl font-semibold text-gray-900">
+            <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm p-4 rounded-lg shadow-sm border dark:border-white/20 light:border-gray-200">
+              <h4 className="text-sm font-medium dark:text-white/70 light:text-gray-500">Total Transacciones</h4>
+              <p className="mt-2 text-2xl font-semibold dark:text-white light:text-gray-900">
                 {summary ? summary.totalTransacciones : toNumber(reportsRaw.resumen?.[0]?.CantidadVentas, 0)}
               </p>
         </div>
-            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-              <h4 className="text-sm font-medium text-gray-500">Método de Pago Popular</h4>
-              <p className="mt-2 text-2xl font-semibold text-gray-900">
+            <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm p-4 rounded-lg shadow-sm border dark:border-white/20 light:border-gray-200">
+              <h4 className="text-sm font-medium dark:text-white/70 light:text-gray-500">Método de Pago Popular</h4>
+              <p className="mt-2 text-2xl font-semibold dark:text-white light:text-gray-900">
                 {summary ? summary.metodoPagoPopular : 'N/A'}
               </p>
       </div>
           </div>
           {/* Segunda fila de tarjetas con más métricas del resumen */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
-            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-              <h4 className="text-sm font-medium text-gray-500">Ventas sin Descuento</h4>
-              <p className="mt-2 text-2xl font-semibold text-gray-900">
+            <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm p-4 rounded-lg shadow-sm border dark:border-white/20 light:border-gray-200">
+              <h4 className="text-sm font-medium dark:text-white/70 light:text-gray-500">Ventas sin Descuento</h4>
+              <p className="mt-2 text-2xl font-semibold dark:text-white light:text-gray-900">
                 {formatCurrency((reportsRaw?.resumen?.[0]?.TotalVentasSinDescuento) ?? 0)}
               </p>
             </div>
-            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-              <h4 className="text-sm font-medium text-gray-500">Total Descuentos</h4>
-              <p className="mt-2 text-2xl font-semibold text-gray-900">
+            <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm p-4 rounded-lg shadow-sm border dark:border-white/20 light:border-gray-200">
+              <h4 className="text-sm font-medium dark:text-white/70 light:text-gray-500">Total Descuentos</h4>
+              <p className="mt-2 text-2xl font-semibold dark:text-white light:text-gray-900">
                 {formatCurrency((reportsRaw?.resumen?.[0]?.TotalDescuentos) ?? 0)}
               </p>
             </div>
-            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-              <h4 className="text-sm font-medium text-gray-500">Ventas con Descuento</h4>
-              <p className="mt-2 text-2xl font-semibold text-gray-900">
+            <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm p-4 rounded-lg shadow-sm border dark:border-white/20 light:border-gray-200">
+              <h4 className="text-sm font-medium dark:text-white/70 light:text-gray-500">Ventas con Descuento</h4>
+              <p className="mt-2 text-2xl font-semibold dark:text-white light:text-gray-900">
                 {toNumber(reportsRaw?.resumen?.[0]?.VentasConDescuento, 0)}
               </p>
             </div>
-            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-              <h4 className="text-sm font-medium text-gray-500">Clientes Únicos</h4>
-              <p className="mt-2 text-2xl font-semibold text-gray-900">
+            <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm p-4 rounded-lg shadow-sm border dark:border-white/20 light:border-gray-200">
+              <h4 className="text-sm font-medium dark:text-white/70 light:text-gray-500">Clientes Únicos</h4>
+              <p className="mt-2 text-2xl font-semibold dark:text-white light:text-gray-900">
                 {toNumber(reportsRaw?.resumen?.[0]?.ClientesUnicos, 0)}
               </p>
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
-            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-              <h4 className="text-sm font-medium text-gray-500">Trabajadores Únicos</h4>
-              <p className="mt-2 text-2xl font-semibold text-gray-900">
+            <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm p-4 rounded-lg shadow-sm border dark:border-white/20 light:border-gray-200">
+              <h4 className="text-sm font-medium dark:text-white/70 light:text-gray-500">Trabajadores Únicos</h4>
+              <p className="mt-2 text-2xl font-semibold dark:text-white light:text-gray-900">
                 {toNumber(reportsRaw?.resumen?.[0]?.TrabajadoresUnicos, 0)}
               </p>
             </div>
-            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-              <h4 className="text-sm font-medium text-gray-500">Productos Vendidos</h4>
-              <p className="mt-2 text-2xl font-semibold text-gray-900">
+            <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm p-4 rounded-lg shadow-sm border dark:border-white/20 light:border-gray-200">
+              <h4 className="text-sm font-medium dark:text-white/70 light:text-gray-500">Productos Vendidos</h4>
+              <p className="mt-2 text-2xl font-semibold dark:text-white light:text-gray-900">
                 {toNumber(reportsRaw?.resumen?.[0]?.ProductosVendidos, 0)}
               </p>
             </div>
-            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-              <h4 className="text-sm font-medium text-gray-500">Categorías Vendidas</h4>
-              <p className="mt-2 text-2xl font-semibold text-gray-900">
+            <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm p-4 rounded-lg shadow-sm border dark:border-white/20 light:border-gray-200">
+              <h4 className="text-sm font-medium dark:text-white/70 light:text-gray-500">Categorías Vendidas</h4>
+              <p className="mt-2 text-2xl font-semibold dark:text-white light:text-gray-900">
                 {toNumber(reportsRaw?.resumen?.[0]?.CategoriasVendidas, 0)}
               </p>
             </div>
-            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-              <h4 className="text-sm font-medium text-gray-500">Promedio Descuento</h4>
-              <p className="mt-2 text-2xl font-semibold text-gray-900">
+            <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm p-4 rounded-lg shadow-sm border dark:border-white/20 light:border-gray-200">
+              <h4 className="text-sm font-medium dark:text-white/70 light:text-gray-500">Promedio Descuento</h4>
+              <p className="mt-2 text-2xl font-semibold dark:text-white light:text-gray-900">
                 {formatCurrency((reportsRaw?.resumen?.[0]?.PromedioDescuento) ?? 0)}
               </p>
             </div>
@@ -1114,8 +1114,8 @@ const ReportsContent = () => {
       {reportType === 'ventas' && (
         <div className="space-y-6">
           {timeRange === 'day' && (
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Ventas del Día</h3>
+      <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm p-6 rounded-lg shadow-sm border dark:border-white/20 light:border-gray-200">
+              <h3 className="text-lg font-medium dark:text-white light:text-gray-900 mb-4">Ventas del Día</h3>
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={dailySales}>
@@ -1174,8 +1174,8 @@ const ReportsContent = () => {
           )}
 
           {timeRange === 'week' && (
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Ventas por Día</h3>
+      <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm p-6 rounded-lg shadow-sm border dark:border-white/20 light:border-gray-200">
+        <h3 className="text-lg font-medium dark:text-white light:text-gray-900 mb-4">Ventas por Día</h3>
         <div className="h-80">
           <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={dailySales}>
@@ -1234,8 +1234,8 @@ const ReportsContent = () => {
           )}
 
           {timeRange === 'month' && (
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Ventas por Mes (Línea)</h3>
+      <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm p-6 rounded-lg shadow-sm border dark:border-white/20 light:border-gray-200">
+              <h3 className="text-lg font-medium dark:text-white light:text-gray-900 mb-4">Ventas por Mes (Línea)</h3>
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={(reportsRaw && Array.isArray(reportsRaw.ventasPorMes))
@@ -1298,8 +1298,8 @@ const ReportsContent = () => {
           )}
 
           {timeRange === 'year' && (
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Ventas por Año (Barras)</h3>
+            <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm p-6 rounded-lg shadow-sm border dark:border-white/20 light:border-gray-200">
+              <h3 className="text-lg font-medium dark:text-white light:text-gray-900 mb-4">Ventas por Año (Barras)</h3>
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={processYearlyData(data?.data?.ventas || [])}>
@@ -1343,8 +1343,8 @@ const ReportsContent = () => {
 
           {/* Nuevas secciones basadas en reportsRaw */}
           {Array.isArray(reportsRaw?.ventasPorCategorias) && reportsRaw.ventasPorCategorias.length > 0 && (
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Ventas por Categoría (Nuevo)</h3>
+            <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm p-6 rounded-lg shadow-sm border dark:border-white/20 light:border-gray-200">
+              <h3 className="text-lg font-medium dark:text-white light:text-gray-900 mb-4">Ventas por Categoría (Nuevo)</h3>
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -1371,8 +1371,8 @@ const ReportsContent = () => {
           )}
 
           {Array.isArray(reportsRaw?.ventasPorDepartamentos) && reportsRaw.ventasPorDepartamentos.length > 0 && (
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Ventas por Departamento</h3>
+            <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm p-6 rounded-lg shadow-sm border dark:border-white/20 light:border-gray-200">
+              <h3 className="text-lg font-medium dark:text-white light:text-gray-900 mb-4">Ventas por Departamento</h3>
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={(reportsRaw.ventasPorDepartamentos || []).map((d: any) => ({ departamento: d.Departamento || 'Sin departamento', total: toNumber(d.TotalVentas, 0) }))}>
@@ -1388,8 +1388,8 @@ const ReportsContent = () => {
           )}
 
           {Array.isArray(reportsRaw?.ventasPorTrabajador) && reportsRaw.ventasPorTrabajador.length > 0 && (
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Ventas por Trabajador</h3>
+            <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm p-6 rounded-lg shadow-sm border dark:border-white/20 light:border-gray-200">
+              <h3 className="text-lg font-medium dark:text-white light:text-gray-900 mb-4">Ventas por Trabajador</h3>
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={(reportsRaw.ventasPorTrabajador || []).map((t: any) => ({ trabajador: t.Trabajador || 'Desconocido', total: toNumber(t.TotalVentas, 0) }))}>
@@ -1406,27 +1406,27 @@ const ReportsContent = () => {
 
           {(Array.isArray(reportsRaw?.productosMasVendidosCantidad) || Array.isArray(reportsRaw?.productosMenosVendidosCantidad)) && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Productos más vendidos (Cantidad)</h3>
+              <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm p-6 rounded-lg shadow-sm border dark:border-white/20 light:border-gray-200">
+                <h3 className="text-lg font-medium dark:text-white light:text-gray-900 mb-4">Productos más vendidos (Cantidad)</h3>
                 <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
+                  <table className="min-w-full divide-y dark:divide-white/10 light:divide-gray-200">
+                    <thead className="dark:bg-white/5 light:bg-gray-50">
                       <tr>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Código</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categoría</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cantidad</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">Producto</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">Código</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">Categoría</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">Cantidad</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">Total</th>
                       </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody className="dark:bg-transparent light:bg-white divide-y dark:divide-white/10 light:divide-gray-200">
                       {(reportsRaw?.productosMasVendidosCantidad || []).map((p: any, i: number) => (
-                        <tr key={`pmc-${i}`} className="hover:bg-gray-50">
-                          <td className="px-4 py-2 text-sm text-gray-900">{p.Producto}</td>
-                          <td className="px-4 py-2 text-sm text-gray-900">{p.Codigo}</td>
-                          <td className="px-4 py-2 text-sm text-gray-900">{p.Categoria}</td>
-                          <td className="px-4 py-2 text-sm text-gray-900">{toNumber(p.CantidadVendida, 0)}</td>
-                          <td className="px-4 py-2 text-sm text-gray-900">{formatCurrency(p.TotalGenerado)}</td>
+                        <tr key={`pmc-${i}`} className="dark:hover:bg-white/5 light:hover:dark:bg-white/5 light:bg-gray-50">
+                          <td className="px-4 py-2 text-sm dark:text-white light:text-gray-900">{p.Producto}</td>
+                          <td className="px-4 py-2 text-sm dark:text-white light:text-gray-900">{p.Codigo}</td>
+                          <td className="px-4 py-2 text-sm dark:text-white light:text-gray-900">{p.Categoria}</td>
+                          <td className="px-4 py-2 text-sm dark:text-white light:text-gray-900">{toNumber(p.CantidadVendida, 0)}</td>
+                          <td className="px-4 py-2 text-sm dark:text-white light:text-gray-900">{formatCurrency(p.TotalGenerado)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -1434,27 +1434,27 @@ const ReportsContent = () => {
                 </div>
               </div>
 
-              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Productos menos vendidos (Cantidad)</h3>
+              <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm p-6 rounded-lg shadow-sm border dark:border-white/20 light:border-gray-200">
+                <h3 className="text-lg font-medium dark:text-white light:text-gray-900 mb-4">Productos menos vendidos (Cantidad)</h3>
                 <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
+                  <table className="min-w-full divide-y dark:divide-white/10 light:divide-gray-200">
+                    <thead className="dark:bg-white/5 light:bg-gray-50">
                       <tr>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Código</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categoría</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cantidad</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">Producto</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">Código</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">Categoría</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">Cantidad</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">Total</th>
                       </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody className="dark:bg-transparent light:bg-white divide-y dark:divide-white/10 light:divide-gray-200">
                       {(reportsRaw?.productosMenosVendidosCantidad || []).map((p: any, i: number) => (
-                        <tr key={`plc-${i}`} className="hover:bg-gray-50">
-                          <td className="px-4 py-2 text-sm text-gray-900">{p.Producto}</td>
-                          <td className="px-4 py-2 text-sm text-gray-900">{p.Codigo}</td>
-                          <td className="px-4 py-2 text-sm text-gray-900">{p.Categoria}</td>
-                          <td className="px-4 py-2 text-sm text-gray-900">{toNumber(p.CantidadVendida, 0)}</td>
-                          <td className="px-4 py-2 text-sm text-gray-900">{formatCurrency(p.TotalGenerado)}</td>
+                        <tr key={`plc-${i}`} className="dark:hover:bg-white/5 light:hover:dark:bg-white/5 light:bg-gray-50">
+                          <td className="px-4 py-2 text-sm dark:text-white light:text-gray-900">{p.Producto}</td>
+                          <td className="px-4 py-2 text-sm dark:text-white light:text-gray-900">{p.Codigo}</td>
+                          <td className="px-4 py-2 text-sm dark:text-white light:text-gray-900">{p.Categoria}</td>
+                          <td className="px-4 py-2 text-sm dark:text-white light:text-gray-900">{toNumber(p.CantidadVendida, 0)}</td>
+                          <td className="px-4 py-2 text-sm dark:text-white light:text-gray-900">{formatCurrency(p.TotalGenerado)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -1466,27 +1466,27 @@ const ReportsContent = () => {
 
           {(Array.isArray(reportsRaw?.productosMasVendidosTotal) || Array.isArray(reportsRaw?.productosMenosVendidosTotal)) && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Productos más vendidos (Total)</h3>
+              <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm p-6 rounded-lg shadow-sm border dark:border-white/20 light:border-gray-200">
+                <h3 className="text-lg font-medium dark:text-white light:text-gray-900 mb-4">Productos más vendidos (Total)</h3>
                 <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
+                  <table className="min-w-full divide-y dark:divide-white/10 light:divide-gray-200">
+                    <thead className="dark:bg-white/5 light:bg-gray-50">
                       <tr>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Código</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categoría</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cantidad</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">Producto</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">Código</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">Categoría</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">Cantidad</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">Total</th>
                       </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody className="dark:bg-transparent light:bg-white divide-y dark:divide-white/10 light:divide-gray-200">
                       {(reportsRaw?.productosMasVendidosTotal || []).map((p: any, i: number) => (
-                        <tr key={`pmt-${i}`} className="hover:bg-gray-50">
-                          <td className="px-4 py-2 text-sm text-gray-900">{p.Producto}</td>
-                          <td className="px-4 py-2 text-sm text-gray-900">{p.Codigo}</td>
-                          <td className="px-4 py-2 text-sm text-gray-900">{p.Categoria}</td>
-                          <td className="px-4 py-2 text-sm text-gray-900">{toNumber(p.CantidadVendida, 0)}</td>
-                          <td className="px-4 py-2 text-sm text-gray-900">{formatCurrency(p.TotalGenerado)}</td>
+                        <tr key={`pmt-${i}`} className="dark:hover:bg-white/5 light:hover:dark:bg-white/5 light:bg-gray-50">
+                          <td className="px-4 py-2 text-sm dark:text-white light:text-gray-900">{p.Producto}</td>
+                          <td className="px-4 py-2 text-sm dark:text-white light:text-gray-900">{p.Codigo}</td>
+                          <td className="px-4 py-2 text-sm dark:text-white light:text-gray-900">{p.Categoria}</td>
+                          <td className="px-4 py-2 text-sm dark:text-white light:text-gray-900">{toNumber(p.CantidadVendida, 0)}</td>
+                          <td className="px-4 py-2 text-sm dark:text-white light:text-gray-900">{formatCurrency(p.TotalGenerado)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -1494,27 +1494,27 @@ const ReportsContent = () => {
                 </div>
               </div>
 
-              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Productos menos vendidos (Total)</h3>
+              <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm p-6 rounded-lg shadow-sm border dark:border-white/20 light:border-gray-200">
+                <h3 className="text-lg font-medium dark:text-white light:text-gray-900 mb-4">Productos menos vendidos (Total)</h3>
                 <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
+                  <table className="min-w-full divide-y dark:divide-white/10 light:divide-gray-200">
+                    <thead className="dark:bg-white/5 light:bg-gray-50">
                       <tr>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Código</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categoría</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cantidad</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">Producto</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">Código</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">Categoría</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">Cantidad</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">Total</th>
                       </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody className="dark:bg-transparent light:bg-white divide-y dark:divide-white/10 light:divide-gray-200">
                       {(reportsRaw?.productosMenosVendidosTotal || []).map((p: any, i: number) => (
-                        <tr key={`plt-${i}`} className="hover:bg-gray-50">
-                          <td className="px-4 py-2 text-sm text-gray-900">{p.Producto}</td>
-                          <td className="px-4 py-2 text-sm text-gray-900">{p.Codigo}</td>
-                          <td className="px-4 py-2 text-sm text-gray-900">{p.Categoria}</td>
-                          <td className="px-4 py-2 text-sm text-gray-900">{toNumber(p.CantidadVendida, 0)}</td>
-                          <td className="px-4 py-2 text-sm text-gray-900">{formatCurrency(p.TotalGenerado)}</td>
+                        <tr key={`plt-${i}`} className="dark:hover:bg-white/5 light:hover:dark:bg-white/5 light:bg-gray-50">
+                          <td className="px-4 py-2 text-sm dark:text-white light:text-gray-900">{p.Producto}</td>
+                          <td className="px-4 py-2 text-sm dark:text-white light:text-gray-900">{p.Codigo}</td>
+                          <td className="px-4 py-2 text-sm dark:text-white light:text-gray-900">{p.Categoria}</td>
+                          <td className="px-4 py-2 text-sm dark:text-white light:text-gray-900">{toNumber(p.CantidadVendida, 0)}</td>
+                          <td className="px-4 py-2 text-sm dark:text-white light:text-gray-900">{formatCurrency(p.TotalGenerado)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -1525,8 +1525,8 @@ const ReportsContent = () => {
           )}
 
           {/* Gráfico de Ventas por Categoría */}
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Ventas por Categoría</h3>
+      <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm p-6 rounded-lg shadow-sm border dark:border-white/20 light:border-gray-200">
+        <h3 className="text-lg font-medium dark:text-white light:text-gray-900 mb-4">Ventas por Categoría</h3>
         <div className="h-80">
               {categorySales.length > 0 ? (
           <ResponsiveContainer width="100%" height="100%">
@@ -1564,13 +1564,13 @@ const ReportsContent = () => {
                 verticalAlign="bottom" 
                 height={36}
                       formatter={(value) => (
-                        <span className="text-sm text-gray-600">{value}</span>
+                        <span className="text-sm dark:text-white/80 light:text-gray-600">{value}</span>
                       )}
               />
             </PieChart>
           </ResponsiveContainer>
               ) : (
-                <div className="h-full flex items-center justify-center text-gray-500">
+                <div className="h-full flex items-center justify-center dark:text-white/70 light:text-gray-500">
                   No hay datos de categorías disponibles
                 </div>
               )}
@@ -1580,45 +1580,45 @@ const ReportsContent = () => {
       )}
 
       {/* Tabla de Datos */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm rounded-lg shadow-sm border dark:border-white/20 light:border-gray-200 overflow-hidden">
         <div className="p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">
+          <h3 className="text-lg font-medium dark:text-white light:text-gray-900 mb-4">
             {reportType === 'ventas' && 'Detalle de Ventas'}
             {reportType === 'total' && 'Total de Ventas'}
             {reportType === 'top' && 'Productos Más Vendidos'}
           </h3>
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y dark:divide-white/10 light:divide-gray-200">
+              <thead className="dark:bg-white/5 light:bg-gray-50">
                 <tr>
                   {reportType === 'ventas' && (
                     <>
                       <th 
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                        className="px-6 py-3 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
                         onClick={() => handleSort('Código')}
                       >
                         Código {sortConfig?.key === 'Código' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
                   </th>
                       <th 
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                        className="px-6 py-3 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
                         onClick={() => handleSort('Cliente')}
                       >
                         Cliente {sortConfig?.key === 'Cliente' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
                   </th>
                       <th 
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                        className="px-6 py-3 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
                         onClick={() => handleSort('Total')}
                       >
                         Total {sortConfig?.key === 'Total' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
                   </th>
                       <th 
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                        className="px-6 py-3 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
                         onClick={() => handleSort('Método')}
                       >
                         Método {sortConfig?.key === 'Método' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
                   </th>
                       <th 
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
+                        className="px-6 py-3 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase cursor-pointer hover:bg-gray-100"
                         onClick={() => handleSort('Fecha')}
                       >
                         Fecha {sortConfig?.key === 'Fecha' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
@@ -1627,40 +1627,40 @@ const ReportsContent = () => {
                   )}
                   {reportType === 'top' && (
                     <>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Producto</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cantidad</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase">Producto</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase">Cantidad</th>
                     </>
                   )}
                   {reportType === 'total' && (
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Ventas</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase">Total Ventas</th>
                   )}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200 bg-white">
+              <tbody className="divide-y dark:divide-white/10 light:divide-gray-200 bg-white">
                 {reportType === 'ventas' && sortedSales.map((venta, index) => (
-                  <tr key={index} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{venta.Código}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{venta.Cliente}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{new Intl.NumberFormat('es-CO', {
+                  <tr key={index} className="dark:hover:bg-white/5 light:hover:dark:bg-white/5 light:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm dark:text-white light:text-gray-900">{venta.Código}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm dark:text-white light:text-gray-900">{venta.Cliente}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm dark:text-white light:text-gray-900">{new Intl.NumberFormat('es-CO', {
                       style: 'currency',
                       currency: 'COP',
                       minimumFractionDigits: 0
                     }).format(venta.Total)}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{venta.Método}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm dark:text-white light:text-gray-900">{venta.Método}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm dark:text-white light:text-gray-900">
                       {moment(venta.Fecha).format('DD/MM/YYYY HH:mm')}
                     </td>
                   </tr>
                 ))}
                 {reportType === 'top' && (data && data.data && Array.isArray(data.data.top)) && data.data.top.map((producto, index) => (
-                  <tr key={index} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{producto.Producto}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{producto.Cantidad}</td>
+                  <tr key={index} className="dark:hover:bg-white/5 light:hover:dark:bg-white/5 light:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm dark:text-white light:text-gray-900">{producto.Producto}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm dark:text-white light:text-gray-900">{producto.Cantidad}</td>
                   </tr>
                 ))}
                 {reportType === 'total' && (data && data.data && Array.isArray(data.data.total)) && data.data.total.map((total, index) => (
-                  <tr key={index} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <tr key={index} className="dark:hover:bg-white/5 light:hover:dark:bg-white/5 light:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm dark:text-white light:text-gray-900">
                       {new Intl.NumberFormat('es-CO', {
                         style: 'currency',
                         currency: 'COP',

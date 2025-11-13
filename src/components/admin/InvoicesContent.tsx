@@ -233,7 +233,7 @@ const InvoicesContent: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-800">Facturación</h1>
+        <h1 className="text-2xl font-bold dark:text-white light:text-gray-800">Facturación</h1>
         <button
           onClick={() => setIsModalOpen(true)}
           className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -242,7 +242,7 @@ const InvoicesContent: React.FC = () => {
         </button>
       </div>
 
-      <div className="bg-white rounded-lg shadow p-4">
+      <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm rounded-lg shadow p-4 border dark:border-white/20 light:border-gray-200">
         <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
           <input
             type="text"
@@ -272,20 +272,20 @@ const InvoicesContent: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm rounded-lg shadow overflow-hidden border dark:border-white/20 light:border-gray-200">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 table-fixed">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y dark:divide-white/10 light:divide-gray-200 table-fixed">
+            <thead className="dark:bg-white/5 light:bg-gray-50">
               <tr>
-                <th className="px-4 py-2 text-left text-[11px] font-medium text-gray-500 uppercase tracking-wider w-2/6">Cliente</th>
-                <th className="px-4 py-2 text-left text-[11px] font-medium text-gray-500 uppercase tracking-wider w-1/12">Estado</th>
-                <th className="px-4 py-2 text-left text-[11px] font-medium text-gray-500 uppercase tracking-wider w-1/12">Total</th>
-                <th className="px-4 py-2 text-left text-[11px] font-medium text-gray-500 uppercase tracking-wider w-2/12">Saldo</th>
-                <th className="px-4 py-2 text-left text-[11px] font-medium text-gray-500 uppercase tracking-wider w-2/12">Fecha</th>
-                <th className="px-4 py-2 text-right text-[11px] font-medium text-gray-500 uppercase tracking-wider w-2/12">Acciones</th>
+                <th className="px-4 py-2 text-left text-[11px] font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider w-2/6">Cliente</th>
+                <th className="px-4 py-2 text-left text-[11px] font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider w-1/12">Estado</th>
+                <th className="px-4 py-2 text-left text-[11px] font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider w-1/12">Total</th>
+                <th className="px-4 py-2 text-left text-[11px] font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider w-2/12">Saldo</th>
+                <th className="px-4 py-2 text-left text-[11px] font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider w-2/12">Fecha</th>
+                <th className="px-4 py-2 text-right text-[11px] font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider w-2/12">Acciones</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="dark:bg-transparent light:bg-white divide-y dark:divide-white/10 light:divide-gray-200">
               {isLoading ? (
                 <tr><td colSpan={6} className="px-6 py-8 text-center">Cargando...</td></tr>
               ) : items.length === 0 ? (
@@ -301,16 +301,16 @@ const InvoicesContent: React.FC = () => {
                     })
                   : items
                 ).map((f) => (
-                  <tr key={f.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-xs md:text-sm text-gray-900">
+                  <tr key={f.id} className="dark:hover:bg-white/5 light:hover:dark:bg-white/5 light:bg-gray-50">
+                    <td className="px-4 py-3 text-xs md:text-sm dark:text-white light:text-gray-900">
                       <div className="flex items-center justify-between gap-2" title={`ID: ${f.id}`}>
                         <div className="min-w-0">
                           <div className="truncate" aria-label="Nombre del cliente">{f.cliente?.nombre || f.clienteId}</div>
-                          <div className="text-[11px] text-gray-500" aria-label="Número de factura">Factura: {f.numeroFactura || '-'}</div>
+                          <div className="text-[11px] dark:text-white/70 light:text-gray-500" aria-label="Número de factura">Factura: {f.numeroFactura || '-'}</div>
                         </div>
                         <button
                           onClick={() => handleCopyId(f.id)}
-                          className="shrink-0 px-2 py-1 border rounded text-[11px] text-gray-600 hover:text-gray-800"
+                          className="shrink-0 px-2 py-1 border rounded text-[11px] dark:text-white/80 light:text-gray-600 hover:dark:text-white light:hover:text-gray-800"
                           aria-label="Copiar ID de factura"
                           title={f.id}
                         >
@@ -318,13 +318,13 @@ const InvoicesContent: React.FC = () => {
                         </button>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-xs md:text-sm text-gray-500 capitalize whitespace-nowrap">{f.estado}</td>
-                    <td className="px-4 py-3 text-xs md:text-sm text-gray-900 whitespace-nowrap">{(f.total ?? 0).toLocaleString('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 })}</td>
-                    <td className="px-4 py-3 text-xs md:text-sm text-gray-900">
+                    <td className="px-4 py-3 text-xs md:text-sm dark:text-white/70 light:text-gray-500 capitalize whitespace-nowrap">{f.estado}</td>
+                    <td className="px-4 py-3 text-xs md:text-sm dark:text-white light:text-gray-900 whitespace-nowrap">{(f.total ?? 0).toLocaleString('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 })}</td>
+                    <td className="px-4 py-3 text-xs md:text-sm dark:text-white light:text-gray-900">
                       <div className="whitespace-nowrap">Pend.: {(f.saldoPendiente ?? 0).toLocaleString('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 })}</div>
-                      <div className="whitespace-nowrap text-gray-500">Abono: {(Math.max(0, (f.total ?? 0) - (f.saldoPendiente ?? 0))).toLocaleString('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 })}</div>
+                      <div className="whitespace-nowrap dark:text-white/70 light:text-gray-500">Abono: {(Math.max(0, (f.total ?? 0) - (f.saldoPendiente ?? 0))).toLocaleString('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 })}</div>
                     </td>
-                    <td className="px-4 py-3 text-xs md:text-sm text-gray-500 whitespace-nowrap">{f.fechaEmision ? new Date(f.fechaEmision).toLocaleString('es-CO') : '-'}</td>
+                    <td className="px-4 py-3 text-xs md:text-sm dark:text-white/70 light:text-gray-500 whitespace-nowrap">{f.fechaEmision ? new Date(f.fechaEmision).toLocaleString('es-CO') : '-'}</td>
                     <td className="px-4 py-3 text-right text-xs md:text-sm">
                       <div className="flex justify-end gap-2">
                         <button onClick={() => openPlanDetails(f.id)} className="px-2 py-1 border rounded text-xs">Abonos</button>
@@ -336,8 +336,8 @@ const InvoicesContent: React.FC = () => {
             </tbody>
           </table>
         </div>
-        <div className="px-6 py-3 bg-gray-50 flex items-center justify-between">
-          <span className="text-sm text-gray-600">Página {pagination.page} de {Math.max(1, pagination.pages)} — {pagination.total} registros</span>
+        <div className="px-6 py-3 dark:bg-white/5 light:bg-gray-50 flex items-center justify-between">
+          <span className="text-sm dark:text-white/80 light:text-gray-600">Página {pagination.page} de {Math.max(1, pagination.pages)} — {pagination.total} registros</span>
           <div className="flex items-center gap-2">
             <button onClick={() => fetchData(pagination.page - 1, pagination.limit)} className="px-3 py-1 border rounded" disabled={pagination.page <= 1}>Anterior</button>
             <button onClick={() => fetchData(pagination.page + 1, pagination.limit)} className="px-3 py-1 border rounded" disabled={pagination.page >= pagination.pages}>Siguiente</button>
@@ -346,17 +346,17 @@ const InvoicesContent: React.FC = () => {
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[90]">
+          <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto border dark:border-white/20 light:border-gray-200">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold">Nueva Factura</h2>
-                <button onClick={() => setIsModalOpen(false)} className="text-gray-500 hover:text-gray-700">✕</button>
+                <h2 className="text-xl font-semibold dark:text-white light:text-gray-900">Nueva Factura</h2>
+                <button onClick={() => setIsModalOpen(false)} className="dark:text-white/70 light:text-gray-500 hover:dark:text-white/90 light:text-gray-700">✕</button>
               </div>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Cliente</label>
+                    <label className="block text-sm font-medium dark:text-white/90 light:text-gray-700 mb-1">Cliente</label>
                     <select value={form.clienteId} onChange={(e) => setForm({ ...form, clienteId: e.target.value })} className="w-full px-3 py-2 border rounded" required>
                       <option value="" disabled>Seleccione un cliente</option>
                       {clientesOptions.map((c) => (
@@ -365,7 +365,7 @@ const InvoicesContent: React.FC = () => {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Método de pago</label>
+                    <label className="block text-sm font-medium dark:text-white/90 light:text-gray-700 mb-1">Método de pago</label>
                     <select value={form.metodoPago} onChange={(e) => setForm({ ...form, metodoPago: e.target.value as any })} className="w-full px-3 py-2 border rounded" required>
                       <option value="Efectivo">Efectivo</option>
                       <option value="Nequi">Nequi</option>
@@ -373,17 +373,17 @@ const InvoicesContent: React.FC = () => {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">IVA (%)</label>
+                    <label className="block text-sm font-medium dark:text-white/90 light:text-gray-700 mb-1">IVA (%)</label>
                     <input type="number" min={0} max={100} value={form.iva} onChange={(e) => setForm({ ...form, iva: Number(e.target.value) })} className="w-full px-3 py-2 border rounded" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Días de vencimiento</label>
+                    <label className="block text-sm font-medium dark:text-white/90 light:text-gray-700 mb-1">Días de vencimiento</label>
                     <input type="number" min={0} value={form.diasVencimiento} onChange={(e) => setForm({ ...form, diasVencimiento: Number(e.target.value) })} className="w-full px-3 py-2 border rounded" />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Productos</label>
+                  <label className="block text-sm font-medium dark:text-white/90 light:text-gray-700 mb-2">Productos</label>
                   <div className="space-y-3">
                     {form.productos.map((p, i) => (
                       <div key={i} className="grid grid-cols-12 gap-3 items-end">
@@ -422,11 +422,11 @@ const InvoicesContent: React.FC = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Descuento (%)</label>
+                    <label className="block text-sm font-medium dark:text-white/90 light:text-gray-700 mb-1">Descuento (%)</label>
                     <input type="number" min={0} max={100} value={form.descuentoAplicado} onChange={(e) => setForm({ ...form, descuentoAplicado: Number(e.target.value) })} className="w-full px-3 py-2 border rounded" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Observaciones</label>
+                    <label className="block text-sm font-medium dark:text-white/90 light:text-gray-700 mb-1">Observaciones</label>
                     <input value={form.observaciones} onChange={(e) => setForm({ ...form, observaciones: e.target.value })} className="w-full px-3 py-2 border rounded" />
                   </div>
                 </div>
@@ -443,10 +443,10 @@ const InvoicesContent: React.FC = () => {
 
       {isPlanWarnOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-[100]">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+          <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm rounded-lg shadow-xl w-full max-w-md border dark:border-white/20 light:border-gray-200">
             <div className="p-4">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Aviso</h3>
-              <p className="text-sm text-gray-700">{planWarnMsg}</p>
+              <h3 className="text-lg font-semibold dark:text-white light:text-gray-900 mb-2">Aviso</h3>
+              <p className="text-sm dark:text-white/90 light:text-gray-700">{planWarnMsg}</p>
               <div className="mt-4 flex justify-end gap-2">
                 <button
                   onClick={() => setIsPlanWarnOpen(false)}
@@ -462,17 +462,17 @@ const InvoicesContent: React.FC = () => {
 
       {/* Modal de Plan de Abonos */}
       {isPlanModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[90]">
+          <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto border dark:border-white/20 light:border-gray-200">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold">Plan de Abonos</h2>
+                <h2 className="text-xl font-semibold dark:text-white light:text-gray-900">Plan de Abonos</h2>
                 <button 
                   onClick={() => {
                     setIsPlanModalOpen(false);
                     setPlanData(null);
                   }} 
-                  className="text-gray-500 hover:text-gray-700"
+                  className="dark:text-white/70 light:text-gray-500 hover:dark:text-white/90 light:text-gray-700"
                 >
                   ✕
                 </button>
@@ -481,41 +481,41 @@ const InvoicesContent: React.FC = () => {
               {isLoadingPlan ? (
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                  <p className="mt-2 text-gray-600">Cargando detalles del plan...</p>
+                  <p className="mt-2 dark:text-white/80 light:text-gray-600">Cargando detalles del plan...</p>
                 </div>
               ) : planData ? (
                 <div className="space-y-6">
                   {/* Información de la Factura */}
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <h3 className="text-lg font-semibold mb-3">Información de la Factura</h3>
+                  <div className="dark:bg-white/5 light:bg-gray-50 rounded-lg p-4">
+                    <h3 className="text-lg font-semibold dark:text-white light:text-gray-900 mb-3">Información de la Factura</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <p><strong>Número:</strong> {planData.factura?.numeroFactura || 'N/A'}</p>
-                        <p><strong>Estado:</strong> <span className={`px-2 py-1 rounded text-xs ${planData.factura?.estado === 'pagada' ? 'bg-green-100 text-green-800' : planData.factura?.estado === 'pendiente' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}`}>{planData.factura?.estado || 'N/A'}</span></p>
-                        <p><strong>Total:</strong> ${(planData.factura?.total || 0).toLocaleString('es-CO')}</p>
-                        <p><strong>Saldo Pendiente:</strong> ${(planData.factura?.saldoPendiente || 0).toLocaleString('es-CO')}</p>
+                        <p className="dark:text-white/90 light:text-gray-900"><strong>Número:</strong> {planData.factura?.numeroFactura || 'N/A'}</p>
+                        <p className="dark:text-white/90 light:text-gray-900"><strong>Estado:</strong> <span className={`px-2 py-1 rounded text-xs ${planData.factura?.estado === 'pagada' ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200' : planData.factura?.estado === 'pendiente' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200' : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200'}`}>{planData.factura?.estado || 'N/A'}</span></p>
+                        <p className="dark:text-white/90 light:text-gray-900"><strong>Total:</strong> ${(planData.factura?.total || 0).toLocaleString('es-CO')}</p>
+                        <p className="dark:text-white/90 light:text-gray-900"><strong>Saldo Pendiente:</strong> ${(planData.factura?.saldoPendiente || 0).toLocaleString('es-CO')}</p>
                       </div>
                       <div>
-                        <p><strong>Cliente:</strong> {planData.factura?.cliente?.nombre || 'N/A'}</p>
-                        <p><strong>Email:</strong> {planData.factura?.cliente?.email || 'N/A'}</p>
-                        <p><strong>Teléfono:</strong> {planData.factura?.cliente?.telefono || 'N/A'}</p>
-                        <p><strong>Fecha Emisión:</strong> {planData.factura?.fechaEmision ? new Date(planData.factura.fechaEmision).toLocaleDateString('es-CO') : 'N/A'}</p>
+                        <p className="dark:text-white/90 light:text-gray-900"><strong>Cliente:</strong> {planData.factura?.cliente?.nombre || 'N/A'}</p>
+                        <p className="dark:text-white/90 light:text-gray-900"><strong>Email:</strong> {planData.factura?.cliente?.email || 'N/A'}</p>
+                        <p className="dark:text-white/90 light:text-gray-900"><strong>Teléfono:</strong> {planData.factura?.cliente?.telefono || 'N/A'}</p>
+                        <p className="dark:text-white/90 light:text-gray-900"><strong>Fecha Emisión:</strong> {planData.factura?.fechaEmision ? new Date(planData.factura.fechaEmision).toLocaleDateString('es-CO') : 'N/A'}</p>
                       </div>
                     </div>
                   </div>
 
                   {/* Información de la Venta Relacionada */}
                   {planData.venta && (
-                    <div className="bg-blue-50 rounded-lg p-4">
-                      <h3 className="text-lg font-semibold mb-3">Venta Relacionada</h3>
+                    <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
+                      <h3 className="text-lg font-semibold dark:text-white light:text-gray-900 mb-3">Venta Relacionada</h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <p><strong>Código:</strong> {planData.venta.code || 'N/A'}</p>
-                          <p><strong>Tipo de Venta:</strong> <span className={`px-2 py-1 rounded text-xs ${planData.venta.tipoVenta === 'contado' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>{planData.venta.tipoVenta || 'N/A'}</span></p>
+                          <p className="dark:text-white/90 light:text-gray-900"><strong>Código:</strong> {planData.venta.code || 'N/A'}</p>
+                          <p className="dark:text-white/90 light:text-gray-900"><strong>Tipo de Venta:</strong> <span className={`px-2 py-1 rounded text-xs ${planData.venta.tipoVenta === 'contado' ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200'}`}>{planData.venta.tipoVenta || 'N/A'}</span></p>
                         </div>
                         <div>
-                          <p><strong>Estado Pago:</strong> <span className={`px-2 py-1 rounded text-xs ${planData.venta.estadoPago === 'pagada' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>{planData.venta.estadoPago || 'N/A'}</span></p>
-                          <p><strong>Vendedor:</strong> {planData.venta.trabajador?.nombre || 'N/A'}</p>
+                          <p className="dark:text-white/90 light:text-gray-900"><strong>Estado Pago:</strong> <span className={`px-2 py-1 rounded text-xs ${planData.venta.estadoPago === 'pagada' ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200' : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200'}`}>{planData.venta.estadoPago || 'N/A'}</span></p>
+                          <p className="dark:text-white/90 light:text-gray-900"><strong>Vendedor:</strong> {planData.venta.trabajador?.nombre || 'N/A'}</p>
                         </div>
                       </div>
                     </div>
@@ -523,24 +523,24 @@ const InvoicesContent: React.FC = () => {
 
                   {/* Estadísticas del Plan */}
                   {planData.estadisticasPlan && (
-                    <div className="bg-green-50 rounded-lg p-4">
-                      <h3 className="text-lg font-semibold mb-3">Resumen del Plan</h3>
+                    <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
+                      <h3 className="text-lg font-semibold dark:text-white light:text-gray-900 mb-3">Resumen del Plan</h3>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div className="text-center">
                           <p className="text-2xl font-bold text-green-600">${planData.estadisticasPlan.totalPlaneado?.toLocaleString('es-CO') || '0'}</p>
-                          <p className="text-sm text-gray-600">Total Planeado</p>
+                          <p className="text-sm dark:text-white/80 light:text-gray-600">Total Planeado</p>
                         </div>
                         <div className="text-center">
                           <p className="text-2xl font-bold text-blue-600">${planData.estadisticasPlan.totalPagado?.toLocaleString('es-CO') || '0'}</p>
-                          <p className="text-sm text-gray-600">Total Pagado</p>
+                          <p className="text-sm dark:text-white/80 light:text-gray-600">Total Pagado</p>
                         </div>
                         <div className="text-center">
                           <p className="text-2xl font-bold text-orange-600">{planData.estadisticasPlan.abonosPagados || 0}</p>
-                          <p className="text-sm text-gray-600">Abonos Pagados</p>
+                          <p className="text-sm dark:text-white/80 light:text-gray-600">Abonos Pagados</p>
                         </div>
                         <div className="text-center">
                           <p className="text-2xl font-bold text-red-600">{planData.estadisticasPlan.abonosPendientes || 0}</p>
-                          <p className="text-sm text-gray-600">Abonos Pendientes</p>
+                          <p className="text-sm dark:text-white/80 light:text-gray-600">Abonos Pendientes</p>
                         </div>
                       </div>
                     </div>
@@ -548,9 +548,9 @@ const InvoicesContent: React.FC = () => {
 
                   {/* Plan de Abonos (editable) */}
                   {planData.factura?.planAbonos && planData.factura.planAbonos.length > 0 ? (
-                    <div className="bg-white border rounded-lg p-4">
+                    <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm border dark:border-white/20 light:border-gray-200 rounded-lg p-4">
                       <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-lg font-semibold">Plan de Abonos</h3>
+                        <h3 className="text-lg font-semibold dark:text-white light:text-gray-900">Plan de Abonos</h3>
                         {!isEditingPlan ? (
                           <button onClick={() => setIsEditingPlan(true)} className="px-2 py-1 text-xs border rounded">Editar</button>
                         ) : (
@@ -609,7 +609,7 @@ const InvoicesContent: React.FC = () => {
                           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-2">
                             <div className="flex items-center gap-2">
                               <div className="flex items-center gap-1">
-                                <label className="text-xs text-gray-600"># Abonos</label>
+                                <label className="text-xs dark:text-white/80 light:text-gray-600"># Abonos</label>
                                 <input
                                   type="number"
                                   min={1}
@@ -693,7 +693,7 @@ const InvoicesContent: React.FC = () => {
                                 + Agregar Abono
                               </button>
                             </div>
-                            <div className="text-xs text-gray-600">
+                            <div className="text-xs dark:text-white/80 light:text-gray-600">
                               {suggestSummary ? (
                                 <span>
                                   Disp.: ${(Number(suggestSummary.montoDisponible || 0)).toLocaleString('es-CO')} /
@@ -727,11 +727,11 @@ const InvoicesContent: React.FC = () => {
                           <div key={index} className={`p-3 rounded-lg border ${abono.estado === 'pagado' ? 'bg-green-50 border-green-200' : abono.estado === 'vencido' ? 'bg-red-50 border-red-200' : 'bg-yellow-50 border-yellow-200'}`}>
                             <div className="grid grid-cols-1 md:grid-cols-6 gap-3 items-end">
                               <div>
-                                <label className="block text-xs text-gray-600">Abono #</label>
-                                <div className="px-3 py-2 border rounded bg-gray-50">{abono.numero}</div>
+                                <label className="block text-xs dark:text-white/80 light:text-gray-600">Abono #</label>
+                                <div className="px-3 py-2 border rounded dark:bg-white/5 light:bg-gray-50">{abono.numero}</div>
                               </div>
                               <div>
-                                <label className="block text-xs text-gray-600">Monto</label>
+                                <label className="block text-xs dark:text-white/80 light:text-gray-600">Monto</label>
                                 {isEditingPlan ? (
                                   <input
                                     type="number"
@@ -742,11 +742,11 @@ const InvoicesContent: React.FC = () => {
                                     disabled={abono.puedeModificar === false}
                                   />
                                 ) : (
-                                  <div className="px-3 py-2 border rounded bg-gray-50">${(abono.monto || 0).toLocaleString('es-CO')}</div>
+                                  <div className="px-3 py-2 border rounded dark:bg-white/5 light:bg-gray-50">${(abono.monto || 0).toLocaleString('es-CO')}</div>
                                 )}
                               </div>
                               <div>
-                                <label className="block text-xs text-gray-600">Fecha Programada</label>
+                                <label className="block text-xs dark:text-white/80 light:text-gray-600">Fecha Programada</label>
                                 {isEditingPlan ? (
                                   <input
                                     type="date"
@@ -756,11 +756,11 @@ const InvoicesContent: React.FC = () => {
                                     disabled={abono.puedeModificar === false}
                                   />
                                 ) : (
-                                  <div className="px-3 py-2 border rounded bg-gray-50">{abono.fechaProgramada ? new Date(abono.fechaProgramada).toLocaleDateString('es-CO') : 'Flexible (auto)'}</div>
+                                  <div className="px-3 py-2 border rounded dark:bg-white/5 light:bg-gray-50">{abono.fechaProgramada ? new Date(abono.fechaProgramada).toLocaleDateString('es-CO') : 'Flexible (auto)'}</div>
                                 )}
                               </div>
                               <div>
-                                <label className="block text-xs text-gray-600">Estado</label>
+                                <label className="block text-xs dark:text-white/80 light:text-gray-600">Estado</label>
                                 {isEditingPlan ? (
                                   <select
                                     value={abono.estado || 'pendiente'}
@@ -776,7 +776,7 @@ const InvoicesContent: React.FC = () => {
                                 )}
                               </div>
                               <div>
-                                <label className="block text-xs text-gray-600">Observaciones</label>
+                                <label className="block text-xs dark:text-white/80 light:text-gray-600">Observaciones</label>
                                 {isEditingPlan ? (
                                   <input
                                     type="text"
@@ -786,7 +786,7 @@ const InvoicesContent: React.FC = () => {
                                     disabled={abono.puedeModificar === false}
                                   />
                                 ) : (
-                                  <div className="px-3 py-2 border rounded bg-gray-50 truncate" title={abono.observaciones || ''}>{abono.observaciones || '-'}</div>
+                                  <div className="px-3 py-2 border rounded dark:bg-white/5 light:bg-gray-50 truncate" title={abono.observaciones || ''}>{abono.observaciones || '-'}</div>
                                 )}
                               </div>
                               {isEditingPlan ? (
@@ -811,19 +811,19 @@ const InvoicesContent: React.FC = () => {
                       </div>
                     </div>
                   ) : (
-                    <div className="bg-gray-50 rounded-lg p-4 text-center">
-                      <p className="text-gray-600">Esta factura no tiene un plan de abonos configurado.</p>
+                    <div className="dark:bg-white/5 light:bg-gray-50 rounded-lg p-4 text-center">
+                      <p className="dark:text-white/80 light:text-gray-600">Esta factura no tiene un plan de abonos configurado.</p>
                     </div>
                   )}
 
                   {/* Historial de Abonos Reales */}
                   {planData.abonosReales && planData.abonosReales.length > 0 && (
-                    <div className="bg-white border rounded-lg p-4">
-                      <h3 className="text-lg font-semibold mb-4">Historial de Pagos</h3>
+                    <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm border dark:border-white/20 light:border-gray-200 rounded-lg p-4">
+                      <h3 className="text-lg font-semibold dark:text-white light:text-gray-900 mb-4">Historial de Pagos</h3>
                       <div className="overflow-x-auto">
                         <table className="min-w-full">
                           <thead>
-                            <tr className="text-left text-sm text-gray-500">
+                            <tr className="text-left text-sm dark:text-white/70 light:text-gray-500">
                               <th className="px-3 py-2">Abono #</th>
                               <th className="px-3 py-2">Monto Pagado</th>
                               <th className="px-3 py-2">Método</th>
@@ -861,7 +861,7 @@ const InvoicesContent: React.FC = () => {
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <p className="text-gray-600">No se pudieron cargar los detalles del plan.</p>
+                  <p className="dark:text-white/80 light:text-gray-600">No se pudieron cargar los detalles del plan.</p>
                 </div>
               )}
             </div>

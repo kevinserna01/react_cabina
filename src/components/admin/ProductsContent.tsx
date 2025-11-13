@@ -362,24 +362,38 @@ const ProductsContent = () => {
     <div className="space-y-6">
       {/* Mensaje de éxito */}
       {showSuccess && (
-        <div className="fixed top-4 right-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-md shadow-lg z-50 animate-fade-in-down">
-          <div className="flex items-center">
-            <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-            </svg>
-            <p>{successMessage}</p>
+        <div className="fixed top-24 right-6 z-[100] max-w-md animate-in slide-in-from-right-5 fade-in duration-300">
+          <div className="dark:bg-gradient-to-r dark:from-green-900/40 dark:to-emerald-900/40 
+                          light:bg-gradient-to-r light:from-green-50 light:to-emerald-50
+                          backdrop-blur-xl border-2 dark:border-green-500/50 light:border-green-400
+                          rounded-xl shadow-2xl p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex-shrink-0 bg-green-500 dark:bg-green-600 p-2 rounded-full">
+                <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <p className="font-medium dark:text-white light:text-gray-900">{successMessage}</p>
+            </div>
           </div>
         </div>
       )}
 
       {/* Mensaje de error */}
       {errorMessage && (
-        <div className="fixed top-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-md shadow-lg z-50 animate-fade-in-down">
-          <div className="flex items-center">
-            <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-            </svg>
-            <p>{errorMessage}</p>
+        <div className="fixed top-24 right-6 z-[100] max-w-md animate-in slide-in-from-right-5 fade-in duration-300">
+          <div className="dark:bg-gradient-to-r dark:from-red-900/40 dark:to-rose-900/40 
+                          light:bg-gradient-to-r light:from-red-50 light:to-rose-50
+                          backdrop-blur-xl border-2 dark:border-red-500/50 light:border-red-400
+                          rounded-xl shadow-2xl p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex-shrink-0 bg-red-500 dark:bg-red-600 p-2 rounded-full">
+                <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <p className="font-medium dark:text-white light:text-gray-900">{errorMessage}</p>
+            </div>
           </div>
         </div>
       )}
@@ -422,29 +436,29 @@ const ProductsContent = () => {
         {filteredProducts.map((product) => (
           <div
             key={product.code}
-            className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
+            className="dark:bg-white/10 light:bg-white backdrop-blur-sm rounded-lg shadow-sm border dark:border-white/20 light:border-gray-200 overflow-hidden"
           >
             <div className="p-4">
               <div className="flex items-start justify-between">
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900">{product.name}</h3>
-                  <p className="text-sm text-gray-500">{product.code}</p>
+                  <h3 className="text-lg font-medium dark:text-white light:text-gray-900">{product.name}</h3>
+                  <p className="text-sm dark:text-white/70 light:text-gray-500">{product.code}</p>
                 </div>
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200">
                   {formatPrice(product.price)}
                 </span>
               </div>
               
-              <p className="mt-2 text-sm text-gray-600">{product.description}</p>
+              <p className="mt-2 text-sm dark:text-white/80 light:text-gray-600">{product.description}</p>
               
               <div className="mt-4 flex items-center justify-between">
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700/30 text-gray-800 dark:text-gray-200">
                   {product.category}
                 </span>
               <div className="flex items-center gap-4">
                   <button
                     onClick={() => handleEdit(product)}
-                    className="text-blue-600 hover:text-blue-800"
+                    className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
                     aria-label="Editar producto"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -453,7 +467,7 @@ const ProductsContent = () => {
                   </button>
                   <button
                     onClick={() => handleDeleteClick(product)}
-                    className="text-red-600 hover:text-red-800"
+                    className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
                     aria-label="Eliminar producto"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -461,7 +475,7 @@ const ProductsContent = () => {
                     </svg>
                   </button>
                 </div>
-                <div className="text-right text-xs text-gray-500">
+                <div className="text-right text-xs dark:text-white/70 light:text-gray-500">
                   {typeof product.costPrice === 'number' && typeof product.salePrice === 'number' && (
                     <span>
                       Costo: {formatPrice(product.costPrice)} · Venta: {formatPrice(product.salePrice)}
@@ -479,10 +493,10 @@ const ProductsContent = () => {
 
       {/* Modal de Confirmación de Eliminación */}
       {isDeleteModalOpen && productToDelete && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Confirmar Eliminación</h2>
-            <p className="text-gray-600 mb-6">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[90]">
+          <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm rounded-lg shadow-xl max-w-md w-full p-6 border dark:border-white/20 light:border-gray-200">
+            <h2 className="text-xl font-semibold dark:text-white light:text-gray-900 mb-4">Confirmar Eliminación</h2>
+            <p className="dark:text-white/80 light:text-gray-600 mb-6">
               ¿Estás seguro de que deseas eliminar el producto "{productToDelete.name}"? Esta acción no se puede deshacer.
             </p>
             <div className="flex justify-end gap-3">
@@ -491,7 +505,7 @@ const ProductsContent = () => {
                   setIsDeleteModalOpen(false);
                   setProductToDelete(null);
                 }}
-                className="px-4 py-2 text-gray-700 hover:text-gray-900"
+                className="px-4 py-2 dark:text-white/90 light:text-gray-700 hover:dark:text-white light:text-gray-900"
                 disabled={isLoading}
               >
                 Cancelar
@@ -510,12 +524,12 @@ const ProductsContent = () => {
 
       {/* Modal de Editar Producto */}
       {isEditModalOpen && editingProduct && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Editar Producto</h2>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[90]">
+          <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm rounded-lg shadow-xl max-w-md w-full p-6 border dark:border-white/20 light:border-gray-200">
+            <h2 className="text-xl font-semibold dark:text-white light:text-gray-900 mb-4">Editar Producto</h2>
             <form onSubmit={handleUpdateProduct} className="space-y-4">
               <div>
-                <label htmlFor="edit-name" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="edit-name" className="block text-sm font-medium dark:text-white/90 light:text-gray-700">
                   Nombre
                 </label>
                 <input
@@ -529,7 +543,7 @@ const ProductsContent = () => {
               </div>
 
               <div>
-                <label htmlFor="edit-code" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="edit-code" className="block text-sm font-medium dark:text-white/90 light:text-gray-700">
                   Código
                 </label>
                 <input
@@ -542,11 +556,11 @@ const ProductsContent = () => {
               </div>
 
               <div>
-                <label htmlFor="edit-price" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="edit-price" className="block text-sm font-medium dark:text-white/90 light:text-gray-700">
                   Precio
                 </label>
                 <div className="relative mt-1">
-                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">
+                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center dark:text-white/70 light:text-gray-500">
                     $
                   </span>
                   <input
@@ -569,7 +583,7 @@ const ProductsContent = () => {
               </div>
 
               <div>
-                <label htmlFor="edit-category" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="edit-category" className="block text-sm font-medium dark:text-white/90 light:text-gray-700">
                   Categoría
                 </label>
                 <select
@@ -588,7 +602,7 @@ const ProductsContent = () => {
               </div>
 
               <div>
-                <label htmlFor="edit-description" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="edit-description" className="block text-sm font-medium dark:text-white/90 light:text-gray-700">
                   Descripción
                 </label>
                 <textarea
@@ -607,7 +621,7 @@ const ProductsContent = () => {
                     setIsEditModalOpen(false);
                     setEditingProduct(null);
                   }}
-                  className="px-4 py-2 text-gray-700 hover:text-gray-900"
+                  className="px-4 py-2 dark:text-white/90 light:text-gray-700 hover:dark:text-white light:text-gray-900"
                   disabled={isLoading}
                 >
                   Cancelar
@@ -627,11 +641,11 @@ const ProductsContent = () => {
 
       {/* Modal de categorías */}
       {isCategoriesModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[90]">
+          <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm rounded-lg shadow-xl max-w-2xl w-full p-6 border dark:border-white/20 light:border-gray-200">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Categorías</h2>
-              <button onClick={() => setIsCategoriesModalOpen(false)} className="text-gray-500 hover:text-gray-700">✕</button>
+              <h2 className="text-xl font-semibold dark:text-white light:text-gray-900">Categorías</h2>
+              <button onClick={() => setIsCategoriesModalOpen(false)} className="dark:text-white/70 light:text-gray-500 hover:dark:text-white/90 light:text-gray-700">✕</button>
             </div>
             <form onSubmit={editingCategory ? handleUpdateCategory : handleCreateCategory} className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
               <input
@@ -664,18 +678,18 @@ const ProductsContent = () => {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-2 text-left text-xs text-gray-500 uppercase tracking-wider">Nombre</th>
-                    <th className="px-4 py-2 text-left text-xs text-gray-500 uppercase tracking-wider">Descripción</th>
-                    <th className="px-4 py-2 text-right text-xs text-gray-500 uppercase tracking-wider">Acciones</th>
+                    <th className="px-4 py-2 text-left text-xs dark:text-white/70 light:text-gray-500 uppercase tracking-wider">Nombre</th>
+                    <th className="px-4 py-2 text-left text-xs dark:text-white/70 light:text-gray-500 uppercase tracking-wider">Descripción</th>
+                    <th className="px-4 py-2 text-right text-xs dark:text-white/70 light:text-gray-500 uppercase tracking-wider">Acciones</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="dark:bg-transparent light:bg-white divide-y dark:divide-white/10 light:divide-gray-200">
                   {categories.length === 0 ? (
-                    <tr><td colSpan={3} className="px-6 py-6 text-center text-gray-500">Sin categorías</td></tr>
+                    <tr><td colSpan={3} className="px-6 py-6 text-center dark:text-white/70 light:text-gray-500">Sin categorías</td></tr>
                   ) : categories.map((c) => (
                     <tr key={c.id}>
-                      <td className="px-4 py-2 text-sm text-gray-900">{c.name}</td>
-                      <td className="px-4 py-2 text-sm text-gray-500">{c.description || '-'}</td>
+                      <td className="px-4 py-2 text-sm dark:text-white light:text-gray-900">{c.name}</td>
+                      <td className="px-4 py-2 text-sm dark:text-white/70 light:text-gray-500">{c.description || '-'}</td>
                       <td className="px-4 py-2 text-sm text-right">
                         <div className="flex justify-end gap-2">
                           <button onClick={() => setEditingCategory(c)} className="px-3 py-1 border rounded">Editar</button>
@@ -693,12 +707,12 @@ const ProductsContent = () => {
 
       {/* Modal de Agregar Producto */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Agregar Nuevo Producto</h2>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[90]">
+          <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm rounded-lg shadow-xl max-w-md w-full p-6 border dark:border-white/20 light:border-gray-200">
+            <h2 className="text-xl font-semibold dark:text-white light:text-gray-900 mb-4">Agregar Nuevo Producto</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="name" className="block text-sm font-medium dark:text-white/90 light:text-gray-700">
                   Nombre
                 </label>
                 <input
@@ -713,7 +727,7 @@ const ProductsContent = () => {
               </div>
 
               <div>
-                <label htmlFor="code" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="code" className="block text-sm font-medium dark:text-white/90 light:text-gray-700">
                   Código
                 </label>
                 <input
@@ -728,7 +742,7 @@ const ProductsContent = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Precio de Costo</label>
+                  <label className="block text-sm font-medium dark:text-white/90 light:text-gray-700">Precio de Costo</label>
                   <input
                     type="text"
                     name="costPrice"
@@ -740,7 +754,7 @@ const ProductsContent = () => {
                   />
                 </div>
               <div>
-                  <label className="block text-sm font-medium text-gray-700">Precio de Venta</label>
+                  <label className="block text-sm font-medium dark:text-white/90 light:text-gray-700">Precio de Venta</label>
                   <input
                     type="text"
                     name="salePrice"
@@ -754,7 +768,7 @@ const ProductsContent = () => {
               </div>
 
               <div>
-                <label htmlFor="category" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="category" className="block text-sm font-medium dark:text-white/90 light:text-gray-700">
                   Categoría
                 </label>
                 <div className="flex gap-2">
@@ -772,7 +786,7 @@ const ProductsContent = () => {
                     </option>
                   ))}
                 </select>
-                  <label className="inline-flex items-center gap-2 mt-1 text-sm text-gray-700">
+                  <label className="inline-flex items-center gap-2 mt-1 text-sm dark:text-white/90 light:text-gray-700">
                     <input type="checkbox" checked={!!newProduct.createNewCategory} onChange={(e) => setNewProduct(prev => ({ ...prev, createNewCategory: e.target.checked }))} />
                   Crear categoría si no existe
                   </label>
@@ -792,7 +806,7 @@ const ProductsContent = () => {
               </div>
 
               <div>
-                <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="description" className="block text-sm font-medium dark:text-white/90 light:text-gray-700">
                   Descripción
                 </label>
                 <textarea
@@ -809,7 +823,7 @@ const ProductsContent = () => {
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="px-4 py-2 text-gray-700 hover:text-gray-900"
+                  className="px-4 py-2 dark:text-white/90 light:text-gray-700 hover:dark:text-white light:text-gray-900"
                   disabled={isLoading}
                 >
                   Cancelar

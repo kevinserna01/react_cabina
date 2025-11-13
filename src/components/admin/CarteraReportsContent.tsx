@@ -57,7 +57,7 @@ const CarteraReportsContent: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow p-4">
+      <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm rounded-lg shadow p-4 border dark:border-white/20 light:border-gray-200">
         <div className="grid grid-cols-1 md:grid-cols-6 gap-3 items-end">
           <input type="date" value={desde} onChange={(e) => setDesde(e.target.value)} className="px-3 py-2 border rounded" />
           <input type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} className="px-3 py-2 border rounded" />
@@ -75,36 +75,36 @@ const CarteraReportsContent: React.FC = () => {
         </div>
       </div>
 
-      {isLoading && <div className="bg-white rounded-lg shadow p-6 text-center text-gray-500">Cargando...</div>}
+      {isLoading && <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm rounded-lg shadow p-6 text-center dark:text-white/70 light:text-gray-500 border dark:border-white/20 light:border-gray-200">Cargando...</div>}
       {error && <div className="bg-red-100 border border-red-400 text-red-700 p-3 rounded">{error}</div>}
 
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="text-xs text-gray-500">Total Facturado</div>
-          <div className="text-xl font-semibold">{(data.summary.totalFacturado || 0).toLocaleString('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 })}</div>
+        <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm rounded-lg shadow p-4 border dark:border-white/20 light:border-gray-200">
+          <div className="text-xs dark:text-white/70 light:text-gray-500">Total Facturado</div>
+          <div className="text-xl font-semibold dark:text-white light:text-gray-900">{(data.summary.totalFacturado || 0).toLocaleString('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 })}</div>
         </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="text-xs text-gray-500">Total Abonado</div>
-          <div className="text-xl font-semibold">{(data.summary.totalAbonado || 0).toLocaleString('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 })}</div>
+        <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm rounded-lg shadow p-4 border dark:border-white/20 light:border-gray-200">
+          <div className="text-xs dark:text-white/70 light:text-gray-500">Total Abonado</div>
+          <div className="text-xl font-semibold dark:text-white light:text-gray-900">{(data.summary.totalAbonado || 0).toLocaleString('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 })}</div>
         </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="text-xs text-gray-500">Saldo Pendiente</div>
-          <div className="text-xl font-semibold">{(data.summary.totalPendiente || 0).toLocaleString('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 })}</div>
+        <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm rounded-lg shadow p-4 border dark:border-white/20 light:border-gray-200">
+          <div className="text-xs dark:text-white/70 light:text-gray-500">Saldo Pendiente</div>
+          <div className="text-xl font-semibold dark:text-white light:text-gray-900">{(data.summary.totalPendiente || 0).toLocaleString('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 })}</div>
         </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="text-xs text-gray-500">Pendientes</div>
-          <div className="text-xl font-semibold">{data.summary.facturasPendientes || 0}</div>
+        <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm rounded-lg shadow p-4 border dark:border-white/20 light:border-gray-200">
+          <div className="text-xs dark:text-white/70 light:text-gray-500">Pendientes</div>
+          <div className="text-xl font-semibold dark:text-white light:text-gray-900">{data.summary.facturasPendientes || 0}</div>
         </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="text-xs text-gray-500">Vencidas</div>
-          <div className="text-xl font-semibold">{data.summary.facturasVencidas || 0}</div>
+        <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm rounded-lg shadow p-4 border dark:border-white/20 light:border-gray-200">
+          <div className="text-xs dark:text-white/70 light:text-gray-500">Vencidas</div>
+          <div className="text-xl font-semibold dark:text-white light:text-gray-900">{data.summary.facturasVencidas || 0}</div>
         </div>
       </div>
 
       {/* Gráficos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="font-medium text-gray-700 mb-2">Total por Estado</div>
+        <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm rounded-lg shadow p-4 border dark:border-white/20 light:border-gray-200">
+          <div className="font-medium dark:text-white/90 light:text-gray-700 mb-2">Total por Estado</div>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={useMemo(() => {
@@ -125,8 +125,8 @@ const CarteraReportsContent: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="font-medium text-gray-700 mb-2">Participación por Cliente (Total Facturado)</div>
+        <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm rounded-lg shadow p-4 border dark:border-white/20 light:border-gray-200">
+          <div className="font-medium dark:text-white/90 light:text-gray-700 mb-2">Participación por Cliente (Total Facturado)</div>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -162,35 +162,35 @@ const CarteraReportsContent: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="p-4 font-medium text-gray-700">Detalle</div>
+      <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm rounded-lg shadow overflow-hidden border dark:border-white/20 light:border-gray-200">
+        <div className="p-4 font-medium dark:text-white/90 light:text-gray-700">Detalle</div>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y dark:divide-white/10 light:divide-gray-200">
+            <thead className="dark:bg-white/5 light:bg-gray-50">
               <tr>
-                <th className="px-4 py-2 text-left text-[11px] text-gray-500 uppercase tracking-wider">Factura</th>
-                <th className="px-4 py-2 text-left text-[11px] text-gray-500 uppercase tracking-wider">Cliente</th>
-                <th className="px-4 py-2 text-left text-[11px] text-gray-500 uppercase tracking-wider">Estado</th>
-                <th className="px-4 py-2 text-left text-[11px] text-gray-500 uppercase tracking-wider">Total</th>
-                <th className="px-4 py-2 text-left text-[11px] text-gray-500 uppercase tracking-wider">Pendiente</th>
-                <th className="px-4 py-2 text-left text-[11px] text-gray-500 uppercase tracking-wider">Días venc.</th>
-                <th className="px-4 py-2 text-left text-[11px] text-gray-500 uppercase tracking-wider">Emisión</th>
-                <th className="px-4 py-2 text-left text-[11px] text-gray-500 uppercase tracking-wider">Vencimiento</th>
+                <th className="px-4 py-2 text-left text-[11px] dark:text-white/70 light:text-gray-500 uppercase tracking-wider">Factura</th>
+                <th className="px-4 py-2 text-left text-[11px] dark:text-white/70 light:text-gray-500 uppercase tracking-wider">Cliente</th>
+                <th className="px-4 py-2 text-left text-[11px] dark:text-white/70 light:text-gray-500 uppercase tracking-wider">Estado</th>
+                <th className="px-4 py-2 text-left text-[11px] dark:text-white/70 light:text-gray-500 uppercase tracking-wider">Total</th>
+                <th className="px-4 py-2 text-left text-[11px] dark:text-white/70 light:text-gray-500 uppercase tracking-wider">Pendiente</th>
+                <th className="px-4 py-2 text-left text-[11px] dark:text-white/70 light:text-gray-500 uppercase tracking-wider">Días venc.</th>
+                <th className="px-4 py-2 text-left text-[11px] dark:text-white/70 light:text-gray-500 uppercase tracking-wider">Emisión</th>
+                <th className="px-4 py-2 text-left text-[11px] dark:text-white/70 light:text-gray-500 uppercase tracking-wider">Vencimiento</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="dark:bg-transparent light:bg-white divide-y dark:divide-white/10 light:divide-gray-200">
               {data.items.length === 0 ? (
-                <tr><td colSpan={8} className="px-6 py-6 text-center text-gray-500">Sin registros</td></tr>
+                <tr><td colSpan={8} className="px-6 py-6 text-center dark:text-white/70 light:text-gray-500">Sin registros</td></tr>
               ) : data.items.map((r, idx) => (
-                <tr key={idx} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 text-xs md:text-sm text-gray-900">{r.numeroFactura || '-'}</td>
-                  <td className="px-4 py-3 text-xs md:text-sm text-gray-500">{r.clienteNombre || '-'}</td>
-                  <td className="px-4 py-3 text-xs md:text-sm text-gray-500 capitalize">{r.estado || '-'}</td>
-                  <td className="px-4 py-3 text-xs md:text-sm text-gray-900">{(r.total || 0).toLocaleString('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 })}</td>
-                  <td className="px-4 py-3 text-xs md:text-sm text-gray-900">{(r.saldoPendiente || 0).toLocaleString('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 })}</td>
-                  <td className="px-4 py-3 text-xs md:text-sm text-gray-500">{r.diasVencido ?? '-'}</td>
-                  <td className="px-4 py-3 text-xs md:text-sm text-gray-500">{r.fechaEmision ? new Date(r.fechaEmision).toLocaleDateString('es-CO') : '-'}</td>
-                  <td className="px-4 py-3 text-xs md:text-sm text-gray-500">{r.fechaVencimiento ? new Date(r.fechaVencimiento).toLocaleDateString('es-CO') : '-'}</td>
+                <tr key={idx} className="dark:hover:bg-white/5 light:hover:dark:bg-white/5 light:bg-gray-50">
+                  <td className="px-4 py-3 text-xs md:text-sm dark:text-white light:text-gray-900">{r.numeroFactura || '-'}</td>
+                  <td className="px-4 py-3 text-xs md:text-sm dark:text-white/70 light:text-gray-500">{r.clienteNombre || '-'}</td>
+                  <td className="px-4 py-3 text-xs md:text-sm dark:text-white/70 light:text-gray-500 capitalize">{r.estado || '-'}</td>
+                  <td className="px-4 py-3 text-xs md:text-sm dark:text-white light:text-gray-900">{(r.total || 0).toLocaleString('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 })}</td>
+                  <td className="px-4 py-3 text-xs md:text-sm dark:text-white light:text-gray-900">{(r.saldoPendiente || 0).toLocaleString('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 })}</td>
+                  <td className="px-4 py-3 text-xs md:text-sm dark:text-white/70 light:text-gray-500">{r.diasVencido ?? '-'}</td>
+                  <td className="px-4 py-3 text-xs md:text-sm dark:text-white/70 light:text-gray-500">{r.fechaEmision ? new Date(r.fechaEmision).toLocaleDateString('es-CO') : '-'}</td>
+                  <td className="px-4 py-3 text-xs md:text-sm dark:text-white/70 light:text-gray-500">{r.fechaVencimiento ? new Date(r.fechaVencimiento).toLocaleDateString('es-CO') : '-'}</td>
                 </tr>
               ))}
             </tbody>

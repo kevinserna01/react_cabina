@@ -356,12 +356,12 @@ const SalesContent = () => {
     <div className="space-y-6">
       {/* Filtros y Resumen */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Filtros</h3>
+        <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm p-6 rounded-lg shadow-sm border dark:border-white/20 light:border-gray-200">
+          <h3 className="text-lg font-medium dark:text-white light:text-gray-900 mb-4">Filtros</h3>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium dark:text-white/90 light:text-gray-700 mb-1">
                   Fecha Inicio
                 </label>
                 <input
@@ -372,7 +372,7 @@ const SalesContent = () => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium dark:text-white/90 light:text-gray-700 mb-1">
                   Fecha Fin
                 </label>
                 <input
@@ -384,7 +384,7 @@ const SalesContent = () => {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium dark:text-white/90 light:text-gray-700 mb-1">
                 Método de Pago
               </label>
               <select
@@ -401,24 +401,24 @@ const SalesContent = () => {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Resumen</h3>
+        <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm p-6 rounded-lg shadow-sm border dark:border-white/20 light:border-gray-200">
+          <h3 className="text-lg font-medium dark:text-white light:text-gray-900 mb-4">Resumen</h3>
           <div className="space-y-4">
             <div>
-              <p className="text-sm text-gray-500">Total de Ventas</p>
-              <p className="text-2xl font-semibold text-gray-900">
+              <p className="text-sm dark:text-white/70 light:text-gray-500">Total de Ventas</p>
+              <p className="text-2xl font-semibold dark:text-white light:text-gray-900">
                 ${(totalSales || 0).toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
               </p>
             </div>
             <div>
-              <p className="text-sm text-gray-500">Número de Transacciones</p>
-              <p className="text-2xl font-semibold text-gray-900">
+              <p className="text-sm dark:text-white/70 light:text-gray-500">Número de Transacciones</p>
+              <p className="text-2xl font-semibold dark:text-white light:text-gray-900">
                 {filteredSales.length}
               </p>
             </div>
             <div>
-              <p className="text-sm text-gray-500">Total de Items Vendidos</p>
-              <p className="text-2xl font-semibold text-gray-900">
+              <p className="text-sm dark:text-white/70 light:text-gray-500">Total de Items Vendidos</p>
+              <p className="text-2xl font-semibold dark:text-white light:text-gray-900">
                 {totalItems}
               </p>
             </div>
@@ -427,9 +427,9 @@ const SalesContent = () => {
       </div>
 
       {/* Tabla de Ventas */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm rounded-lg shadow-sm border dark:border-white/20 light:border-gray-200 overflow-hidden">
         <div className="flex justify-between items-center p-4 border-b">
-          <h3 className="text-lg font-medium text-gray-900">Ventas</h3>
+          <h3 className="text-lg font-medium dark:text-white light:text-gray-900">Ventas</h3>
           <div className="space-x-2">
             <button
               onClick={handleExportPDF}
@@ -440,54 +440,54 @@ const SalesContent = () => {
           </div>
         </div>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y dark:divide-white/10 light:divide-gray-200">
+            <thead className="dark:bg-white/5 light:bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">
                   Código
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">
                   Fecha
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">
                   Cliente
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">
                   Items
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">
                   Total
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">
                   Método de Pago
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">
                   Acciones
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="dark:bg-transparent light:bg-white divide-y dark:divide-white/10 light:divide-gray-200">
               {filteredSales.map((sale) => (
-                <tr key={sale._id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                <tr key={sale._id} className="dark:hover:bg-white/5 light:hover:dark:bg-white/5 light:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium dark:text-white light:text-gray-900">
                     {sale.code}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm dark:text-white light:text-gray-900">
                     {sale.fechaColombia}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm dark:text-white light:text-gray-900">
                     {sale.cliente ? `${sale.cliente.nombre} (${sale.cliente.documento})` : 'Sin cliente'}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm dark:text-white light:text-gray-900">
                     {sale.productos.reduce((sum, item) => sum + item.cantidad, 0)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm dark:text-white light:text-gray-900">
                     ${(sale.totalVenta || 0).toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm dark:text-white light:text-gray-900">
                     {sale.metodoPago}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm dark:text-white light:text-gray-900">
                     <button
                       onClick={() => handleViewPDF(sale)}
                       className="text-blue-600 hover:text-blue-800 p-2 rounded-full hover:bg-blue-50"
@@ -505,13 +505,13 @@ const SalesContent = () => {
 
       {/* Modal para PDF */}
       {isPDFModalOpen && selectedSale && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl p-6">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[90]">
+          <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm rounded-lg shadow-xl w-full max-w-6xl p-6 border dark:border-white/20 light:border-gray-200">
             <div className="flex justify-between items-start mb-4">
-              <h2 className="text-xl font-semibold">Comprobante de Venta</h2>
+              <h2 className="text-xl font-semibold dark:text-white light:text-gray-900">Comprobante de Venta</h2>
               <button
                 onClick={() => setIsPDFModalOpen(false)}
-                className="text-gray-500 hover:text-gray-700"
+                className="dark:text-white/70 light:text-gray-500 hover:dark:text-white/90 light:text-gray-700"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

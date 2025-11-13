@@ -5,6 +5,7 @@ import SalesDashboard from './pages/SalesDashboard'
 import AdminDashboard from './pages/AdminDashboard'
 import LoginGeneral from './components/auth/LoginGeneral'
 import ProtectedRoute from './components/ProtectedRoute'
+import { ThemeProvider } from './context/ThemeContext'
 import './index.css'
 
 // Verificar si hay un usuario autenticado usando los datos del usuario
@@ -44,6 +45,8 @@ const router = createBrowserRouter([
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <RouterProvider router={router} />
+    <ThemeProvider>
+      <RouterProvider router={router} />
+    </ThemeProvider>
   </React.StrictMode>,
 ) 

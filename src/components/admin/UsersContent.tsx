@@ -237,43 +237,43 @@ const UsersContent: React.FC = () => {
       </div>
 
       {users.length === 0 ? (
-        <div className="bg-white rounded-lg shadow p-6">
-          <p className="text-gray-600 text-center">
+        <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm rounded-lg shadow p-6 border dark:border-white/20 light:border-gray-200">
+          <p className="dark:text-white/80 light:text-gray-600 text-center">
             No hay usuarios registrados. Crea un nuevo usuario para comenzar.
           </p>
         </div>
       ) : (
         <div className="overflow-x-auto w-full">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y dark:divide-white/10 light:divide-gray-200">
+            <thead className="dark:bg-white/5 light:bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">
                   Nombre
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">
                   Email
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">
                   Rol
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">
                   Estado
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-right text-xs font-medium dark:text-white/70 light:text-gray-500 uppercase tracking-wider">
                   Acciones
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="dark:bg-transparent light:bg-white divide-y dark:divide-white/10 light:divide-gray-200">
               {users.map((user) => (
                 <tr key={user.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium dark:text-white light:text-gray-900">
                     {user.name}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm dark:text-white/70 light:text-gray-500">
                     {user.email}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm dark:text-white/70 light:text-gray-500">
                     {user.role === 'admin' ? 'Administrador' : 'Trabajador'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -314,10 +314,10 @@ const UsersContent: React.FC = () => {
 
       {/* Modal para crear/editar usuario */}
       {showModal && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-2 sm:p-0">
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[90] flex items-center justify-center p-2 sm:p-0">
           <div className="relative mx-2 sm:mx-auto w-full max-w-md p-2 sm:p-5 border shadow-lg rounded-md bg-white">
             <div className="mt-3">
-              <h3 className="text-lg leading-6 font-medium text-gray-900">
+              <h3 className="text-lg leading-6 font-medium dark:text-white light:text-gray-900">
                 {selectedUser ? 'Editar Usuario' : 'Nuevo Usuario'}
               </h3>
               {error && (
@@ -327,7 +327,7 @@ const UsersContent: React.FC = () => {
               )}
               <form onSubmit={handleSubmit} className="mt-4 space-y-4">
                 <div>
-                  <label htmlFor="name" className="block text-gray-700 text-sm font-bold mb-2">Nombre</label>
+                  <label htmlFor="name" className="block dark:text-white/90 light:text-gray-700 text-sm font-bold mb-2">Nombre</label>
                   <input
                     id="name"
                     type="text"
@@ -336,11 +336,11 @@ const UsersContent: React.FC = () => {
                     onChange={handleInputChange}
                     required
                     disabled={!!selectedUser}
-                    className={`shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline ${selectedUser ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                    className={`shadow appearance-none border rounded w-full py-2 px-3 dark:text-white/90 light:text-gray-700 leading-tight focus:outline-none focus:shadow-outline ${selectedUser ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                   />
                 </div>
                 <div>
-                  <label htmlFor="email" className="block text-gray-700 text-sm font-bold mb-2">Email</label>
+                  <label htmlFor="email" className="block dark:text-white/90 light:text-gray-700 text-sm font-bold mb-2">Email</label>
                   <input
                     id="email"
                     type="email"
@@ -348,11 +348,11 @@ const UsersContent: React.FC = () => {
                     value={formData.email}
                     onChange={handleInputChange}
                     required
-                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    className="shadow appearance-none border rounded w-full py-2 px-3 dark:text-white/90 light:text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                   />
                 </div>
                 <div>
-                  <label htmlFor="password" className="block text-gray-700 text-sm font-bold mb-2">Contraseña</label>
+                  <label htmlFor="password" className="block dark:text-white/90 light:text-gray-700 text-sm font-bold mb-2">Contraseña</label>
                   <div className="relative">
                     <input
                       id="password"
@@ -361,38 +361,38 @@ const UsersContent: React.FC = () => {
                       value={formData.password}
                       onChange={handleInputChange}
                       required={!selectedUser}
-                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline pr-10"
+                      className="shadow appearance-none border rounded w-full py-2 px-3 dark:text-white/90 light:text-gray-700 leading-tight focus:outline-none focus:shadow-outline pr-10"
                     />
                     <button
                       type="button"
                       tabIndex={0}
                       aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                       onClick={() => setShowPassword((prev) => !prev)}
-                      className="absolute inset-y-0 right-2 flex items-center text-gray-500 focus:outline-none"
+                      className="absolute inset-y-0 right-2 flex items-center dark:text-white/70 light:text-gray-500 focus:outline-none"
                     >
                       {showPassword ? <EyeSlashIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
                     </button>
                   </div>
                 </div>
                 <div>
-                  <label className="block text-gray-700 text-sm font-bold mb-2">Rol</label>
+                  <label className="block dark:text-white/90 light:text-gray-700 text-sm font-bold mb-2">Rol</label>
                   <select
                     name="role"
                     value="worker"
                     disabled
-                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 bg-gray-100 cursor-not-allowed"
+                    className="shadow appearance-none border rounded w-full py-2 px-3 dark:text-white/90 light:text-gray-700 bg-gray-100 cursor-not-allowed"
                   >
                     <option value="worker">Trabajador</option>
                   </select>
                 </div>
                 {selectedUser && (
                   <div>
-                    <label className="block text-gray-700 text-sm font-bold mb-2">Estado</label>
+                    <label className="block dark:text-white/90 light:text-gray-700 text-sm font-bold mb-2">Estado</label>
                     <select
                       name="status"
                       value={formData.status}
                       onChange={handleInputChange}
-                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                      className="shadow appearance-none border rounded w-full py-2 px-3 dark:text-white/90 light:text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                     >
                       <option value="active">Activo</option>
                       <option value="inactive">Inactivo</option>
@@ -402,7 +402,7 @@ const UsersContent: React.FC = () => {
                 <div className="flex items-center justify-end mt-6 gap-2">
                   <button
                     type="button"
-                    className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400 w-full sm:w-auto"
+                    className="bg-gray-300 dark:text-white/90 light:text-gray-700 px-4 py-2 rounded hover:bg-gray-400 w-full sm:w-auto"
                     onClick={() => setShowModal(false)}
                   >
                     Cancelar
@@ -422,13 +422,13 @@ const UsersContent: React.FC = () => {
 
       {/* Modal de confirmación de borrado */}
       {showDeleteModal && userToDelete && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-2 sm:p-0" aria-modal="true" role="dialog" tabIndex={0}>
-          <div className="bg-white rounded-lg shadow-lg p-2 sm:p-6 max-w-sm w-full text-center mx-2 sm:mx-auto">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">¿Eliminar trabajador?</h3>
-            <p className="text-gray-700 mb-6">¿Estás seguro de que deseas eliminar al trabajador <span className="font-semibold">{userToDelete.name}</span>? Esta acción no se puede deshacer.</p>
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[90] flex items-center justify-center p-2 sm:p-0" aria-modal="true" role="dialog" tabIndex={0}>
+          <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm rounded-lg shadow-lg p-2 sm:p-6 max-w-sm w-full text-center mx-2 sm:mx-auto border dark:border-white/20 light:border-gray-200">
+            <h3 className="text-lg font-bold dark:text-white light:text-gray-900 mb-4">¿Eliminar trabajador?</h3>
+            <p className="dark:text-white/90 light:text-gray-700 mb-6">¿Estás seguro de que deseas eliminar al trabajador <span className="font-semibold">{userToDelete.name}</span>? Esta acción no se puede deshacer.</p>
             <div className="flex flex-col sm:flex-row justify-end gap-2">
               <button
-                className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400 w-full sm:w-auto"
+                className="bg-gray-300 dark:text-white/90 light:text-gray-700 px-4 py-2 rounded hover:bg-gray-400 w-full sm:w-auto"
                 onClick={() => { setShowDeleteModal(false); setUserToDelete(null); }}
               >
                 Cancelar
@@ -446,16 +446,16 @@ const UsersContent: React.FC = () => {
 
       {/* Modal de éxito al crear usuario */}
       {showSuccessModal && createdUserInfo && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-2 sm:p-0" aria-modal="true" role="dialog" tabIndex={0}>
-          <div className="bg-white rounded-lg shadow-lg p-2 sm:p-6 max-w-sm w-full text-center mx-2 sm:mx-auto">
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[90] flex items-center justify-center p-2 sm:p-0" aria-modal="true" role="dialog" tabIndex={0}>
+          <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm rounded-lg shadow-lg p-2 sm:p-6 max-w-sm w-full text-center mx-2 sm:mx-auto border dark:border-white/20 light:border-gray-200">
             <h3 className="text-lg font-bold text-green-700 mb-4 flex items-center justify-center gap-2">
               <CheckIcon className="w-6 h-6 text-green-600" /> Usuario creado exitosamente
             </h3>
             <div className="mb-2">
-              <span className="block text-gray-700 font-semibold">Email:</span>
-              <span className="block text-gray-900 mb-2">{createdUserInfo.email}</span>
-              <span className="block text-gray-700 font-semibold">Contraseña:</span>
-              <span className="block text-gray-900 mb-2">{createdUserInfo.password}</span>
+              <span className="block dark:text-white/90 light:text-gray-700 font-semibold">Email:</span>
+              <span className="block dark:text-white light:text-gray-900 mb-2">{createdUserInfo.email}</span>
+              <span className="block dark:text-white/90 light:text-gray-700 font-semibold">Contraseña:</span>
+              <span className="block dark:text-white light:text-gray-900 mb-2">{createdUserInfo.password}</span>
             </div>
             <button
               className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mx-auto mb-4 w-full sm:w-auto"
@@ -469,7 +469,7 @@ const UsersContent: React.FC = () => {
               {copied ? '¡Copiado!' : 'Copiar datos'}
             </button>
             <button
-              className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400 w-full sm:w-auto"
+              className="bg-gray-300 dark:text-white/90 light:text-gray-700 px-4 py-2 rounded hover:bg-gray-400 w-full sm:w-auto"
               onClick={() => { setShowSuccessModal(false); setCreatedUserInfo(null); }}
             >
               Cerrar
@@ -480,13 +480,13 @@ const UsersContent: React.FC = () => {
 
       {/* Modal de éxito al eliminar usuario */}
       {showDeleteSuccess && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-2 sm:p-0" aria-modal="true" role="dialog" tabIndex={0}>
-          <div className="bg-white rounded-lg shadow-lg p-2 sm:p-6 max-w-sm w-full text-center mx-2 sm:mx-auto">
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[90] flex items-center justify-center p-2 sm:p-0" aria-modal="true" role="dialog" tabIndex={0}>
+          <div className="dark:bg-white/10 light:bg-white backdrop-blur-sm rounded-lg shadow-lg p-2 sm:p-6 max-w-sm w-full text-center mx-2 sm:mx-auto border dark:border-white/20 light:border-gray-200">
             <h3 className="text-lg font-bold text-green-700 mb-4 flex items-center justify-center gap-2">
               <CheckIcon className="w-6 h-6 text-green-600" /> Usuario eliminado exitosamente
             </h3>
             <button
-              className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400 w-full sm:w-auto"
+              className="bg-gray-300 dark:text-white/90 light:text-gray-700 px-4 py-2 rounded hover:bg-gray-400 w-full sm:w-auto"
               onClick={() => setShowDeleteSuccess(false)}
             >
               Cerrar
